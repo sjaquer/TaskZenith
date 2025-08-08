@@ -104,7 +104,7 @@ export function TodoList() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="z-10 relative">
         <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
           Mi Lista de Tareas
         </h2>
@@ -166,3 +166,4 @@ export function TodoList() {
     </div>
   );
 }
+    

@@ -1,6 +1,6 @@
 'use client';
 
-import { type Task, type Project, type KanbanStatus } from '@/lib/types';
+import { type Task, type Project, type KanbanStatus, type Category, type Priority } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 interface TaskContextType {
@@ -11,7 +11,9 @@ interface TaskContextType {
   updateTaskStatus: (taskId: string, status: KanbanStatus) => void;
   getProjectById: (projectId: string) => Project | undefined;
   addProject: (project: Omit<Project, 'id'>) => void;
-  addAiTasks: (newTasks: string[], category: Task['category'], priority: Task['priority']) => void;
+  deleteProject: (projectId: string) => void;
+  addAiTasks: (newTasks: string[], category: Category, priority: Priority) => void;
+  clearAllData: () => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -69,7 +71,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     setTasks((prev) => [newTask, ...prev]);
   };
 
-  const addAiTasks = (newTasks: string[], category: Task['category'], priority: Task['priority']) => {
+  const addAiTasks = (newTasks: string[], category: Category, priority: Priority) => {
     const createdTasks: Task[] = newTasks.map((title, index) => ({
       id: `task-ai-${Date.now()}-${index}`,
       title,
@@ -115,12 +117,27 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     setProjects(prev => [...prev, newProject]);
   }
   
+  const deleteProject = (projectId: string) => {
+    setProjects(prev => prev.filter(p => p.id !== projectId));
+    // Also remove projectId from tasks that have it
+    setTasks(prev => prev.map(t => t.projectId === projectId ? { ...t, projectId: undefined } : t));
+  }
+  
+  const clearAllData = () => {
+    setTasks(initialTasks);
+    setProjects(initialProjects);
+    // Also clear daily tasks
+    const todayKey = `dailyTasks-${new Date().toISOString().split('T')[0]}`;
+    localStorage.removeItem(todayKey);
+    // This will cause daily tasks to regenerate on next load/refresh
+  }
+
   if (!isLoaded) {
     return null;
   }
 
   return (
-    <TaskContext.Provider value={{ tasks, projects, addTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, addAiTasks }}>
+    <TaskContext.Provider value={{ tasks, projects, addTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, addAiTasks, clearAllData }}>
       {children}
     </TaskContext.Provider>
   );
@@ -133,3 +150,4 @@ export const useTasks = () => {
   }
   return context;
 };
+    
