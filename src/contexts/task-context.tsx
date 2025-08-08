@@ -72,7 +72,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     setTasks(prev => 
       prev.map(task => {
         if (task.id === taskId) {
-          const isCompleted = status === 'Finalizado' || status === 'Cancelado';
+          const isCompleted = status === 'Finalizado' || status === 'Hecho' || status === 'Cancelado';
           return { ...task, status, completed: isCompleted, completedAt: isCompleted ? new Date() : null };
         }
         return task;

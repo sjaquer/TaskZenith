@@ -129,6 +129,9 @@ export function TodoList() {
                     </div>
                     <Button type="submit" className="w-full md:w-auto">Añadir Tarea</Button>
                 </form>
+                 <div className="mt-4 flex justify-end">
+                    <AiTaskGenerator />
+                </div>
             </CardContent>
         </Card>
 
@@ -141,13 +144,12 @@ export function TodoList() {
                 <TabsTrigger value="personal">Personal</TabsTrigger>
                 <TabsTrigger value="proyectos">Proyectos</TabsTrigger>
             </TabsList>
-            <AiTaskGenerator />
         </div>
-        <TabsContent value="all">{renderTaskList(groupedTasks.all)}</TabsContent>
-        <TabsContent value="estudio">{renderTaskList(groupedTasks.estudio)}</TabsContent>
-        <TabsContent value="trabajo">{renderTaskList(groupedTasks.trabajo)}</TabsContent>
-        <TabsContent value="personal">{renderTaskList(groupedTasks.personal)}</TabsContent>
-        <TabsContent value="proyectos">{renderTaskList(groupedTasks.proyectos)}</TabsContent>
+        <TabsContent value="all" className="mt-6">{renderTaskList(groupedTasks.all)}</TabsContent>
+        <TabsContent value="estudio" className="mt-6">{renderTaskList(groupedTasks.estudio)}</TabsContent>
+        <TabsContent value="trabajo" className="mt-6">{renderTaskList(groupedTasks.trabajo)}</TabsContent>
+        <TabsContent value="personal" className="mt-6">{renderTaskList(groupedTasks.personal)}</TabsContent>
+        <TabsContent value="proyectos" className="mt-6">{renderTaskList(groupedTasks.proyectos)}</TabsContent>
       </Tabs>
     </div>
   );

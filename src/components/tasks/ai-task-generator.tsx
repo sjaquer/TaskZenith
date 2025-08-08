@@ -84,11 +84,20 @@ export function AiTaskGenerator() {
     setIsOpen(false);
     form.reset();
   }
+  
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      form.reset();
+      setGeneratedTasks([]);
+      setNumberOfTasks(3);
+    }
+    setIsOpen(open);
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button>
+        <Button variant="outline">
           <Bot className="mr-2 h-4 w-4" /> Generar con IA
         </Button>
       </DialogTrigger>

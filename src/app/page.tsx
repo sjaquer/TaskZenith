@@ -2,6 +2,7 @@ import { DailyDashboard } from '@/components/tasks/daily-dashboard';
 import { TodoList } from '@/components/tasks/todo-list';
 import { KanbanBoard } from '@/components/tasks/kanban-board';
 import { TaskHistory } from '@/components/tasks/task-history';
+import { DailyTodoList } from '@/components/tasks/daily-todo-list';
 import { Bot } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
@@ -23,10 +24,19 @@ export default function DashboardPage() {
         </section>
         
         <Separator className="bg-white/10" />
+
+        <section>
+          <h2 className="mb-4 text-3xl font-bold tracking-tight">
+            Tareas Diarias
+          </h2>
+          <DailyTodoList />
+        </section>
+
+        <Separator className="bg-white/10" />
         
         <section>
           <h2 className="mb-4 text-3xl font-bold tracking-tight">
-            Lista de Tareas
+            Mi Lista de Tareas
           </h2>
           <TodoList />
         </section>
