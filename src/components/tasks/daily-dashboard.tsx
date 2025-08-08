@@ -7,10 +7,10 @@ import { Badge } from '../ui/badge';
 import { Book, Briefcase, User, FolderKanban } from 'lucide-react';
 
 const categoryIcons: { [key: string]: React.ElementType } = {
-  study: Book,
-  work: Briefcase,
+  estudio: Book,
+  trabajo: Briefcase,
   personal: User,
-  projects: FolderKanban,
+  proyectos: FolderKanban,
 };
 
 export function DailyDashboard() {
@@ -24,7 +24,7 @@ export function DailyDashboard() {
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <Card className="col-span-1 lg:col-span-2">
         <CardHeader>
-          <CardTitle className="font-headline">Today's Focus</CardTitle>
+          <CardTitle className="font-headline">Foco de Hoy</CardTitle>
         </CardHeader>
         <CardContent>
           {todaysTasks.length > 0 ? (
@@ -37,7 +37,7 @@ export function DailyDashboard() {
                       id={`task-${task.id}`}
                       checked={task.completed}
                       onCheckedChange={() => toggleTaskCompletion(task.id)}
-                      aria-label={`Mark ${task.title} as complete`}
+                      aria-label={`Marcar ${task.title} como completa`}
                     />
                     <div className="flex-1">
                       <label
@@ -47,28 +47,28 @@ export function DailyDashboard() {
                         {task.title}
                       </label>
                     </div>
-                    <Badge variant={task.priority === 'high' ? 'destructive' : 'secondary'}>{task.priority}</Badge>
+                    <Badge variant={task.priority === 'alta' ? 'destructive' : 'secondary'}>{task.priority}</Badge>
                     <Icon className="w-5 h-5 text-muted-foreground" />
                   </div>
                 )
               })}
             </div>
           ) : (
-            <p className="text-muted-foreground">No tasks for today. Enjoy your break!</p>
+            <p className="text-muted-foreground">No hay tareas para hoy. ¡Disfruta tu descanso!</p>
           )}
         </CardContent>
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Task Summary</CardTitle>
+          <CardTitle className="font-headline">Resumen de Tareas</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
            <div className="flex justify-between items-center">
-             <p className="font-medium">Pending Tasks</p>
+             <p className="font-medium">Tareas Pendientes</p>
              <p className="text-2xl font-bold">{pendingCount}</p>
            </div>
            <div className="flex justify-between items-center">
-             <p className="font-medium">Completed Tasks</p>
+             <p className="font-medium">Tareas Completadas</p>
              <p className="text-2xl font-bold">{completedCount}</p>
            </div>
         </CardContent>

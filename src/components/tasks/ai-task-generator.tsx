@@ -34,9 +34,9 @@ import { useToast } from '@/hooks/use-toast';
 import type { Category, Priority } from '@/lib/types';
 
 const formSchema = z.object({
-  activityDescription: z.string().min(10, 'Please describe the activity in at least 10 characters.'),
-  category: z.enum(['study', 'work', 'personal', 'projects']),
-  priority: z.enum(['low', 'medium', 'high']),
+  activityDescription: z.string().min(10, 'Por favor, describe la actividad en al menos 10 caracteres.'),
+  category: z.enum(['estudio', 'trabajo', 'personal', 'proyectos']),
+  priority: z.enum(['baja', 'media', 'alta']),
 });
 
 export function AiTaskGenerator() {
@@ -52,7 +52,7 @@ export function AiTaskGenerator() {
     defaultValues: {
       activityDescription: '',
       category: 'personal',
-      priority: 'medium',
+      priority: 'media',
     },
   });
 
@@ -77,8 +77,8 @@ export function AiTaskGenerator() {
     const { category, priority } = form.getValues();
     addAiTasks(generatedTasks, category as Category, priority as Priority);
     toast({
-      title: 'Success!',
-      description: `${generatedTasks.length} tasks have been added to your list.`,
+      title: '¡Éxito!',
+      description: `${generatedTasks.length} tareas han sido añadidas a tu lista.`,
     });
     setGeneratedTasks([]);
     setIsOpen(false);
@@ -89,16 +89,16 @@ export function AiTaskGenerator() {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button>
-          <Bot className="mr-2 h-4 w-4" /> Generate with AI
+          <Bot className="mr-2 h-4 w-4" /> Generar con IA
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="font-headline flex items-center gap-2">
-            <Sparkles className="text-accent" /> AI Task Generator
+            <Sparkles className="text-accent" /> Generador de Tareas con IA
           </DialogTitle>
           <DialogDescription>
-            Describe an activity, and we'll break it down into manageable tasks for you.
+            Describe una actividad y la dividiremos en tareas manejables para ti.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -108,9 +108,9 @@ export function AiTaskGenerator() {
               name="activityDescription"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Activity Description</FormLabel>
+                  <FormLabel>Descripción de la Actividad</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="e.g., Plan a surprise birthday party for a friend" {...field} />
+                    <Textarea placeholder="Ej: Planear una fiesta de cumpleaños sorpresa para un amigo" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -122,18 +122,18 @@ export function AiTaskGenerator() {
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>Categoría</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
+                          <SelectValue placeholder="Selecciona una categoría" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="personal">Personal</SelectItem>
-                        <SelectItem value="work">Work</SelectItem>
-                        <SelectItem value="study">Study</SelectItem>
-                        <SelectItem value="projects">Projects</SelectItem>
+                        <SelectItem value="trabajo">Trabajo</SelectItem>
+                        <SelectItem value="estudio">Estudio</SelectItem>
+                        <SelectItem value="proyectos">Proyectos</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -144,17 +144,17 @@ export function AiTaskGenerator() {
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Priority</FormLabel>
+                    <FormLabel>Prioridad</FormLabel>
                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a priority" />
+                          <SelectValue placeholder="Selecciona una prioridad" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="baja">Baja</SelectItem>
+                        <SelectItem value="media">Media</SelectItem>
+                        <SelectItem value="alta">Alta</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -162,25 +162,25 @@ export function AiTaskGenerator() {
               />
             </div>
             <div className="space-y-2">
-                <Label>Number of tasks: {numberOfTasks}</Label>
+                <Label>Número de tareas: {numberOfTasks}</Label>
                 <Slider defaultValue={[3]} min={1} max={10} step={1} onValueChange={(value) => setNumberOfTasks(value[0])} />
             </div>
 
             <Button type="submit" className="w-full" disabled={isGenerating}>
-              {isGenerating ? 'Generating...' : 'Generate Tasks'}
+              {isGenerating ? 'Generando...' : 'Generar Tareas'}
             </Button>
           </form>
         </Form>
         {generatedTasks.length > 0 && (
           <div className="mt-4 space-y-2">
-            <h3 className="font-semibold">Suggested Tasks:</h3>
+            <h3 className="font-semibold">Tareas Sugeridas:</h3>
             <div className="space-y-2 rounded-md border p-2">
               {generatedTasks.map((task, index) => (
                 <p key={index} className="text-sm p-2 bg-primary/30 rounded-md">{task}</p>
               ))}
             </div>
             <Button onClick={handleAddTasks} className="w-full">
-              <Plus className="mr-2 h-4 w-4" /> Add to My List
+              <Plus className="mr-2 h-4 w-4" /> Añadir a Mi Lista
             </Button>
           </div>
         )}

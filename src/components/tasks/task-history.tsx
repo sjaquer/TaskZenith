@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export function TaskHistory() {
   const { tasks } = useTasks();
@@ -26,16 +27,16 @@ export function TaskHistory() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Completed Tasks</CardTitle>
+        <CardTitle className="font-headline">Tareas Completadas</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Task</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead className="text-right">Completed On</TableHead>
+              <TableHead>Tarea</TableHead>
+              <TableHead>Categoría</TableHead>
+              <TableHead>Prioridad</TableHead>
+              <TableHead className="text-right">Completada el</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -47,19 +48,19 @@ export function TaskHistory() {
                             <Badge variant="secondary">{task.category}</Badge>
                         </TableCell>
                         <TableCell>
-                             <Badge variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'outline' : 'secondary'}>
+                             <Badge variant={task.priority === 'alta' ? 'destructive' : task.priority === 'media' ? 'outline' : 'secondary'}>
                                 {task.priority}
                             </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                            {format(new Date(task.completedAt!), "PPP")}
+                            {format(new Date(task.completedAt!), "PPP", { locale: es })}
                         </TableCell>
                     </TableRow>
                 ))
             ) : (
                 <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center">
-                        No completed tasks yet. Keep going!
+                        Aún no hay tareas completadas. ¡Sigue adelante!
                     </TableCell>
                 </TableRow>
             )}

@@ -23,9 +23,9 @@ function TaskItem({ task, onToggle }: { task: Task; onToggle: (id: string) => vo
   };
 
   const priorityColors = {
-    low: 'border-l-4 border-green-500',
-    medium: 'border-l-4 border-yellow-500',
-    high: 'border-l-4 border-red-500',
+    baja: 'border-l-4 border-green-500',
+    media: 'border-l-4 border-yellow-500',
+    alta: 'border-l-4 border-red-500',
   };
 
   return (
@@ -35,13 +35,13 @@ function TaskItem({ task, onToggle }: { task: Task; onToggle: (id: string) => vo
       } ${isCompleted ? 'task-complete-animation' : ''}`}
     >
       <Checkbox
-        id={`task-${task.id}`}
+        id={`task-todo-${task.id}`}
         onCheckedChange={handleToggle}
-        aria-label={`Complete ${task.title}`}
+        aria-label={`Completar ${task.title}`}
       />
       <div className="flex-1">
         <label
-          htmlFor={`task-${task.id}`}
+          htmlFor={`task-todo-${task.id}`}
           className="font-medium leading-none cursor-pointer"
         >
           {task.title}
@@ -57,7 +57,7 @@ export function TodoList() {
   const { tasks, addTask, toggleTaskCompletion } = useTasks();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskCategory, setNewTaskCategory] = useState<Category>('personal');
-  const [newTaskPriority, setNewTaskPriority] = useState<Priority>('medium');
+  const [newTaskPriority, setNewTaskPriority] = useState<Priority>('media');
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,16 +79,16 @@ export function TodoList() {
     const all = filteredTasks.filter(t => !t.completed);
     return {
       all,
-      study: all.filter(t => t.category === 'study'),
-      work: all.filter(t => t.category === 'work'),
+      estudio: all.filter(t => t.category === 'estudio'),
+      trabajo: all.filter(t => t.category === 'trabajo'),
       personal: all.filter(t => t.category === 'personal'),
-      projects: all.filter(t => t.category === 'projects'),
+      proyectos: all.filter(t => t.category === 'proyectos'),
     };
   }, [filteredTasks]);
 
   const renderTaskList = (tasksToRender: Task[]) => {
     if (tasksToRender.length === 0) {
-      return <p className="text-muted-foreground text-center py-8">No tasks in this category.</p>;
+      return <p className="text-muted-foreground text-center py-8">No hay tareas en esta categoría.</p>;
     }
     return (
       <div className="space-y-4">
@@ -107,33 +107,33 @@ export function TodoList() {
                     <Input
                         value={newTaskTitle}
                         onChange={(e) => setNewTaskTitle(e.target.value)}
-                        placeholder="Add a new task..."
+                        placeholder="Añadir una nueva tarea..."
                         className="flex-grow"
                     />
                     <div className="flex gap-2">
                         <Select value={newTaskCategory} onValueChange={(v) => setNewTaskCategory(v as Category)}>
                             <SelectTrigger className="w-full md:w-[120px]">
-                                <SelectValue placeholder="Category" />
+                                <SelectValue placeholder="Categoría" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="personal">Personal</SelectItem>
-                                <SelectItem value="work">Work</SelectItem>
-                                <SelectItem value="study">Study</SelectItem>
-                                <SelectItem value="projects">Projects</SelectItem>
+                                <SelectItem value="trabajo">Trabajo</SelectItem>
+                                <SelectItem value="estudio">Estudio</SelectItem>
+                                <SelectItem value="proyectos">Proyectos</SelectItem>
                             </SelectContent>
                         </Select>
                         <Select value={newTaskPriority} onValueChange={(v) => setNewTaskPriority(v as Priority)}>
                             <SelectTrigger className="w-full md:w-[120px]">
-                                <SelectValue placeholder="Priority" />
+                                <SelectValue placeholder="Prioridad" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="low">Low</SelectItem>
-                                <SelectItem value="medium">Medium</SelectItem>
-                                <SelectItem value="high">High</SelectItem>
+                                <SelectItem value="baja">Baja</SelectItem>
+                                <SelectItem value="media">Media</SelectItem>
+                                <SelectItem value="alta">Alta</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button type="submit" className="w-full md:w-auto">Add Task</Button>
+                    <Button type="submit" className="w-full md:w-auto">Añadir Tarea</Button>
                 </form>
             </CardContent>
         </Card>
@@ -141,19 +141,19 @@ export function TodoList() {
       <Tabs defaultValue="all" className="w-full">
         <div className="flex justify-between items-center">
             <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="study">Study</TabsTrigger>
-                <TabsTrigger value="work">Work</TabsTrigger>
+                <TabsTrigger value="all">Todas</TabsTrigger>
+                <TabsTrigger value="estudio">Estudio</TabsTrigger>
+                <TabsTrigger value="trabajo">Trabajo</TabsTrigger>
                 <TabsTrigger value="personal">Personal</TabsTrigger>
-                <TabsTrigger value="projects">Projects</TabsTrigger>
+                <TabsTrigger value="proyectos">Proyectos</TabsTrigger>
             </TabsList>
             <AiTaskGenerator />
         </div>
         <TabsContent value="all">{renderTaskList(groupedTasks.all)}</TabsContent>
-        <TabsContent value="study">{renderTaskList(groupedTasks.study)}</TabsContent>
-        <TabsContent value="work">{renderTaskList(groupedTasks.work)}</TabsContent>
+        <TabsContent value="estudio">{renderTaskList(groupedTasks.estudio)}</TabsContent>
+        <TabsContent value="trabajo">{renderTaskList(groupedTasks.trabajo)}</TabsContent>
         <TabsContent value="personal">{renderTaskList(groupedTasks.personal)}</TabsContent>
-        <TabsContent value="projects">{renderTaskList(groupedTasks.projects)}</TabsContent>
+        <TabsContent value="proyectos">{renderTaskList(groupedTasks.proyectos)}</TabsContent>
       </Tabs>
     </div>
   );

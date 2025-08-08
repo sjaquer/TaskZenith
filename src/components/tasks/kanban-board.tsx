@@ -13,13 +13,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const columns: KanbanStatus[] = ['Pending', 'In Progress', 'Done', 'Finished', 'Canceled'];
+const columns: KanbanStatus[] = ['Pendiente', 'En Progreso', 'Hecho', 'Finalizado', 'Cancelado'];
 const statusToColor: Record<KanbanStatus, string> = {
-  'Pending': 'bg-gray-500',
-  'In Progress': 'bg-blue-500',
-  'Done': 'bg-green-500',
-  'Finished': 'bg-purple-500',
-  'Canceled': 'bg-red-500'
+  'Pendiente': 'bg-gray-500',
+  'En Progreso': 'bg-blue-500',
+  'Hecho': 'bg-green-500',
+  'Finalizado': 'bg-purple-500',
+  'Cancelado': 'bg-red-500'
 }
 
 function KanbanCard({ task }: { task: Task }) {
@@ -47,13 +47,13 @@ function KanbanCard({ task }: { task: Task }) {
                 <DropdownMenuContent>
                     {columns.filter(c => c !== task.status).map(status => (
                         <DropdownMenuItem key={status} onClick={() => updateTaskStatus(task.id, status)}>
-                            Move to {status}
+                            Mover a {status}
                         </DropdownMenuItem>
                     ))}
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
-        <p className="text-xs text-muted-foreground">{project?.name || 'No Project'}</p>
+        <p className="text-xs text-muted-foreground">{project?.name || 'Sin Proyecto'}</p>
       </CardContent>
     </Card>
   );
@@ -104,7 +104,7 @@ function KanbanColumn({ status, tasks }: { status: KanbanStatus; tasks: Task[] }
 
 export function KanbanBoard() {
   const { tasks } = useTasks();
-  const projectTasks = useMemo(() => tasks.filter(t => t.category === 'projects'), [tasks]);
+  const projectTasks = useMemo(() => tasks.filter(t => t.category === 'proyectos'), [tasks]);
 
   const groupedTasks = useMemo(() => {
     return columns.reduce((acc, status) => {

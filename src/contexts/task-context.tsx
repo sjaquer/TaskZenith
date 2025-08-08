@@ -17,19 +17,19 @@ interface TaskContextType {
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 const initialProjects: Project[] = [
-  { id: 'proj-1', name: 'Website Redesign', color: 'hsl(210 40% 96.1%)' },
-  { id: 'proj-2', name: 'Mobile App Launch', color: 'hsl(142.1 76.2% 86.3%)' },
-  { id: 'proj-3', name: 'Marketing Campaign', color: 'hsl(47.9 95.8% 83.1%)' },
+  { id: 'proj-1', name: 'Rediseño del Sitio Web', color: 'hsl(210 40% 96.1%)' },
+  { id: 'proj-2', name: 'Lanzamiento de App Móvil', color: 'hsl(142.1 76.2% 86.3%)' },
+  { id: 'proj-3', name: 'Campaña de Marketing', color: 'hsl(47.9 95.8% 83.1%)' },
 ];
 
 const initialTasks: Task[] = [
-  { id: 'task-1', title: 'Review Chapter 5 for exam', category: 'study', priority: 'high', completed: false, status: 'Pending' },
-  { id: 'task-2', title: 'Prepare presentation for client', category: 'work', priority: 'medium', completed: false, status: 'In Progress', projectId: 'proj-1' },
-  { id: 'task-3', title: 'Go for a 30-minute run', category: 'personal', priority: 'low', completed: true, completedAt: new Date(Date.now() - 3600 * 1000), status: 'Finished' },
-  { id: 'task-4', title: 'Finalize UI mockups', category: 'projects', priority: 'high', completed: false, status: 'In Progress', projectId: 'proj-1' },
-  { id: 'task-5', title: 'Schedule team meeting', category: 'work', priority: 'medium', completed: false, status: 'Pending' },
-  { id: 'task-6', title: 'Plan weekend trip', category: 'personal', priority: 'low', completed: false, status: 'Pending'},
-  { id: 'task-7', title: 'Develop backend API for login', category: 'projects', priority: 'high', completed: false, status: 'Done', projectId: 'proj-2' },
+  { id: 'task-1', title: 'Revisar Capítulo 5 para examen', category: 'estudio', priority: 'alta', completed: false, status: 'Pendiente' },
+  { id: 'task-2', title: 'Preparar presentación para cliente', category: 'trabajo', priority: 'media', completed: false, status: 'En Progreso', projectId: 'proj-1' },
+  { id: 'task-3', title: 'Salir a correr 30 minutos', category: 'personal', priority: 'baja', completed: true, completedAt: new Date(Date.now() - 3600 * 1000), status: 'Finalizado' },
+  { id: 'task-4', title: 'Finalizar maquetas de UI', category: 'proyectos', priority: 'alta', completed: false, status: 'En Progreso', projectId: 'proj-1' },
+  { id: 'task-5', title: 'Agendar reunión de equipo', category: 'trabajo', priority: 'media', completed: false, status: 'Pendiente' },
+  { id: 'task-6', title: 'Planear viaje de fin de semana', category: 'personal', priority: 'baja', completed: false, status: 'Pendiente'},
+  { id: 'task-7', title: 'Desarrollar API de backend para login', category: 'proyectos', priority: 'alta', completed: false, status: 'Hecho', projectId: 'proj-2' },
 ];
 
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
@@ -41,7 +41,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       ...task,
       id: `task-${Date.now()}`,
       completed: false,
-      status: 'Pending',
+      status: 'Pendiente',
     };
     setTasks((prev) => [newTask, ...prev]);
   };
@@ -53,7 +53,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       category,
       priority,
       completed: false,
-      status: 'Pending',
+      status: 'Pendiente',
     }));
     setTasks((prev) => [...createdTasks, ...prev]);
   };
@@ -98,7 +98,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 export const useTasks = () => {
   const context = useContext(TaskContext);
   if (!context) {
-    throw new Error('useTasks must be used within a TaskProvider');
+    throw new Error('useTasks debe ser usado dentro de un TaskProvider');
   }
   return context;
 };

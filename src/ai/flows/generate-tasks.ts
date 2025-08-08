@@ -13,21 +13,21 @@ import {z} from 'genkit';
 const GenerateTasksInputSchema = z.object({
   activityDescription: z
     .string()
-    .describe('A description of the activity for which tasks should be generated.'),
+    .describe('Una descripción de la actividad para la cual se deben generar tareas.'),
   numberOfTasks: z
     .number()
     .int()
     .min(1)
     .max(10)
     .default(3)
-    .describe('The number of tasks to generate.'),
+    .describe('El número de tareas a generar.'),
 });
 export type GenerateTasksInput = z.infer<typeof GenerateTasksInputSchema>;
 
 const GenerateTasksOutputSchema = z.object({
   tasks: z.array(
-    z.string().describe('A task generated based on the activity description.')
-  ).describe('The generated list of tasks.')
+    z.string().describe('Una tarea generada basada en la descripción de la actividad.')
+  ).describe('La lista de tareas generada.')
 });
 export type GenerateTasksOutput = z.infer<typeof GenerateTasksOutputSchema>;
 
@@ -39,11 +39,11 @@ const generateTasksPrompt = ai.definePrompt({
   name: 'generateTasksPrompt',
   input: {schema: GenerateTasksInputSchema},
   output: {schema: GenerateTasksOutputSchema},
-  prompt: `You are a helpful task generator. Given an activity description, you will generate a list of tasks required to complete the activity.
+  prompt: `Eres un útil generador de tareas. Dada una descripción de la actividad, generarás una lista de tareas necesarias para completar la actividad.
 
-Activity Description: {{{activityDescription}}}
+Descripción de la actividad: {{{activityDescription}}}
 
-Please generate {{{numberOfTasks}}} tasks related to the activity.  Return the tasks as a JSON array of strings. Do not include any extra text.`, 
+Por favor, genera {{{numberOfTasks}}} tareas relacionadas con la actividad. Devuelve las tareas como un array JSON de strings. No incluyas ningún texto extra.`, 
 });
 
 const generateTasksFlow = ai.defineFlow(

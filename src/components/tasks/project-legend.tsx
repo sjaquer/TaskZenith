@@ -38,7 +38,7 @@ export function ProjectLegend() {
 
   return (
     <div className="flex items-center gap-4 flex-wrap">
-      <h3 className="text-sm font-medium text-muted-foreground">Projects:</h3>
+      <h3 className="text-sm font-medium text-muted-foreground">Proyectos:</h3>
       {projects.map((project) => (
         <div key={project.id} className="flex items-center gap-2">
           <span
@@ -52,26 +52,26 @@ export function ProjectLegend() {
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            New Project
+            Nuevo Proyecto
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80">
           <div className="grid gap-4">
             <div className="space-y-2">
-              <h4 className="font-medium leading-none font-headline">New Project</h4>
+              <h4 className="font-medium leading-none font-headline">Nuevo Proyecto</h4>
               <p className="text-sm text-muted-foreground">
-                Add a new project to your board.
+                Añade un nuevo proyecto a tu tablero.
               </p>
             </div>
             <div className="grid gap-2">
               <div className="grid grid-cols-3 items-center gap-4">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">Nombre</Label>
                 <Input
                   id="name"
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   className="col-span-2 h-8"
-                  placeholder="e.g. Q4 Report"
+                  placeholder="Ej: Informe Q4"
                 />
               </div>
               <div className="grid grid-cols-3 items-center gap-4">
@@ -92,7 +92,7 @@ export function ProjectLegend() {
                 </div>
               </div>
             </div>
-            <Button onClick={handleAddProject}>Add Project</Button>
+            <Button onClick={handleAddProject}>Añadir Proyecto</Button>
           </div>
         </PopoverContent>
       </Popover>

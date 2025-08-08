@@ -1,6 +1,6 @@
-export type Category = 'study' | 'work' | 'personal' | 'projects';
-export type Priority = 'low' | 'medium' | 'high';
-export type KanbanStatus = 'Pending' | 'In Progress' | 'Done' | 'Finished' | 'Canceled';
+export type Category = 'estudio' | 'trabajo' | 'personal' | 'proyectos';
+export type Priority = 'baja' | 'media' | 'alta';
+export type KanbanStatus = 'Pendiente' | 'En Progreso' | 'Hecho' | 'Finalizado' | 'Cancelado';
 
 export interface Project {
   id: string;

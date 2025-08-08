@@ -11,7 +11,7 @@ const actionSchema = z.object({
 export async function generateAiTasksAction(input: GenerateTasksInput) {
   const parsedInput = actionSchema.safeParse(input);
   if (!parsedInput.success) {
-    return { error: 'Invalid input' };
+    return { error: 'Entrada no válida' };
   }
   
   try {
@@ -19,6 +19,6 @@ export async function generateAiTasksAction(input: GenerateTasksInput) {
     return { tasks: result.tasks };
   } catch (error) {
     console.error(error);
-    return { error: 'Failed to generate tasks.' };
+    return { error: 'Error al generar las tareas.' };
   }
 }
