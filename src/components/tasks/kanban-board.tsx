@@ -15,10 +15,10 @@ import {
 
 const columns: KanbanStatus[] = ['Pendiente', 'En Progreso', 'Hecho', 'Finalizado', 'Cancelado'];
 const statusToColor: Record<KanbanStatus, string> = {
-  'Pendiente': 'bg-gray-500',
+  'Pendiente': 'bg-gray-400',
   'En Progreso': 'bg-blue-500',
-  'Hecho': 'bg-green-500',
-  'Finalizado': 'bg-purple-500',
+  'Hecho': 'bg-yellow-500',
+  'Finalizado': 'bg-green-500',
   'Cancelado': 'bg-red-500'
 }
 
@@ -34,15 +34,15 @@ function KanbanCard({ task }: { task: Task }) {
     <Card
       draggable
       onDragStart={handleDragStart}
-      className="mb-4 p-4 rounded-lg shadow-sm cursor-grab active:cursor-grabbing bg-card/80 backdrop-blur-sm"
-      style={{ borderTop: `4px solid ${project?.color || 'transparent'}` }}
+      className="mb-4 p-4 rounded-lg shadow-md cursor-grab active:cursor-grabbing bg-card/90 backdrop-blur-sm"
+      style={{ borderLeft: `5px solid ${project?.color || 'hsl(var(--primary))'}` }}
     >
       <CardContent className="p-0">
         <div className="flex justify-between items-start">
             <p className="font-medium text-sm mb-2">{task.title}</p>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className="text-muted-foreground"><MoreHorizontal size={16} /></button>
+                    <button className="text-muted-foreground hover:text-foreground"><MoreHorizontal size={16} /></button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                     {columns.filter(c => c !== task.status).map(status => (
@@ -53,7 +53,7 @@ function KanbanCard({ task }: { task: Task }) {
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
-        <p className="text-xs text-muted-foreground">{project?.name || 'Sin Proyecto'}</p>
+        <p className="text-xs text-muted-foreground capitalize">{project?.name || 'Sin Proyecto'}</p>
       </CardContent>
     </Card>
   );
@@ -86,14 +86,14 @@ function KanbanColumn({ status, tasks }: { status: KanbanStatus; tasks: Task[] }
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`flex-1 min-w-[280px] rounded-lg p-2 transition-colors ${isOver ? 'bg-primary/20' : 'bg-secondary/30'}`}
+      className={`flex-1 min-w-[300px] rounded-lg p-3 transition-colors ${isOver ? 'bg-primary/20' : 'bg-secondary/30'}`}
     >
-      <div className="flex items-center gap-2 p-2 mb-4">
+      <div className="flex items-center gap-3 p-2 mb-4">
         <span className={`w-3 h-3 rounded-full ${statusToColor[status]}`}></span>
-        <h3 className="font-semibold">{status}</h3>
-        <span className="text-sm text-muted-foreground">{tasks.length}</span>
+        <h3 className="font-semibold uppercase tracking-wider">{status}</h3>
+        <span className="text-sm font-bold text-muted-foreground bg-secondary/50 rounded-full px-2 py-0.5">{tasks.length}</span>
       </div>
-      <div className="space-y-4 min-h-[200px]">
+      <div className="space-y-4 min-h-[200px] p-1">
         {tasks.map((task) => (
           <KanbanCard key={task.id} task={task} />
         ))}
@@ -113,7 +113,7 @@ export function KanbanBoard() {
   }, [tasks]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
         <ProjectLegend />
         <div className="flex gap-6 pb-4 overflow-x-auto">
             {columns.map((status) => (

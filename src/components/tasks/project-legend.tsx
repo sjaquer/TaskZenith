@@ -9,13 +9,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Plus } from 'lucide-react';
+import { Plus, Palette } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 
 const colorPalette = [
-  '#2563eb', // blue-600
+  '#0B7ABF', // Custom Blue
+  '#F2BB13', // Custom Yellow
   '#16a34a', // green-600
-  '#ca8a04', // yellow-600
   '#db2777', // pink-600
   '#9333ea', // purple-600
   '#dc2626', // red-600
@@ -37,15 +37,15 @@ export function ProjectLegend() {
   };
 
   return (
-    <div className="flex items-center gap-4 flex-wrap p-4 rounded-lg bg-card/50 backdrop-blur-sm">
-      <h3 className="text-sm font-medium text-muted-foreground">Proyectos:</h3>
+    <div className="flex items-center gap-4 flex-wrap p-4 rounded-lg bg-card/80 backdrop-blur-sm">
+      <h3 className="text-sm font-semibold text-muted-foreground uppercase">Proyectos:</h3>
       {projects.map((project) => (
         <div key={project.id} className="flex items-center gap-2">
           <span
             className="h-4 w-4 rounded-full"
             style={{ backgroundColor: project.color }}
           />
-          <span className="text-sm">{project.name}</span>
+          <span className="text-sm font-medium capitalize">{project.name}</span>
         </div>
       ))}
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
@@ -58,7 +58,7 @@ export function ProjectLegend() {
         <PopoverContent className="w-80">
           <div className="grid gap-4">
             <div className="space-y-2">
-              <h4 className="font-medium leading-none">Nuevo Proyecto</h4>
+              <h4 className="font-medium leading-none">NUEVO PROYECTO</h4>
               <p className="text-sm text-muted-foreground">
                 Añade un nuevo proyecto a tu tablero.
               </p>
@@ -71,19 +71,19 @@ export function ProjectLegend() {
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   className="col-span-2 h-8"
-                  placeholder="Ej: Informe Q4"
+                  placeholder="Ej: Informe Trimestral"
                 />
               </div>
               <div className="grid grid-cols-3 items-center gap-4">
-                <Label>Color</Label>
+                <Label><Palette className="w-4 h-4 inline-block mr-1" />Color</Label>
                 <div className="col-span-2 flex gap-2">
                   {colorPalette.map((color) => (
                     <button
                       key={color}
                       onClick={() => setNewProjectColor(color)}
-                      className={`h-6 w-6 rounded-full border-2 ${
+                      className={`h-6 w-6 rounded-full border-2 transition-transform hover:scale-110 ${
                         newProjectColor === color
-                          ? 'border-ring'
+                          ? 'border-accent ring-2 ring-accent'
                           : 'border-transparent'
                       }`}
                       style={{ backgroundColor: color }}

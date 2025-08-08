@@ -1,7 +1,7 @@
 'use client';
 
 import { type Task, type Project, type KanbanStatus } from '@/lib/types';
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 interface TaskContextType {
   tasks: Task[];
@@ -17,9 +17,9 @@ interface TaskContextType {
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 const initialProjects: Project[] = [
-  { id: 'proj-1', name: 'Rediseño del Sitio Web', color: '#2563eb' },
-  { id: 'proj-2', name: 'Lanzamiento de App Móvil', color: '#16a34a' },
-  { id: 'proj-3', name: 'Campaña de Marketing', color: '#ca8a04' },
+  { id: 'proj-1', name: 'Rediseño Web', color: '#0B7ABF' },
+  { id: 'proj-2', name: 'App Móvil', color: '#16a34a' },
+  { id: 'proj-3', name: 'Marketing Q3', color: '#F2BB13' },
 ];
 
 const initialTasks: Task[] = [
@@ -33,8 +33,44 @@ const initialTasks: Task[] = [
 ];
 
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    useEffect(() => {
+        try {
+            const storedTasks = localStorage.getItem('tasks');
+            const storedProjects = localStorage.getItem('projects');
+
+            if (storedTasks) {
+                setTasks(JSON.parse(storedTasks).map((task: Task) => ({
+                    ...task,
+                    completedAt: task.completedAt ? new Date(task.completedAt) : null,
+                })));
+            } else {
+                setTasks(initialTasks);
+            }
+
+            if (storedProjects) {
+                setProjects(JSON.parse(storedProjects));
+            } else {
+                setProjects(initialProjects);
+            }
+        } catch (error) {
+            console.error("Failed to load from localStorage", error);
+            setTasks(initialTasks);
+            setProjects(initialProjects);
+        } finally {
+            setIsLoaded(true);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (isLoaded) {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            localStorage.setItem('projects', JSON.stringify(projects));
+        }
+    }, [tasks, projects, isLoaded]);
 
   const addTask = (task: Omit<Task, 'id' | 'completed' | 'status'>) => {
     const newTask: Task = {
@@ -72,8 +108,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     setTasks(prev => 
       prev.map(task => {
         if (task.id === taskId) {
-          const isCompleted = status === 'Finalizado' || status === 'Hecho' || status === 'Cancelado';
-          return { ...task, status, completed: isCompleted, completedAt: isCompleted ? new Date() : null };
+          const isCompleted = status === 'Finalizado' || status === 'Hecho';
+          return { ...task, status, completed: isCompleted, completedAt: isCompleted && !task.completedAt ? new Date() : task.completedAt };
         }
         return task;
       })
@@ -90,6 +126,10 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       id: `proj-${Date.now()}`,
     };
     setProjects(prev => [...prev, newProject]);
+  }
+  
+  if (!isLoaded) {
+    return null; // O un spinner de carga
   }
 
   return (

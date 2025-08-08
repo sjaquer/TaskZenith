@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { Timer } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Timer, Settings, Plus, Trash2 } from 'lucide-react';
 
-const initialDailyTasks = [
+const defaultDailyTasks = [
   { id: 'daily-1', title: 'Hacer la cama' },
   { id: 'daily-2', title: 'Meditar 10 minutos' },
   { id: 'daily-3', title: 'Revisar la agenda del día' },
@@ -20,25 +23,28 @@ type DailyTask = {
   completed: boolean;
 };
 
-const getStorageKey = () => {
-  const today = new Date();
-  return `dailyTasks-${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-};
+const getStorageKey = () => `dailyTasks-${new Date().toISOString().split('T')[0]}`;
+const getCustomTasksKey = () => 'customDailyTasks';
 
 export function DailyTodoList() {
   const [tasks, setTasks] = useState<DailyTask[]>([]);
   const [timeRemaining, setTimeRemaining] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [customTasks, setCustomTasks] = useState<Omit<DailyTask, 'completed'>[]>([]);
 
   useEffect(() => {
+    const customTasksStored = localStorage.getItem(getCustomTasksKey());
+    const initialTasks = customTasksStored ? JSON.parse(customTasksStored) : defaultDailyTasks;
+    setCustomTasks(initialTasks);
+
     const storageKey = getStorageKey();
     const storedTasks = localStorage.getItem(storageKey);
     if (storedTasks) {
       setTasks(JSON.parse(storedTasks));
     } else {
-      localStorage.removeItem(
-        `dailyTasks-${new Date(Date.now() - 86400000).toISOString().split('T')[0]}`
-      );
-      const newTasks = initialDailyTasks.map(task => ({ ...task, completed: false }));
+      const yesterdayKey = `dailyTasks-${new Date(Date.now() - 86400000).toISOString().split('T')[0]}`;
+      localStorage.removeItem(yesterdayKey);
+      const newTasks = initialTasks.map((task: Omit<DailyTask, 'completed'>) => ({ ...task, completed: false }));
       setTasks(newTasks);
       localStorage.setItem(storageKey, JSON.stringify(newTasks));
     }
@@ -65,8 +71,7 @@ export function DailyTodoList() {
   
   useEffect(() => {
     if (tasks.length > 0) {
-      const storageKey = getStorageKey();
-      localStorage.setItem(storageKey, JSON.stringify(tasks));
+      localStorage.setItem(getStorageKey(), JSON.stringify(tasks));
     }
   }, [tasks]);
 
@@ -76,24 +81,73 @@ export function DailyTodoList() {
     );
   };
 
+  const handleCustomTaskChange = (id: string, newTitle: string) => {
+    setCustomTasks(customTasks.map(task => task.id === id ? { ...task, title: newTitle } : task));
+  };
+
+  const addNewCustomTask = () => {
+    setCustomTasks([...customTasks, { id: `daily-${Date.now()}`, title: '' }]);
+  };
+
+  const removeCustomTask = (id: string) => {
+    setCustomTasks(customTasks.filter(task => task.id !== id));
+  };
+
+  const saveCustomTasks = () => {
+    localStorage.setItem(getCustomTasksKey(), JSON.stringify(customTasks));
+    const newTasks = customTasks.map(task => ({ ...task, completed: false }));
+    setTasks(newTasks);
+    localStorage.setItem(getStorageKey(), JSON.stringify(newTasks));
+    setIsDialogOpen(false);
+  };
+
   const completedCount = tasks.filter(task => task.completed).length;
   const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
 
   return (
-    <Card className="bg-card/50 backdrop-blur-sm">
+    <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Mis Quehaceres Diarios</CardTitle>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Timer className="w-4 h-4" />
+          <Timer className="w-4 h-4 text-accent" />
           <span>{timeRemaining} para reiniciar</span>
         </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon"><Settings className="w-5 h-5" /></Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>EDITAR TAREAS DIARIAS</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto p-2">
+              {customTasks.map((task) => (
+                <div key={task.id} className="flex items-center gap-2">
+                  <Input 
+                    value={task.title} 
+                    onChange={(e) => handleCustomTaskChange(task.id, e.target.value)}
+                    className="flex-grow"
+                  />
+                  <Button variant="ghost" size="icon" onClick={() => removeCustomTask(task.id)}>
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+              <Button variant="outline" onClick={addNewCustomTask} className="w-full">
+                <Plus className="w-4 h-4 mr-2" /> Añadir Tarea
+              </Button>
+            </div>
+            <DialogFooter>
+              <Button onClick={saveCustomTasks}>Guardar Cambios</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
         <div className="space-y-4">
           {tasks.map(task => (
             <div
               key={task.id}
-              className="flex items-center space-x-4 p-3 rounded-lg hover:bg-secondary/40 transition-colors"
+              className="flex items-center space-x-4 p-3 rounded-lg hover:bg-secondary/60 transition-colors"
             >
               <Checkbox
                 id={task.id}
@@ -103,7 +157,7 @@ export function DailyTodoList() {
               />
               <label
                 htmlFor={task.id}
-                className={`flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
+                className={`flex-1 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
                   task.completed ? 'line-through text-muted-foreground' : ''
                 }`}
               >

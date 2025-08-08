@@ -3,52 +3,52 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 @layer base {
   :root {
-    --background: 224 71.4% 4.1%;
+    --background: 220 20% 10%;
     --foreground: 210 20% 98%;
-    --card: 224 71.4% 10.1%;
+    --card: 220 20% 15%;
     --card-foreground: 210 20% 98%;
-    --popover: 224 71.4% 4.1%;
+    --popover: 220 20% 10%;
     --popover-foreground: 210 20% 98%;
-    --primary: 217.2 91.2% 59.8%;
+    --primary: 203 89% 39%;
     --primary-foreground: 210 20% 98%;
-    --secondary: 215 27.9% 16.9%;
+    --secondary: 220 15% 25%;
     --secondary-foreground: 210 20% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 215.4 16.3% 56.9%;
-    --accent: 217.2 91.2% 59.8%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --muted: 220 15% 25%;
+    --muted-foreground: 215.4 16.3% 65%;
+    --accent: 45 89% 51%;
+    --accent-foreground: 220 20% 10%;
+    --destructive: 0 62.8% 50.6%;
     --destructive-foreground: 0 85.7% 97.3%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 217.2 91.2% 59.8%;
-    --radius: 0.5rem;
+    --border: 220 15% 25%;
+    --input: 220 15% 25%;
+    --ring: 203 89% 39%;
+    --radius: 0.75rem;
   }
   .dark {
-    --background: 224 71.4% 4.1%;
+    --background: 220 20% 10%;
     --foreground: 210 20% 98%;
-    --card: 224 71.4% 10.1%;
+    --card: 220 20% 15%;
     --card-foreground: 210 20% 98%;
-    --popover: 224 71.4% 4.1%;
+    --popover: 220 20% 10%;
     --popover-foreground: 210 20% 98%;
-    --primary: 217.2 91.2% 59.8%;
+    --primary: 203 89% 39%;
     --primary-foreground: 210 20% 98%;
-    --secondary: 215 27.9% 16.9%;
+    --secondary: 220 15% 25%;
     --secondary-foreground: 210 20% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 215.4 16.3% 56.9%;
-    --accent: 217.2 91.2% 59.8%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --muted: 220 15% 25%;
+    --muted-foreground: 215.4 16.3% 65%;
+    --accent: 45 89% 51%;
+    --accent-foreground: 220 20% 10%;
+    --destructive: 0 62.8% 50.6%;
     --destructive-foreground: 0 85.7% 97.3%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 217.2 91.2% 59.8%;
+    --border: 220 15% 25%;
+    --input: 220 15% 25%;
+    --ring: 203 89% 39%;
   }
 }
 
@@ -63,4 +63,22 @@ body {
 
 .task-complete-animation {
     animation: task-complete 0.5s ease-out forwards;
+}
+
+@keyframes task-complete {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 100px;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    border: 0;
+  }
 }

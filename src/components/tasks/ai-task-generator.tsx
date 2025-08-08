@@ -79,6 +79,7 @@ export function AiTaskGenerator() {
     toast({
       title: '¡Éxito!',
       description: `${generatedTasks.length} tareas han sido añadidas a tu lista.`,
+      className: 'bg-primary text-primary-foreground',
     });
     setGeneratedTasks([]);
     setIsOpen(false);

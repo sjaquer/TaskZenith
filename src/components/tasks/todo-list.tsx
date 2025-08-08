@@ -23,14 +23,14 @@ function TaskItem({ task, onToggle }: { task: Task; onToggle: (id: string) => vo
   };
 
   const priorityColors = {
-    baja: 'border-l-4 border-green-500',
-    media: 'border-l-4 border-yellow-500',
-    alta: 'border-l-4 border-red-500',
+    baja: 'border-l-4 border-green-500/70',
+    media: 'border-l-4 border-yellow-500/70',
+    alta: 'border-l-4 border-red-500/70',
   };
 
   return (
     <div
-      className={`flex items-center space-x-4 p-4 bg-card/80 backdrop-blur-sm rounded-lg shadow-sm transition-all ${
+      className={`flex items-center space-x-4 p-4 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all hover:bg-secondary/60 ${
         priorityColors[task.priority]
       } ${isCompleted ? 'task-complete-animation' : ''}`}
     >
@@ -47,7 +47,7 @@ function TaskItem({ task, onToggle }: { task: Task; onToggle: (id: string) => vo
           {task.title}
         </label>
       </div>
-      <Badge variant="outline">{task.category}</Badge>
+      <Badge variant="outline" className="capitalize">{task.category}</Badge>
     </div>
   );
 }
@@ -92,21 +92,30 @@ export function TodoList() {
       </div>
     );
   };
+  
+  const TABS_WITH_CONTENT = [
+    { value: 'all', label: 'Todas', tasks: groupedTasks.all },
+    { value: 'estudio', label: 'Estudio', tasks: groupedTasks.estudio },
+    { value: 'trabajo', label: 'Trabajo', tasks: groupedTasks.trabajo },
+    { value: 'personal', label: 'Personal', tasks: groupedTasks.personal },
+    { value: 'proyectos', label: 'Proyectos', tasks: groupedTasks.proyectos },
+  ].filter(tab => tab.tasks.length > 0 || tab.value === 'all');
+
 
   return (
     <div className="space-y-6">
-        <Card className="bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4">
+        <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg">
+            <CardContent className="p-6">
                 <form onSubmit={handleAddTask} className="flex flex-col md:flex-row gap-4">
                     <Input
                         value={newTaskTitle}
                         onChange={(e) => setNewTaskTitle(e.target.value)}
                         placeholder="Añadir una nueva tarea..."
-                        className="flex-grow"
+                        className="flex-grow bg-background/50"
                     />
                     <div className="flex gap-2">
                         <Select value={newTaskCategory} onValueChange={(v) => setNewTaskCategory(v as Category)}>
-                            <SelectTrigger className="w-full md:w-[120px]">
+                            <SelectTrigger className="w-full md:w-[130px] capitalize">
                                 <SelectValue placeholder="Categoría" />
                             </SelectTrigger>
                             <SelectContent>
@@ -117,7 +126,7 @@ export function TodoList() {
                             </SelectContent>
                         </Select>
                         <Select value={newTaskPriority} onValueChange={(v) => setNewTaskPriority(v as Priority)}>
-                            <SelectTrigger className="w-full md:w-[120px]">
+                            <SelectTrigger className="w-full md:w-[120px] capitalize">
                                 <SelectValue placeholder="Prioridad" />
                             </SelectTrigger>
                             <SelectContent>
@@ -128,21 +137,19 @@ export function TodoList() {
                         </Select>
                     </div>
                     <Button type="submit" className="w-full md:w-auto">Añadir Tarea</Button>
+                     <AiTaskGenerator />
                 </form>
-                 <div className="mt-4 flex justify-end">
-                    <AiTaskGenerator />
-                </div>
             </CardContent>
         </Card>
 
       <Tabs defaultValue="all" className="w-full">
-        <div className="flex justify-between items-center flex-wrap gap-4">
+        <div className="flex justify-start items-center flex-wrap gap-4">
             <TabsList>
-                <TabsTrigger value="all">Todas</TabsTrigger>
-                <TabsTrigger value="estudio">Estudio</TabsTrigger>
-                <TabsTrigger value="trabajo">Trabajo</TabsTrigger>
-                <TabsTrigger value="personal">Personal</TabsTrigger>
-                <TabsTrigger value="proyectos">Proyectos</TabsTrigger>
+                 {TABS_WITH_CONTENT.map(tab => (
+                    <TabsTrigger key={tab.value} value={tab.value} className="capitalize">
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
             </TabsList>
         </div>
         <TabsContent value="all" className="mt-6">{renderTaskList(groupedTasks.all)}</TabsContent>

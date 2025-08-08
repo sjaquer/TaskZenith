@@ -2,9 +2,12 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { TaskProvider } from '@/contexts/task-context';
 import { Toaster } from '@/components/ui/toaster';
-import { Inter } from 'next/font/google';
+import { Poppins } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin'] });
+const poppins = Poppins({ 
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'] 
+});
 
 export const metadata: Metadata = {
   title: 'TaskZenith',
@@ -22,7 +25,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${poppins.className} antialiased`}>
         <TaskProvider>
           {children}
           <Toaster />

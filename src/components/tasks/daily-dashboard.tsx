@@ -21,10 +21,10 @@ export function DailyDashboard() {
   const pendingCount = tasks.filter(task => !task.completed).length;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card className="col-span-1 lg:col-span-2 bg-card/50 backdrop-blur-sm">
+    <div className="grid gap-6 md:grid-cols-2">
+      <Card className="col-span-1 md:col-span-2 bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg">
         <CardHeader>
-          <CardTitle>Foco de Hoy</CardTitle>
+          <CardTitle className="text-lg font-semibold uppercase tracking-wider">Foco de Hoy</CardTitle>
         </CardHeader>
         <CardContent>
           {todaysTasks.length > 0 ? (
@@ -32,7 +32,7 @@ export function DailyDashboard() {
               {todaysTasks.map(task => {
                 const Icon = categoryIcons[task.category];
                 return (
-                  <div key={task.id} className="flex items-center space-x-4 p-2 rounded-lg hover:bg-secondary/40 transition-colors">
+                  <div key={task.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-secondary/60 transition-colors">
                     <Checkbox
                       id={`task-${task.id}`}
                       checked={task.completed}
@@ -42,12 +42,12 @@ export function DailyDashboard() {
                     <div className="flex-1">
                       <label
                         htmlFor={`task-${task.id}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        className="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                       >
                         {task.title}
                       </label>
                     </div>
-                    <Badge variant={task.priority === 'alta' ? 'destructive' : 'secondary'}>{task.priority}</Badge>
+                    <Badge variant={task.priority === 'alta' ? 'destructive' : task.priority === 'media' ? 'secondary' : 'outline'}>{task.priority.toUpperCase()}</Badge>
                     <Icon className="w-5 h-5 text-muted-foreground" />
                   </div>
                 )
@@ -58,19 +58,20 @@ export function DailyDashboard() {
           )}
         </CardContent>
       </Card>
-      <Card className="bg-card/50 backdrop-blur-sm">
+      <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg">
         <CardHeader>
-          <CardTitle>Resumen de Tareas</CardTitle>
+          <CardTitle className="text-lg font-semibold uppercase tracking-wider">Pendientes</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-           <div className="flex justify-between items-center">
-             <p className="font-medium">Tareas Pendientes</p>
-             <p className="text-2xl font-bold">{pendingCount}</p>
-           </div>
-           <div className="flex justify-between items-center">
-             <p className="font-medium">Tareas Completadas</p>
-             <p className="text-2xl font-bold">{completedCount}</p>
-           </div>
+        <CardContent className="flex items-center justify-center">
+            <p className="text-6xl font-bold text-accent">{pendingCount}</p>
+        </CardContent>
+      </Card>
+      <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold uppercase tracking-wider">Completadas</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center">
+            <p className="text-6xl font-bold text-primary">{completedCount}</p>
         </CardContent>
       </Card>
     </div>

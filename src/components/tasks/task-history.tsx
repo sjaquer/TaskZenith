@@ -25,9 +25,9 @@ export function TaskHistory() {
   }, [tasks]);
 
   return (
-    <Card className="bg-card/50 backdrop-blur-sm">
+    <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg h-full">
       <CardHeader>
-        <CardTitle>Tareas Completadas</CardTitle>
+        <CardTitle className="text-lg font-semibold uppercase tracking-wider">Tareas Completadas</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -42,13 +42,13 @@ export function TaskHistory() {
           <TableBody>
             {completedTasks.length > 0 ? (
                 completedTasks.map(task => (
-                    <TableRow key={task.id}>
+                    <TableRow key={task.id} className="hover:bg-secondary/60">
                         <TableCell className="font-medium">{task.title}</TableCell>
                         <TableCell>
-                            <Badge variant="secondary">{task.category}</Badge>
+                            <Badge variant="secondary" className="capitalize">{task.category}</Badge>
                         </TableCell>
                         <TableCell>
-                             <Badge variant={task.priority === 'alta' ? 'destructive' : task.priority === 'media' ? 'outline' : 'secondary'}>
+                             <Badge variant={task.priority === 'alta' ? 'destructive' : task.priority === 'media' ? 'secondary' : 'outline'} className="uppercase">
                                 {task.priority}
                             </Badge>
                         </TableCell>
@@ -59,7 +59,7 @@ export function TaskHistory() {
                 ))
             ) : (
                 <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                         Aún no hay tareas completadas. ¡Sigue adelante!
                     </TableCell>
                 </TableRow>
