@@ -25,9 +25,9 @@ export function TaskHistory() {
   }, [tasks]);
 
   return (
-    <Card>
+    <Card className="bg-card/50 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="font-headline">Tareas Completadas</CardTitle>
+        <CardTitle>Tareas Completadas</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>

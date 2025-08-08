@@ -30,7 +30,7 @@ function TaskItem({ task, onToggle }: { task: Task; onToggle: (id: string) => vo
 
   return (
     <div
-      className={`flex items-center space-x-4 p-4 bg-card rounded-lg shadow-sm transition-all ${
+      className={`flex items-center space-x-4 p-4 bg-card/80 backdrop-blur-sm rounded-lg shadow-sm transition-all ${
         priorityColors[task.priority]
       } ${isCompleted ? 'task-complete-animation' : ''}`}
     >
@@ -67,28 +67,22 @@ export function TodoList() {
     }
   };
 
-  const now = new Date();
-  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-  const filteredTasks = useMemo(() => tasks.filter(task => 
-    !task.completed || (task.completedAt && task.completedAt > twentyFourHoursAgo)
-  ), [tasks]);
+  const pendingTasks = useMemo(() => tasks.filter(task => !task.completed), [tasks]);
 
 
   const groupedTasks = useMemo(() => {
-    const all = filteredTasks.filter(t => !t.completed);
     return {
-      all,
-      estudio: all.filter(t => t.category === 'estudio'),
-      trabajo: all.filter(t => t.category === 'trabajo'),
-      personal: all.filter(t => t.category === 'personal'),
-      proyectos: all.filter(t => t.category === 'proyectos'),
+      all: pendingTasks,
+      estudio: pendingTasks.filter(t => t.category === 'estudio'),
+      trabajo: pendingTasks.filter(t => t.category === 'trabajo'),
+      personal: pendingTasks.filter(t => t.category === 'personal'),
+      proyectos: pendingTasks.filter(t => t.category === 'proyectos'),
     };
-  }, [filteredTasks]);
+  }, [pendingTasks]);
 
   const renderTaskList = (tasksToRender: Task[]) => {
     if (tasksToRender.length === 0) {
-      return <p className="text-muted-foreground text-center py-8">No hay tareas en esta categoría.</p>;
+      return <p className="text-muted-foreground text-center py-8">No hay tareas pendientes en esta categoría.</p>;
     }
     return (
       <div className="space-y-4">
@@ -101,7 +95,7 @@ export function TodoList() {
 
   return (
     <div className="space-y-6">
-        <Card>
+        <Card className="bg-card/50 backdrop-blur-sm">
             <CardContent className="p-4">
                 <form onSubmit={handleAddTask} className="flex flex-col md:flex-row gap-4">
                     <Input
@@ -139,7 +133,7 @@ export function TodoList() {
         </Card>
 
       <Tabs defaultValue="all" className="w-full">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-4">
             <TabsList>
                 <TabsTrigger value="all">Todas</TabsTrigger>
                 <TabsTrigger value="estudio">Estudio</TabsTrigger>

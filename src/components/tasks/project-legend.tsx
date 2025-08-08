@@ -13,12 +13,12 @@ import { Plus } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 
 const colorPalette = [
-  'hsl(210 40% 96.1%)',
-  'hsl(142.1 76.2% 86.3%)',
-  'hsl(47.9 95.8% 83.1%)',
-  'hsl(346.8 77.2% 89.8%)',
-  'hsl(262.1 83.3% 87.8%)',
-  'hsl(355.7 82.9% 89.8%)',
+  '#2563eb', // blue-600
+  '#16a34a', // green-600
+  '#ca8a04', // yellow-600
+  '#db2777', // pink-600
+  '#9333ea', // purple-600
+  '#dc2626', // red-600
 ];
 
 export function ProjectLegend() {
@@ -37,7 +37,7 @@ export function ProjectLegend() {
   };
 
   return (
-    <div className="flex items-center gap-4 flex-wrap">
+    <div className="flex items-center gap-4 flex-wrap p-4 rounded-lg bg-card/50 backdrop-blur-sm">
       <h3 className="text-sm font-medium text-muted-foreground">Proyectos:</h3>
       {projects.map((project) => (
         <div key={project.id} className="flex items-center gap-2">
@@ -58,7 +58,7 @@ export function ProjectLegend() {
         <PopoverContent className="w-80">
           <div className="grid gap-4">
             <div className="space-y-2">
-              <h4 className="font-medium leading-none font-headline">Nuevo Proyecto</h4>
+              <h4 className="font-medium leading-none">Nuevo Proyecto</h4>
               <p className="text-sm text-muted-foreground">
                 Añade un nuevo proyecto a tu tablero.
               </p>

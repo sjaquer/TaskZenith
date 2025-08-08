@@ -17,9 +17,9 @@ interface TaskContextType {
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 const initialProjects: Project[] = [
-  { id: 'proj-1', name: 'Rediseño del Sitio Web', color: 'hsl(210 40% 96.1%)' },
-  { id: 'proj-2', name: 'Lanzamiento de App Móvil', color: 'hsl(142.1 76.2% 86.3%)' },
-  { id: 'proj-3', name: 'Campaña de Marketing', color: 'hsl(47.9 95.8% 83.1%)' },
+  { id: 'proj-1', name: 'Rediseño del Sitio Web', color: '#2563eb' },
+  { id: 'proj-2', name: 'Lanzamiento de App Móvil', color: '#16a34a' },
+  { id: 'proj-3', name: 'Campaña de Marketing', color: '#ca8a04' },
 ];
 
 const initialTasks: Task[] = [
@@ -62,7 +62,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     setTasks((prev) =>
       prev.map((task) =>
         task.id === taskId
-          ? { ...task, completed: !task.completed, completedAt: !task.completed ? new Date() : null }
+          ? { ...task, completed: !task.completed, completedAt: !task.completed ? new Date() : null, status: !task.completed ? 'Finalizado' : 'Pendiente' }
           : task
       )
     );
@@ -70,9 +70,13 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
   const updateTaskStatus = (taskId: string, status: KanbanStatus) => {
     setTasks(prev => 
-      prev.map(task => 
-        task.id === taskId ? { ...task, status } : task
-      )
+      prev.map(task => {
+        if (task.id === taskId) {
+          const isCompleted = status === 'Finalizado' || status === 'Cancelado';
+          return { ...task, status, completed: isCompleted, completedAt: isCompleted ? new Date() : null };
+        }
+        return task;
+      })
     );
   };
 

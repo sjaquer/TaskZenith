@@ -22,9 +22,9 @@ export function DailyDashboard() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card className="col-span-1 lg:col-span-2">
+      <Card className="col-span-1 lg:col-span-2 bg-card/50 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="font-headline">Foco de Hoy</CardTitle>
+          <CardTitle>Foco de Hoy</CardTitle>
         </CardHeader>
         <CardContent>
           {todaysTasks.length > 0 ? (
@@ -32,7 +32,7 @@ export function DailyDashboard() {
               {todaysTasks.map(task => {
                 const Icon = categoryIcons[task.category];
                 return (
-                  <div key={task.id} className="flex items-center space-x-4 p-2 rounded-lg hover:bg-primary/20 transition-colors">
+                  <div key={task.id} className="flex items-center space-x-4 p-2 rounded-lg hover:bg-secondary/40 transition-colors">
                     <Checkbox
                       id={`task-${task.id}`}
                       checked={task.completed}
@@ -58,9 +58,9 @@ export function DailyDashboard() {
           )}
         </CardContent>
       </Card>
-      <Card>
+      <Card className="bg-card/50 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="font-headline">Resumen de Tareas</CardTitle>
+          <CardTitle>Resumen de Tareas</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
            <div className="flex justify-between items-center">

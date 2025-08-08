@@ -92,10 +92,10 @@ export function AiTaskGenerator() {
           <Bot className="mr-2 h-4 w-4" /> Generar con IA
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-headline flex items-center gap-2">
-            <Sparkles className="text-accent" /> Generador de Tareas con IA
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="text-primary" /> Generador de Tareas con IA
           </DialogTitle>
           <DialogDescription>
             Describe una actividad y la dividiremos en tareas manejables para ti.
@@ -176,7 +176,7 @@ export function AiTaskGenerator() {
             <h3 className="font-semibold">Tareas Sugeridas:</h3>
             <div className="space-y-2 rounded-md border p-2">
               {generatedTasks.map((task, index) => (
-                <p key={index} className="text-sm p-2 bg-primary/30 rounded-md">{task}</p>
+                <p key={index} className="text-sm p-2 bg-secondary/50 rounded-md">{task}</p>
               ))}
             </div>
             <Button onClick={handleAddTasks} className="w-full">

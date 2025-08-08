@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useTasks } from '@/contexts/task-context';
 import type { KanbanStatus, Task } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ProjectLegend } from './project-legend';
 import { MoreHorizontal } from 'lucide-react';
 import {
@@ -34,7 +34,7 @@ function KanbanCard({ task }: { task: Task }) {
     <Card
       draggable
       onDragStart={handleDragStart}
-      className="mb-4 p-4 rounded-lg shadow-sm cursor-grab active:cursor-grabbing"
+      className="mb-4 p-4 rounded-lg shadow-sm cursor-grab active:cursor-grabbing bg-card/80 backdrop-blur-sm"
       style={{ borderTop: `4px solid ${project?.color || 'transparent'}` }}
     >
       <CardContent className="p-0">
@@ -86,11 +86,11 @@ function KanbanColumn({ status, tasks }: { status: KanbanStatus; tasks: Task[] }
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`flex-1 min-w-[280px] rounded-lg p-2 transition-colors ${isOver ? 'bg-primary/50' : 'bg-primary/20'}`}
+      className={`flex-1 min-w-[280px] rounded-lg p-2 transition-colors ${isOver ? 'bg-primary/20' : 'bg-secondary/30'}`}
     >
       <div className="flex items-center gap-2 p-2 mb-4">
         <span className={`w-3 h-3 rounded-full ${statusToColor[status]}`}></span>
-        <h3 className="font-semibold font-headline">{status}</h3>
+        <h3 className="font-semibold">{status}</h3>
         <span className="text-sm text-muted-foreground">{tasks.length}</span>
       </div>
       <div className="space-y-4 min-h-[200px]">
@@ -104,14 +104,13 @@ function KanbanColumn({ status, tasks }: { status: KanbanStatus; tasks: Task[] }
 
 export function KanbanBoard() {
   const { tasks } = useTasks();
-  const projectTasks = useMemo(() => tasks.filter(t => t.category === 'proyectos'), [tasks]);
 
   const groupedTasks = useMemo(() => {
     return columns.reduce((acc, status) => {
-      acc[status] = projectTasks.filter((task) => task.status === status);
+      acc[status] = tasks.filter((task) => task.status === status);
       return acc;
     }, {} as Record<KanbanStatus, Task[]>);
-  }, [projectTasks]);
+  }, [tasks]);
 
   return (
     <div className="space-y-4">
