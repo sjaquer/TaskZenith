@@ -25,9 +25,6 @@ export default function DashboardPage() {
           </div>
 
           <div className="md:col-span-2 lg:col-span-4 xl:col-span-5">
-             <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
-              Mi Lista de Tareas
-            </h2>
             <TodoList />
           </div>
           

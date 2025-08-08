@@ -104,6 +104,10 @@ export function TodoList() {
 
   return (
     <div className="space-y-6">
+      <div>
+        <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
+          Mi Lista de Tareas
+        </h2>
         <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg">
             <CardContent className="p-6">
                 <form onSubmit={handleAddTask} className="flex flex-col md:flex-row gap-4">
@@ -141,6 +145,7 @@ export function TodoList() {
                 </form>
             </CardContent>
         </Card>
+      </div>
 
       <Tabs defaultValue="all" className="w-full">
         <div className="flex justify-start items-center flex-wrap gap-4">

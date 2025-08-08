@@ -16,21 +16,8 @@ interface TaskContextType {
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
-const initialProjects: Project[] = [
-  { id: 'proj-1', name: 'Rediseño Web', color: '#0B7ABF' },
-  { id: 'proj-2', name: 'App Móvil', color: '#16a34a' },
-  { id: 'proj-3', name: 'Marketing Q3', color: '#F2BB13' },
-];
-
-const initialTasks: Task[] = [
-  { id: 'task-1', title: 'Revisar Capítulo 5 para examen', category: 'estudio', priority: 'alta', completed: false, status: 'Pendiente' },
-  { id: 'task-2', title: 'Preparar presentación para cliente', category: 'trabajo', priority: 'media', completed: false, status: 'En Progreso', projectId: 'proj-1' },
-  { id: 'task-3', title: 'Salir a correr 30 minutos', category: 'personal', priority: 'baja', completed: true, completedAt: new Date(Date.now() - 3600 * 1000), status: 'Finalizado' },
-  { id: 'task-4', title: 'Finalizar maquetas de UI', category: 'proyectos', priority: 'alta', completed: false, status: 'En Progreso', projectId: 'proj-1' },
-  { id: 'task-5', title: 'Agendar reunión de equipo', category: 'trabajo', priority: 'media', completed: false, status: 'Pendiente' },
-  { id: 'task-6', title: 'Planear viaje de fin de semana', category: 'personal', priority: 'baja', completed: false, status: 'Pendiente'},
-  { id: 'task-7', title: 'Desarrollar API de backend para login', category: 'proyectos', priority: 'alta', completed: false, status: 'Hecho', projectId: 'proj-2' },
-];
+const initialProjects: Project[] = [];
+const initialTasks: Task[] = [];
 
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -108,8 +95,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     setTasks(prev => 
       prev.map(task => {
         if (task.id === taskId) {
-          const isCompleted = status === 'Finalizado' || status === 'Hecho';
-          return { ...task, status, completed: isCompleted, completedAt: isCompleted && !task.completedAt ? new Date() : task.completedAt };
+          const isCompleted = status === 'Finalizado' || status === 'Cancelado';
+          return { ...task, status, completed: isCompleted, completedAt: isCompleted && !task.completedAt ? new Date() : (status !== 'Finalizado' && status !== 'Cancelado' ? null : task.completedAt) };
         }
         return task;
       })
@@ -129,7 +116,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   }
   
   if (!isLoaded) {
-    return null; // O un spinner de carga
+    return null;
   }
 
   return (
