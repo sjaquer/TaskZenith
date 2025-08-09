@@ -82,6 +82,7 @@ TaskZenith/
 │       │   ├── generate-tasks.ts
 │       │   └── process-voice-command.ts
 │       └── genkit.ts
+├── .env
 ├── package.json
 ├── tailwind.config.ts
 └── tsconfig.json
@@ -118,11 +119,23 @@ npm install
 ### 3. Configura las Variables de Entorno
 
 Antes de iniciar, debes configurar tus credenciales.
-Crea un archivo llamado `.env` en la raíz del proyecto y añade tu clave de API de Google, necesaria para que Genkit funcione:
+Crea un archivo llamado `.env` en la raíz del proyecto (puedes duplicar y renombrar el archivo `.env.example`) y añade tus claves:
 
+```env
+# Firebase Configuration - Required
+# IMPORTANT: These variables must be prefixed with NEXT_PUBLIC_ to be exposed to the browser.
+NEXT_PUBLIC_FIREBASE_API_KEY="TU_API_KEY_DE_FIREBASE"
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="TU_AUTH_DOMAIN_DE_FIREBASE"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID="TU_PROJECT_ID_DE_FIREBASE"
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="TU_STORAGE_BUCKET_DE_FIREBASE"
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="TU_MESSAGING_SENDER_ID_DE_FIREBASE"
+NEXT_PUBLIC_FIREBASE_APP_ID="TU_APP_ID_DE_FIREBASE"
+
+# Genkit/Gemini API Key - Required for AI features
+# This key is used on the server-side, so it does not need the NEXT_PUBLIC_ prefix.
+GEMINI_API_KEY="TU_API_KEY_DE_GEMINI"
 ```
-GEMINI_API_KEY=TU_API_KEY_AQUI
-```
+Puedes encontrar tus credenciales de Firebase en la configuración de tu proyecto en la [Consola de Firebase](https://console.firebase.google.com/). La `GEMINI_API_KEY` la obtienes desde [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 ### 4. Ejecuta en Modo Desarrollo
 
@@ -144,17 +157,18 @@ npm run build
 
 Para adaptar este proyecto a tu propia cuenta y necesidades, sigue estos pasos:
 
-### 1. Configuración de Firebase
+### 1. Configuración de Firebase y Gemini
 
-El corazón de la persistencia de datos de la aplicación reside en Firebase.
+El corazón de la aplicación (base de datos y IA) se configura a través de variables de entorno.
 
-*   **Archivo Clave:** `src/lib/firebase.ts`
+*   **Archivo Clave:** `.env`
 *   **Qué hacer:**
-    1.  Ve a la [Consola de Firebase](https://console.firebase.google.com/).
-    2.  Crea un nuevo proyecto o selecciona uno existente.
-    3.  En la configuración de tu proyecto, ve a la sección "Tus apps" y crea una nueva aplicación web.
-    4.  Firebase te proporcionará un objeto de configuración `firebaseConfig`.
-    5.  Copia este objeto y pégalo para reemplazar el contenido de la variable `firebaseConfig` en `src/lib/firebase.ts`.
+    1.  Crea una copia del archivo `.env.example` y renómbrala a `.env`.
+    2.  Ve a la [Consola de Firebase](https://console.firebase.google.com/).
+    3.  Crea un nuevo proyecto o selecciona uno existente.
+    4.  En la configuración de tu proyecto, ve a la sección "Tus apps" y crea una nueva aplicación web.
+    5.  Firebase te proporcionará un objeto de configuración `firebaseConfig`. Copia los valores de ese objeto en las variables `NEXT_PUBLIC_FIREBASE_*` correspondientes en tu archivo `.env`.
+    6.  Ve a [Google AI Studio](https://aistudio.google.com/app/apikey) para generar una clave de API para Gemini y pégala en la variable `GEMINI_API_KEY`.
 
 ### 2. Lógica de Inteligencia Artificial (Genkit)
 
