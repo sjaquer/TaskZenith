@@ -14,7 +14,11 @@ import {
   Timestamp,
   getDoc,
   runTransaction,
-  updateDoc
+  updateDoc,
+  onSnapshot,
+  enableNetwork,
+  disableNetwork,
+  getDocsFromCache
 } from "firebase/firestore";
 
 interface TaskContextType {
@@ -66,73 +70,94 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         const todayStr = new Date().toISOString().split('T')[0];
         const dailyStatusDocRef = doc(dailyTasksCollection, todayStr);
     
-        await runTransaction(db, async (transaction) => {
-          const dailyStatusDoc = await transaction.get(dailyStatusDocRef);
-          
-          let finalCustomTasks = customDailyTasks;
-          if (customDailyTasks.length === 0) {
-            const customTasksSnapshot = await transaction.get(customDailyTasksDoc);
-            if (customTasksSnapshot.exists()) {
-              finalCustomTasks = customTasksSnapshot.data().tasks;
-            } else {
-              finalCustomTasks = defaultDailyTasks;
-              transaction.set(customDailyTasksDoc, { tasks: finalCustomTasks });
-            }
-            setCustomDailyTasks(finalCustomTasks);
-          }
-    
-          if (dailyStatusDoc.exists()) {
-            setDailyTasks(dailyStatusDoc.data().tasks as DailyTask[]);
-          } else {
-            const newDailyTasks = finalCustomTasks.map(task => ({ ...task, completed: false }));
-            transaction.set(dailyStatusDocRef, { tasks: newDailyTasks });
-            setDailyTasks(newDailyTasks);
-    
-            // Clean up old daily tasks docs
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = yesterday.toISOString().split('T')[0];
-            const oldDocRef = doc(dailyTasksCollection, yesterdayStr);
-            const oldDoc = await transaction.get(oldDocRef);
-            if (oldDoc.exists()) {
-              transaction.delete(oldDocRef);
-            }
-          }
-        });
+        try {
+            await runTransaction(db, async (transaction) => {
+              const dailyStatusDoc = await transaction.get(dailyStatusDocRef);
+              
+              let finalCustomTasks = customDailyTasks;
+              if (customDailyTasks.length === 0) {
+                const customTasksSnapshot = await transaction.get(customDailyTasksDoc);
+                if (customTasksSnapshot.exists()) {
+                  finalCustomTasks = customTasksSnapshot.data().tasks;
+                } else {
+                  finalCustomTasks = defaultDailyTasks;
+                  transaction.set(customDailyTasksDoc, { tasks: finalCustomTasks });
+                }
+                setCustomDailyTasks(finalCustomTasks);
+              }
+        
+              if (dailyStatusDoc.exists()) {
+                setDailyTasks(dailyStatusDoc.data().tasks as DailyTask[]);
+              } else {
+                const newDailyTasks = finalCustomTasks.map(task => ({ ...task, completed: false }));
+                transaction.set(dailyStatusDocRef, { tasks: newDailyTasks });
+                setDailyTasks(newDailyTasks);
+        
+                // Clean up old daily tasks docs
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toISOString().split('T')[0];
+                const oldDocRef = doc(dailyTasksCollection, yesterdayStr);
+                const oldDoc = await transaction.get(oldDocRef);
+                if (oldDoc.exists()) {
+                  transaction.delete(oldDocRef);
+                }
+              }
+            });
+        } catch (e) {
+            // Likely offline, which is fine for this part.
+            // We can rely on the last known state or defaults.
+            console.log("Could not fetch daily tasks, possibly offline.");
+        }
     }, [customDailyTasks]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [tasksSnapshot, projectsSnapshot] = await Promise.all([
-                    getDocs(tasksCollection),
-                    getDocs(projectsCollection),
+                // Try to get data from cache first for a fast startup
+                const [tasksCache, projectsCache] = await Promise.all([
+                    getDocsFromCache(tasksCollection),
+                    getDocsFromCache(projectsCollection)
                 ]);
 
-                const tasksData = tasksSnapshot.docs.map(doc => {
-                  const data = doc.data();
-                  return {
-                    ...data,
-                    id: doc.id,
-                    completedAt: data.completedAt ? (data.completedAt as Timestamp).toDate() : null,
-                  } as Task;
-                });
-
-                const projectsData = projectsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
-                
-                setTasks(tasksData);
-                setProjects(projectsData);
-                await fetchDailyTasks();
-
+                if (!tasksCache.empty || !projectsCache.empty) {
+                    const tasksData = tasksCache.docs.map(doc => ({ ...doc.data(), id: doc.id, completedAt: doc.data().completedAt ? (doc.data().completedAt as Timestamp).toDate() : null }) as Task);
+                    const projectsData = projectsCache.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
+                    setTasks(tasksData);
+                    setProjects(projectsData);
+                    await fetchDailyTasks();
+                    setIsLoaded(true);
+                }
             } catch (error) {
-                console.error("Failed to load from Firestore", error);
-            } finally {
-                setIsLoaded(true);
+                console.log("No data in cache, will fetch from server.", error);
             }
+
+            // Set up listeners for real-time updates from server (will also work offline)
+            const unsubscribeTasks = onSnapshot(tasksCollection, (snapshot) => {
+                const tasksData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, completedAt: doc.data().completedAt ? (doc.data().completedAt as Timestamp).toDate() : null }) as Task);
+                setTasks(tasksData);
+                if (!isLoaded) fetchDailyTasks(); // ensure daily tasks are loaded after first data fetch
+                setIsLoaded(true);
+            }, (error) => {
+                console.error("Error listening to tasks:", error);
+                setIsLoaded(true); // Mark as loaded even on error to unblock UI
+            });
+
+            const unsubscribeProjects = onSnapshot(projectsCollection, (snapshot) => {
+                const projectsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
+                setProjects(projectsData);
+            }, (error) => {
+                console.error("Error listening to projects:", error);
+            });
+            
+            return () => {
+                unsubscribeTasks();
+                unsubscribeProjects();
+            };
         };
 
         fetchData();
-    }, [fetchDailyTasks]);
+    }, [fetchDailyTasks, isLoaded]);
 
   const addTask = async (task: Omit<Task, 'id' | 'completed' | 'status'>) => {
     const newTaskId = `task-${Date.now()}`;
@@ -141,6 +166,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       id: newTaskId,
       completed: false,
       status: 'Pendiente',
+      completedAt: null
     };
 
     // Optimistic UI update
@@ -156,11 +182,15 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const deleteTask = async (taskId: string) => {
+    const originalTasks = tasks;
+    // Optimistic UI Update
+    setTasks((prev) => prev.filter((task) => task.id !== taskId));
     try {
         await deleteDoc(doc(db, 'tasks', taskId));
-        setTasks((prev) => prev.filter((task) => task.id !== taskId));
     } catch (error) {
         console.error("Error deleting task: ", error);
+        // Revert
+        setTasks(originalTasks);
     }
   };
 
@@ -184,11 +214,14 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         createdTasks.push(newTask);
     });
 
+    // Optimistic update
+    setTasks((prev) => [...createdTasks, ...prev]);
     try {
         await batch.commit();
-        setTasks((prev) => [...createdTasks, ...prev]);
     } catch(error) {
         console.error("Error adding AI tasks: ", error);
+        // Revert
+        setTasks((prev) => prev.filter(t => !createdTasks.some(ct => ct.id === t.id)));
     }
   };
 
@@ -209,11 +242,14 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         createdTasks.push(newTask);
     });
 
+    // Optimistic update
+    setTasks((prev) => [...createdTasks, ...prev]);
     try {
         await batch.commit();
-        setTasks((prev) => [...createdTasks, ...prev]);
     } catch(error) {
         console.error("Error adding voice tasks: ", error);
+         // Revert
+        setTasks((prev) => prev.filter(t => !createdTasks.some(ct => ct.id === t.id)));
     }
   };
 
@@ -229,11 +265,20 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         status: newCompletedState ? 'Finalizado' : 'Pendiente'
     } as Task;
 
+    const originalTasks = tasks;
+    // Optimistic UI update
+    setTasks((prev) => prev.map((task) => task.id === taskId ? updatedTask : task));
+
     try {
-        await setDoc(doc(db, 'tasks', taskId), updatedTask);
-        setTasks((prev) => prev.map((task) => task.id === taskId ? updatedTask : task));
+        await updateDoc(doc(db, 'tasks', taskId), {
+            completed: updatedTask.completed,
+            completedAt: updatedTask.completedAt,
+            status: updatedTask.status
+        });
     } catch(error) {
         console.error("Error toggling task completion: ", error);
+        // Revert
+        setTasks(originalTasks);
     }
   };
 
@@ -243,8 +288,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     if (!taskToUpdate) return;
   
     const isCompleted = status === 'Finalizado' || status === 'Cancelado';
-    const updatedTask = {
-      ...taskToUpdate,
+    const updatedTaskData = {
       status,
       completed: isCompleted,
       completedAt:
@@ -257,11 +301,11 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   
     // Optimistic UI update
     setTasks((prev) =>
-      prev.map((task) => (task.id === taskId ? updatedTask : task))
+      prev.map((task) => (task.id === taskId ? { ...task, ...updatedTaskData } : task))
     );
   
     try {
-      await setDoc(doc(db, 'tasks', taskId), updatedTask);
+      await updateDoc(doc(db, 'tasks', taskId), updatedTaskData);
     } catch (error) {
       console.error('Error updating task status: ', error);
       // Revert on error
@@ -279,61 +323,78 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       ...project,
       id: newProjectId,
     };
+
+    const originalProjects = projects;
+    // Optimistic update
+    setProjects(prev => [...prev, newProject]);
     try {
         await setDoc(doc(db, 'projects', newProjectId), newProject);
-        setProjects(prev => [...prev, newProject]);
     } catch(error) {
         console.error("Error adding project: ", error);
+        // Revert
+        setProjects(originalProjects);
     }
   }
 
   const updateProject = async (projectId: string, data: Partial<Omit<Project, 'id'>>) => {
     const projectRef = doc(db, 'projects', projectId);
+    const originalProjects = projects;
+    // Optimistic update
+    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...data } : p));
     try {
       await updateDoc(projectRef, data);
-      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...data } : p));
     } catch (error) {
       console.error("Error updating project:", error);
+      // Revert
+      setProjects(originalProjects);
     }
   };
   
   const deleteProject = async (projectId: string) => {
-     try {
-        await deleteDoc(doc(db, 'projects', projectId));
-        setProjects(prev => prev.filter(p => p.id !== projectId));
-        
+    const originalProjects = projects;
+    const originalTasks = tasks;
+     
+    // Optimistic Update
+    setProjects(prev => prev.filter(p => p.id !== projectId));
+    setTasks(prev => prev.map(t => t.projectId === projectId ? { ...t, projectId: undefined } : t));
+    
+    try {
         const batch = writeBatch(db);
-        const updatedTasks = tasks.map(t => {
+        batch.delete(doc(db, 'projects', projectId));
+        
+        tasks.forEach(t => {
             if (t.projectId === projectId) {
                 const taskRef = doc(db, 'tasks', t.id);
-                const updatedTask = { ...t, projectId: undefined };
                 batch.update(taskRef, { projectId: undefined });
-                return updatedTask;
             }
-            return t;
         });
         await batch.commit();
-        setTasks(updatedTasks);
-
     } catch(error) {
         console.error("Error deleting project: ", error);
+        // Revert
+        setProjects(originalProjects);
+        setTasks(originalTasks);
     }
   }
   
   const clearAllData = async () => {
-    const batch = writeBatch(db);
-    tasks.forEach(task => batch.delete(doc(db, 'tasks', task.id)));
-    projects.forEach(project => batch.delete(doc(db, 'projects', project.id)));
-    
-    // Also delete daily tasks and custom daily tasks config
-    const todayStr = new Date().toISOString().split('T')[0];
-    batch.delete(doc(dailyTasksCollection, todayStr));
-    batch.delete(customDailyTasksDoc);
+    const originalTasks = tasks;
+    const originalProjects = projects;
 
+    setTasks([]);
+    setProjects([]);
+    
     try {
+        const batch = writeBatch(db);
+        tasks.forEach(task => batch.delete(doc(db, 'tasks', task.id)));
+        projects.forEach(project => batch.delete(doc(db, 'projects', project.id)));
+        
+        // Also delete daily tasks and custom daily tasks config
+        const todayStr = new Date().toISOString().split('T')[0];
+        batch.delete(doc(dailyTasksCollection, todayStr));
+        batch.delete(customDailyTasksDoc);
+
         await batch.commit();
-        setTasks([]);
-        setProjects([]);
         const newDaily = defaultDailyTasks.map(t => ({...t, completed: false}));
         setDailyTasks(newDaily);
         setCustomDailyTasks(defaultDailyTasks);
@@ -342,6 +403,9 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         await setDoc(customDailyTasksDoc, { tasks: defaultDailyTasks });
     } catch (error) {
         console.error("Error clearing all data: ", error);
+        // Revert
+        setTasks(originalTasks);
+        setProjects(originalProjects);
     }
   }
 
@@ -349,6 +413,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const todayStr = new Date().toISOString().split('T')[0];
     const dailyStatusDocRef = doc(dailyTasksCollection, todayStr);
     
+    const originalDailyTasks = dailyTasks;
     const updatedDailyTasks = dailyTasks.map(task =>
         task.id === taskId ? { ...task, completed: !task.completed } : task
     );
@@ -358,11 +423,12 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
         console.error("Error updating daily task status:", error);
         // Revert UI change on error
-        setDailyTasks(dailyTasks);
+        setDailyTasks(originalDailyTasks);
     }
   };
 
   const updateCustomDailyTasks = async (newCustomTasks: CustomDailyTask[]) => {
+    const originalCustomTasks = customDailyTasks;
     setCustomDailyTasks(newCustomTasks);
     try {
       await setDoc(customDailyTasksDoc, { tasks: newCustomTasks });
@@ -370,6 +436,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       await fetchDailyTasks();
     } catch (error) {
       console.error("Error updating custom daily tasks:", error);
+      setCustomDailyTasks(originalCustomTasks);
     }
   };
 
