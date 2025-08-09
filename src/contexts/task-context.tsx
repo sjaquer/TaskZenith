@@ -204,22 +204,34 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateTaskStatus = async (taskId: string, status: KanbanStatus) => {
-    const taskToUpdate = tasks.find(t => t.id === taskId);
+    const originalTasks = [...tasks];
+    const taskToUpdate = tasks.find((t) => t.id === taskId);
     if (!taskToUpdate) return;
-
+  
     const isCompleted = status === 'Finalizado' || status === 'Cancelado';
     const updatedTask = {
-        ...taskToUpdate,
-        status,
-        completed: isCompleted,
-        completedAt: isCompleted && !taskToUpdate.completedAt ? new Date() : (status !== 'Finalizado' && status !== 'Cancelado' ? null : taskToUpdate.completedAt)
-    }
-
+      ...taskToUpdate,
+      status,
+      completed: isCompleted,
+      completedAt:
+        isCompleted && !taskToUpdate.completedAt
+          ? new Date()
+          : status !== 'Finalizado' && status !== 'Cancelado'
+          ? null
+          : taskToUpdate.completedAt,
+    };
+  
+    // Optimistic UI update
+    setTasks((prev) =>
+      prev.map((task) => (task.id === taskId ? updatedTask : task))
+    );
+  
     try {
-        await setDoc(doc(db, 'tasks', taskId), updatedTask);
-         setTasks(prev => prev.map(task => task.id === taskId ? updatedTask : task));
-    } catch(error) {
-        console.error("Error updating task status: ", error);
+      await setDoc(doc(db, 'tasks', taskId), updatedTask);
+    } catch (error) {
+      console.error('Error updating task status: ', error);
+      // Revert on error
+      setTasks(originalTasks);
     }
   };
 
