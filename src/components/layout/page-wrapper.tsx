@@ -15,7 +15,7 @@ export function PageWrapper({ children }: { children: React.ReactNode }) {
       const timer = setTimeout(() => {
         setLoading(false);
         sessionStorage.setItem('hasLoaded', 'true');
-      }, 1500); // 0.5s wait + 1s fade-out
+      }, 1000); // 0.5s wait + 0.5s fade-out
 
       return () => clearTimeout(timer);
     }
