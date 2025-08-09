@@ -2,6 +2,17 @@
 
 import { type Task, type Project, type KanbanStatus, type Category, type Priority } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { firebaseApp } from '@/lib/firebase';
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  getDocs, 
+  writeBatch,
+  setDoc,
+  deleteDoc,
+  Timestamp
+} from "firebase/firestore";
 
 interface TaskContextType {
   tasks: Task[];
@@ -18,8 +29,9 @@ interface TaskContextType {
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
-const initialProjects: Project[] = [];
-const initialTasks: Task[] = [];
+const db = getFirestore(firebaseApp);
+const tasksCollection = collection(db, 'tasks');
+const projectsCollection = collection(db, 'projects');
 
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -27,109 +39,179 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
-        try {
-            const storedTasks = localStorage.getItem('tasks');
-            const storedProjects = localStorage.getItem('projects');
+        const fetchData = async () => {
+            try {
+                const [tasksSnapshot, projectsSnapshot] = await Promise.all([
+                    getDocs(tasksCollection),
+                    getDocs(projectsCollection)
+                ]);
 
-            if (storedTasks) {
-                setTasks(JSON.parse(storedTasks).map((task: Task) => ({
-                    ...task,
-                    completedAt: task.completedAt ? new Date(task.completedAt) : null,
-                })));
-            } else {
-                setTasks(initialTasks);
-            }
+                const tasksData = tasksSnapshot.docs.map(doc => {
+                  const data = doc.data();
+                  return {
+                    ...data,
+                    id: doc.id,
+                    completedAt: data.completedAt ? (data.completedAt as Timestamp).toDate() : null,
+                  } as Task;
+                });
 
-            if (storedProjects) {
-                setProjects(JSON.parse(storedProjects));
-            } else {
-                setProjects(initialProjects);
+                const projectsData = projectsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
+                
+                setTasks(tasksData);
+                setProjects(projectsData);
+
+            } catch (error) {
+                console.error("Failed to load from Firestore", error);
+                setTasks([]);
+                setProjects([]);
+            } finally {
+                setIsLoaded(true);
             }
-        } catch (error) {
-            console.error("Failed to load from localStorage", error);
-            setTasks(initialTasks);
-            setProjects(initialProjects);
-        } finally {
-            setIsLoaded(true);
-        }
+        };
+
+        fetchData();
     }, []);
 
-    useEffect(() => {
-        if (isLoaded) {
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-            localStorage.setItem('projects', JSON.stringify(projects));
-        }
-    }, [tasks, projects, isLoaded]);
-
-  const addTask = (task: Omit<Task, 'id' | 'completed' | 'status'>) => {
+  const addTask = async (task: Omit<Task, 'id' | 'completed' | 'status'>) => {
+    const newTaskId = `task-${Date.now()}`;
     const newTask: Task = {
       ...task,
-      id: `task-${Date.now()}`,
+      id: newTaskId,
       completed: false,
       status: 'Pendiente',
     };
-    setTasks((prev) => [newTask, ...prev]);
+    try {
+        await setDoc(doc(db, 'tasks', newTaskId), newTask);
+        setTasks((prev) => [newTask, ...prev]);
+    } catch (error) {
+        console.error("Error adding task: ", error);
+    }
   };
 
-  const addAiTasks = (newTasks: string[], category: Category, priority: Priority) => {
-    const createdTasks: Task[] = newTasks.map((title, index) => ({
-      id: `task-ai-${Date.now()}-${index}`,
-      title,
-      category,
-      priority,
-      completed: false,
-      status: 'Pendiente',
-    }));
-    setTasks((prev) => [...createdTasks, ...prev]);
+  const addAiTasks = async (newTasks: string[], category: Category, priority: Priority) => {
+    const batch = writeBatch(db);
+    const createdTasks: Task[] = [];
+
+    newTasks.forEach((title, index) => {
+        const newTaskId = `task-ai-${Date.now()}-${index}`;
+        const newTask: Task = {
+            id: newTaskId,
+            title,
+            category,
+            priority,
+            completed: false,
+            status: 'Pendiente',
+        };
+        const taskRef = doc(db, 'tasks', newTaskId);
+        batch.set(taskRef, newTask);
+        createdTasks.push(newTask);
+    });
+
+    try {
+        await batch.commit();
+        setTasks((prev) => [...createdTasks, ...prev]);
+    } catch(error) {
+        console.error("Error adding AI tasks: ", error);
+    }
   };
 
-  const toggleTaskCompletion = (taskId: string) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId
-          ? { ...task, completed: !task.completed, completedAt: !task.completed ? new Date() : null, status: !task.completed ? 'Finalizado' : 'Pendiente' }
-          : task
-      )
-    );
+  const toggleTaskCompletion = async (taskId: string) => {
+    const taskToUpdate = tasks.find(t => t.id === taskId);
+    if (!taskToUpdate) return;
+    
+    const newCompletedState = !taskToUpdate.completed;
+    const updatedTask = {
+        ...taskToUpdate,
+        completed: newCompletedState,
+        completedAt: newCompletedState ? new Date() : null,
+        status: newCompletedState ? 'Finalizado' : 'Pendiente'
+    } as Task;
+
+    try {
+        await setDoc(doc(db, 'tasks', taskId), updatedTask);
+        setTasks((prev) => prev.map((task) => task.id === taskId ? updatedTask : task));
+    } catch(error) {
+        console.error("Error toggling task completion: ", error);
+    }
   };
 
-  const updateTaskStatus = (taskId: string, status: KanbanStatus) => {
-    setTasks(prev => 
-      prev.map(task => {
-        if (task.id === taskId) {
-          const isCompleted = status === 'Finalizado' || status === 'Cancelado';
-          return { ...task, status, completed: isCompleted, completedAt: isCompleted && !task.completedAt ? new Date() : (status !== 'Finalizado' && status !== 'Cancelado' ? null : task.completedAt) };
-        }
-        return task;
-      })
-    );
+  const updateTaskStatus = async (taskId: string, status: KanbanStatus) => {
+    const taskToUpdate = tasks.find(t => t.id === taskId);
+    if (!taskToUpdate) return;
+
+    const isCompleted = status === 'Finalizado' || status === 'Cancelado';
+    const updatedTask = {
+        ...taskToUpdate,
+        status,
+        completed: isCompleted,
+        completedAt: isCompleted && !taskToUpdate.completedAt ? new Date() : (status !== 'Finalizado' && status !== 'Cancelado' ? null : taskToUpdate.completedAt)
+    }
+
+    try {
+        await setDoc(doc(db, 'tasks', taskId), updatedTask);
+         setTasks(prev => prev.map(task => task.id === taskId ? updatedTask : task));
+    } catch(error) {
+        console.error("Error updating task status: ", error);
+    }
   };
 
   const getProjectById = (projectId: string) => {
     return projects.find(p => p.id === projectId);
   }
 
-  const addProject = (project: Omit<Project, 'id'>) => {
+  const addProject = async (project: Omit<Project, 'id'>) => {
+    const newProjectId = `proj-${Date.now()}`;
     const newProject: Project = {
       ...project,
-      id: `proj-${Date.now()}`,
+      id: newProjectId,
     };
-    setProjects(prev => [...prev, newProject]);
+    try {
+        await setDoc(doc(db, 'projects', newProjectId), newProject);
+        setProjects(prev => [...prev, newProject]);
+    } catch(error) {
+        console.error("Error adding project: ", error);
+    }
   }
   
-  const deleteProject = (projectId: string) => {
-    setProjects(prev => prev.filter(p => p.id !== projectId));
-    // Also remove projectId from tasks that have it
-    setTasks(prev => prev.map(t => t.projectId === projectId ? { ...t, projectId: undefined } : t));
+  const deleteProject = async (projectId: string) => {
+     try {
+        await deleteDoc(doc(db, 'projects', projectId));
+        setProjects(prev => prev.filter(p => p.id !== projectId));
+        
+        // Also remove projectId from tasks that have it
+        const batch = writeBatch(db);
+        const updatedTasks = tasks.map(t => {
+            if (t.projectId === projectId) {
+                const taskRef = doc(db, 'tasks', t.id);
+                const updatedTask = { ...t, projectId: undefined };
+                batch.update(taskRef, { projectId: undefined });
+                return updatedTask;
+            }
+            return t;
+        });
+        await batch.commit();
+        setTasks(updatedTasks);
+
+    } catch(error) {
+        console.error("Error deleting project: ", error);
+    }
   }
   
-  const clearAllData = () => {
-    setTasks(initialTasks);
-    setProjects(initialProjects);
-    // Also clear daily tasks
-    const todayKey = `dailyTasks-${new Date().toISOString().split('T')[0]}`;
-    localStorage.removeItem(todayKey);
-    // This will cause daily tasks to regenerate on next load/refresh
+  const clearAllData = async () => {
+    const batch = writeBatch(db);
+    tasks.forEach(task => batch.delete(doc(db, 'tasks', task.id)));
+    projects.forEach(project => batch.delete(doc(db, 'projects', project.id)));
+    
+    try {
+        await batch.commit();
+        setTasks([]);
+        setProjects([]);
+        // Also clear daily tasks
+        const todayKey = `dailyTasks-${new Date().toISOString().split('T')[0]}`;
+        localStorage.removeItem(todayKey);
+    } catch (error) {
+        console.error("Error clearing all data: ", error);
+    }
   }
 
   if (!isLoaded) {
