@@ -89,12 +89,17 @@ export function TodoList() {
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTaskTitle.trim()) {
-      addTask({ 
-        title: newTaskTitle, 
-        category: newTaskCategory, 
+      const taskPayload: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'> = {
+        title: newTaskTitle,
+        category: newTaskCategory,
         priority: newTaskPriority,
-        projectId: newTaskCategory === 'proyectos' ? newTaskProjectId : undefined,
-      });
+      };
+
+      if (newTaskCategory === 'proyectos' && newTaskProjectId) {
+        taskPayload.projectId = newTaskProjectId;
+      }
+      
+      addTask(taskPayload);
       setNewTaskTitle('');
       setNewTaskProjectId(undefined);
     }

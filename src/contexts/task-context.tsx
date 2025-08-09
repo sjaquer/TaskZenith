@@ -27,7 +27,7 @@ interface TaskContextType {
   dailyTasks: DailyTask[];
   customDailyTasks: CustomDailyTask[];
   isLoaded: boolean;
-  addTask: (task: Omit<Task, 'id' | 'completed' | 'status'>) => void;
+  addTask: (task: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'>) => void;
   deleteTask: (taskId: string) => void;
   toggleTaskCompletion: (taskId: string) => void;
   updateTaskStatus: (taskId: string, status: KanbanStatus) => void;
@@ -159,7 +159,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         fetchData();
     }, [fetchDailyTasks, isLoaded]);
 
-  const addTask = async (task: Omit<Task, 'id' | 'completed' | 'status'>) => {
+  const addTask = async (task: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'>) => {
     const newTaskId = `task-${Date.now()}`;
     const newTask: Task = {
       ...task,
@@ -173,7 +173,11 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     setTasks((prev) => [newTask, ...prev]);
 
     try {
-        await setDoc(doc(db, 'tasks', newTaskId), newTask);
+        const taskDataForFirestore = { ...task, completed: false, status: 'Pendiente', completedAt: null };
+        if (taskDataForFirestore.projectId === undefined) {
+          delete taskDataForFirestore.projectId;
+        }
+        await setDoc(doc(db, 'tasks', newTaskId), taskDataForFirestore);
     } catch (error) {
         console.error("Error adding task: ", error);
         // Revert on error
@@ -200,17 +204,23 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     newTasks.forEach((title, index) => {
         const newTaskId = `task-ai-${Date.now()}-${index}`;
-        const newTask: Task = {
-            id: newTaskId,
+        const newTaskData: Omit<Task, 'id'> = {
             title,
             category,
             priority,
             completed: false,
             status: 'Pendiente',
-            projectId: category === 'proyectos' ? projectId : undefined,
+        };
+        if (category === 'proyectos' && projectId) {
+          newTaskData.projectId = projectId;
+        }
+
+        const newTask: Task = {
+            ...newTaskData,
+            id: newTaskId,
         };
         const taskRef = doc(db, 'tasks', newTaskId);
-        batch.set(taskRef, newTask);
+        batch.set(taskRef, newTaskData);
         createdTasks.push(newTask);
     });
 
@@ -231,14 +241,22 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     newTasks.forEach((task, index) => {
         const newTaskId = `task-voice-${Date.now()}-${index}`;
-        const newTask: Task = {
+        const taskDataForFirestore: Omit<Task, 'id'> = {
             ...task,
-            id: newTaskId,
             completed: false,
             status: 'Pendiente',
         };
+        if (taskDataForFirestore.projectId === undefined) {
+          delete taskDataForFirestore.projectId;
+        }
+
+        const newTask: Task = {
+            id: newTaskId,
+            ...taskDataForFirestore,
+        };
+        
         const taskRef = doc(db, 'tasks', newTaskId);
-        batch.set(taskRef, newTask);
+        batch.set(taskRef, taskDataForFirestore);
         createdTasks.push(newTask);
     });
 
