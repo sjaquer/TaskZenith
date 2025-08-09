@@ -181,7 +181,7 @@ export function AiTaskGenerator() {
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona una prioridad" />
-                        </Trigger>
+                        </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="baja">Baja</SelectItem>

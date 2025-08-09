@@ -81,11 +81,12 @@ function DeleteDataConfirmation() {
 }
 
 function ProjectEditDialog({ projectId, currentName, currentDescription, onOpenChange, isOpen }: { projectId: string; currentName: string; currentDescription?: string; isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+  const [name, setName] = useState(currentName);
   const [description, setDescription] = useState(currentDescription || '');
   const { updateProject } = useTasks();
 
   const handleSave = () => {
-    updateProject(projectId, { description });
+    updateProject(projectId, { name, description });
     onOpenChange(false);
   };
 
@@ -95,15 +96,31 @@ function ProjectEditDialog({ projectId, currentName, currentDescription, onOpenC
         <AlertDialogHeader>
           <AlertDialogTitle>Editar Proyecto: <span className="capitalize font-bold text-primary">{currentName}</span></AlertDialogTitle>
           <AlertDialogDescription>
-            Añade o edita la descripción de tu proyecto para dar más contexto a la IA al generar tareas.
+            Puedes cambiar el nombre y la descripción de tu proyecto.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <Textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe el objetivo principal de este proyecto..."
-          className="my-4 min-h-[120px]"
-        />
+        <div className="space-y-4 my-4">
+          <div>
+            <Label htmlFor="projectName" className="mb-2 block">Nombre del Proyecto</Label>
+            <Input
+              id="projectName"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nombre del proyecto"
+              className="capitalize"
+            />
+          </div>
+          <div>
+            <Label htmlFor="projectDescription" className="mb-2 block">Descripción del Proyecto</Label>
+            <Textarea
+              id="projectDescription"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe el objetivo principal de este proyecto..."
+              className="min-h-[100px]"
+            />
+          </div>
+        </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={handleSave}>Guardar Cambios</AlertDialogAction>
@@ -249,4 +266,3 @@ export function ProjectLegend() {
     </div>
   );
 }
-    

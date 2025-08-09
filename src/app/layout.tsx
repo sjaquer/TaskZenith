@@ -35,8 +35,8 @@ export default function RootLayout({
       </head>
       <body className={`${poppins.className} antialiased`}>
         <TaskProvider>
-          {children}
-          <Toaster />
+            {children}
+            <Toaster />
         </TaskProvider>
       </body>
     </html>
