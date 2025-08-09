@@ -84,15 +84,42 @@ body {
 }
 
 .splash-screen {
-  animation: fade-out 1s ease-out 1s forwards;
+  animation: splash-bg-fade-out 0.5s ease-out 2s forwards;
 }
 
-@keyframes fade-out {
+.splash-logo {
+  animation: splash-logo-zoom 2.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+@keyframes splash-bg-fade-out {
   from {
     opacity: 1;
   }
   to {
     opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes splash-logo-zoom {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  40% {
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
     visibility: hidden;
   }
 }
