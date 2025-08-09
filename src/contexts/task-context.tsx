@@ -13,7 +13,8 @@ import {
   deleteDoc,
   Timestamp,
   getDoc,
-  runTransaction
+  runTransaction,
+  updateDoc
 } from "firebase/firestore";
 
 interface TaskContextType {
@@ -29,7 +30,8 @@ interface TaskContextType {
   getProjectById: (projectId: string) => Project | undefined;
   addProject: (project: Omit<Project, 'id'>) => void;
   deleteProject: (projectId: string) => void;
-  addAiTasks: (newTasks: string[], category: Category, priority: Priority) => void;
+  updateProject: (projectId: string, data: Partial<Omit<Project, 'id'>>) => void;
+  addAiTasks: (newTasks: string[], category: Category, priority: Priority, projectId?: string) => void;
   clearAllData: () => void;
   toggleDailyTask: (taskId: string) => void;
   updateCustomDailyTasks: (tasks: CustomDailyTask[]) => void;
@@ -156,7 +158,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addAiTasks = async (newTasks: string[], category: Category, priority: Priority) => {
+  const addAiTasks = async (newTasks: string[], category: Category, priority: Priority, projectId?: string) => {
     const batch = writeBatch(db);
     const createdTasks: Task[] = [];
 
@@ -169,6 +171,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             priority,
             completed: false,
             status: 'Pendiente',
+            projectId: category === 'proyectos' ? projectId : undefined,
         };
         const taskRef = doc(db, 'tasks', newTaskId);
         batch.set(taskRef, newTask);
@@ -252,6 +255,16 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         console.error("Error adding project: ", error);
     }
   }
+
+  const updateProject = async (projectId: string, data: Partial<Omit<Project, 'id'>>) => {
+    const projectRef = doc(db, 'projects', projectId);
+    try {
+      await updateDoc(projectRef, data);
+      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...data } : p));
+    } catch (error) {
+      console.error("Error updating project:", error);
+    }
+  };
   
   const deleteProject = async (projectId: string) => {
      try {
@@ -331,7 +344,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, addTask, deleteTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, addAiTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks }}>
+    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, addTask, deleteTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks }}>
       {children}
     </TaskContext.Provider>
   );

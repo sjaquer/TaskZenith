@@ -9,9 +9,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Plus, Palette, Trash2, Settings, ShieldAlert } from 'lucide-react';
+import { Plus, Palette, Trash2, Settings, ShieldAlert, Edit } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { Textarea } from '../ui/textarea';
 
 const colorPalette = [
   '#0B7ABF', // Custom Blue
@@ -79,21 +80,58 @@ function DeleteDataConfirmation() {
   )
 }
 
+function ProjectEditDialog({ projectId, currentName, currentDescription, onOpenChange, isOpen }: { projectId: string; currentName: string; currentDescription?: string; isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+  const [description, setDescription] = useState(currentDescription || '');
+  const { updateProject } = useTasks();
+
+  const handleSave = () => {
+    updateProject(projectId, { description });
+    onOpenChange(false);
+  };
+
+  return (
+    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Editar Proyecto: <span className="capitalize font-bold text-primary">{currentName}</span></AlertDialogTitle>
+          <AlertDialogDescription>
+            Añade o edita la descripción de tu proyecto para dar más contexto a la IA al generar tareas.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Describe el objetivo principal de este proyecto..."
+          className="my-4 min-h-[120px]"
+        />
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleSave}>Guardar Cambios</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+
 export function ProjectLegend() {
   const { projects, addProject, deleteProject } = useTasks();
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectColor, setNewProjectColor] = useState(colorPalette[0]);
   const [isAddPopoverOpen, setIsAddPopoverOpen] = useState(false);
   const [isManagePopoverOpen, setIsManagePopoverOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<string | null>(null);
 
   const handleAddProject = () => {
     if (newProjectName.trim()) {
-      addProject({ name: newProjectName, color: newProjectColor });
+      addProject({ name: newProjectName, color: newProjectColor, description: '' });
       setNewProjectName('');
       setNewProjectColor(colorPalette[0]);
       setIsAddPopoverOpen(false);
     }
   };
+
+  const projectToEdit = projects.find(p => p.id === editingProject);
 
   return (
     <div className="flex items-center gap-4 flex-wrap p-4 rounded-lg bg-card/80 backdrop-blur-sm">
@@ -168,24 +206,29 @@ export function ProjectLegend() {
               Gestionar
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80">
+          <PopoverContent className="w-96">
              <div className="grid gap-4">
                 <div className="space-y-2">
                   <h4 className="font-medium leading-none">GESTIONAR PROYECTOS</h4>
                    <p className="text-sm text-muted-foreground">
-                    Elimina los proyectos que ya no necesites.
+                    Edita o elimina los proyectos que ya no necesites.
                   </p>
                 </div>
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-2">
                     {projects.map(project => (
                         <div key={project.id} className="flex items-center justify-between p-2 rounded-md hover:bg-secondary">
                            <div className="flex items-center gap-2">
                                 <span className="h-4 w-4 rounded-full" style={{ backgroundColor: project.color }} />
                                 <span className="text-sm font-medium capitalize">{project.name}</span>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => deleteProject(project.id)}>
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => setEditingProject(project.id)}>
+                                    <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => deleteProject(project.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -193,6 +236,15 @@ export function ProjectLegend() {
              </div>
           </PopoverContent>
         </Popover>
+        {projectToEdit && (
+          <ProjectEditDialog
+            isOpen={!!editingProject}
+            onOpenChange={(open) => !open && setEditingProject(null)}
+            projectId={projectToEdit.id}
+            currentName={projectToEdit.name}
+            currentDescription={projectToEdit.description}
+          />
+        )}
       </div>
     </div>
   );

@@ -31,12 +31,13 @@ import { Slider } from '@/components/ui/slider';
 import { Bot, Plus, Sparkles } from 'lucide-react';
 import { generateAiTasksAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { Category, Priority } from '@/lib/types';
+import type { Category, Priority, Task } from '@/lib/types';
 
 const formSchema = z.object({
   activityDescription: z.string().min(10, 'Por favor, describe la actividad en al menos 10 caracteres.'),
   category: z.enum(['estudio', 'trabajo', 'personal', 'proyectos']),
   priority: z.enum(['baja', 'media', 'alta']),
+  projectId: z.string().optional(),
 });
 
 export function AiTaskGenerator() {
@@ -44,7 +45,7 @@ export function AiTaskGenerator() {
   const [numberOfTasks, setNumberOfTasks] = useState(3);
   const [generatedTasks, setGeneratedTasks] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const { addAiTasks } = useTasks();
+  const { addAiTasks, projects, getProjectById, tasks } = useTasks();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -53,13 +54,34 @@ export function AiTaskGenerator() {
       activityDescription: '',
       category: 'personal',
       priority: 'media',
+      projectId: undefined,
     },
   });
+
+  const category = form.watch('category');
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
     setGeneratedTasks([]);
-    const result = await generateAiTasksAction({ ...values, numberOfTasks });
+
+    let projectContext;
+    if (values.category === 'proyectos' && values.projectId) {
+      const project = getProjectById(values.projectId);
+      if (project) {
+        projectContext = {
+          name: project.name,
+          description: project.description,
+          existingTasks: tasks.filter(t => t.projectId === values.projectId).map(t => t.title),
+        };
+      }
+    }
+    
+    const result = await generateAiTasksAction({ 
+      activityDescription: values.activityDescription,
+      numberOfTasks,
+      projectContext
+    });
+
     setIsGenerating(false);
 
     if (result.error) {
@@ -74,8 +96,8 @@ export function AiTaskGenerator() {
   }
 
   function handleAddTasks() {
-    const { category, priority } = form.getValues();
-    addAiTasks(generatedTasks, category as Category, priority as Priority);
+    const { category, priority, projectId } = form.getValues();
+    addAiTasks(generatedTasks, category as Category, priority as Priority, projectId);
     toast({
       title: '¡Éxito!',
       description: `${generatedTasks.length} tareas han sido añadidas a tu lista.`,
@@ -93,7 +115,7 @@ export function AiTaskGenerator() {
       setNumberOfTasks(3);
     }
     setIsOpen(open);
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -108,7 +130,7 @@ export function AiTaskGenerator() {
             <Sparkles className="text-primary" /> Generador de Tareas con IA
           </DialogTitle>
           <DialogDescription>
-            Describe una actividad y la dividiremos en tareas manejables para ti.
+            Describe una actividad y la dividiremos en tareas manejables para ti. Para mejores resultados en proyectos, añade una descripción al proyecto.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -159,7 +181,7 @@ export function AiTaskGenerator() {
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona una prioridad" />
-                        </SelectTrigger>
+                        </Trigger>
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="baja">Baja</SelectItem>
@@ -171,6 +193,32 @@ export function AiTaskGenerator() {
                 )}
               />
             </div>
+            {category === 'proyectos' && (
+              <FormField
+                control={form.control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Proyecto</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger disabled={projects.length === 0}>
+                          <SelectValue placeholder={projects.length > 0 ? "Selecciona un proyecto" : "No hay proyectos"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {projects.map(project => (
+                          <SelectItem key={project.id} value={project.id} className="capitalize">
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <div className="space-y-2">
                 <Label>Número de tareas: {numberOfTasks}</Label>
                 <Slider defaultValue={[3]} min={1} max={10} step={1} onValueChange={(value) => setNumberOfTasks(value[0])} />

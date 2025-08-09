@@ -21,6 +21,11 @@ const GenerateTasksInputSchema = z.object({
     .max(10)
     .default(3)
     .describe('El número de tareas a generar.'),
+  projectContext: z.object({
+    name: z.string(),
+    description: z.string().optional(),
+    existingTasks: z.array(z.string()),
+  }).optional().describe('El contexto del proyecto para el cual se generan las tareas.'),
 });
 export type GenerateTasksInput = z.infer<typeof GenerateTasksInputSchema>;
 
@@ -42,6 +47,19 @@ const generateTasksPrompt = ai.definePrompt({
   prompt: `Eres un útil generador de tareas. Dada una descripción de la actividad, generarás una lista de tareas necesarias para completar la actividad.
 
 Descripción de la actividad: {{{activityDescription}}}
+{{#if projectContext}}
+Estás generando tareas para el proyecto: **{{projectContext.name}}**.
+{{#if projectContext.description}}
+Descripción del proyecto: {{projectContext.description}}
+{{/if}}
+{{#if projectContext.existingTasks}}
+Tareas existentes en este proyecto que puedes usar como referencia de estilo y alcance:
+{{#each projectContext.existingTasks}}
+- {{this}}
+{{/each}}
+{{/if}}
+Por favor, asegúrate de que las nuevas tareas sean coherentes con este proyecto.
+{{/if}}
 
 Por favor, genera {{{numberOfTasks}}} tareas relacionadas con la actividad. Devuelve las tareas como un array JSON de strings. No incluyas ningún texto extra.`, 
 });
