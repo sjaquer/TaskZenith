@@ -19,15 +19,18 @@ export function TaskHistory() {
   const { tasks } = useTasks();
 
   const completedTasks = useMemo(() => {
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
     return tasks
-      .filter(task => task.completed && task.completedAt)
+      .filter(task => task.completed && task.completedAt && new Date(task.completedAt) > fifteenDaysAgo)
       .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
   }, [tasks]);
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg h-full">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold uppercase tracking-wider">Tareas Completadas</CardTitle>
+        <CardTitle className="text-lg font-semibold uppercase tracking-wider">Tareas Completadas (Últimos 15 días)</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -53,14 +56,14 @@ export function TaskHistory() {
                             </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                            {format(new Date(task.completedAt!), "PPP", { locale: es })}
+                            {task.completedAt && format(new Date(task.completedAt), "PPP", { locale: es })}
                         </TableCell>
                     </TableRow>
                 ))
             ) : (
                 <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                        Aún no hay tareas completadas. ¡Sigue adelante!
+                        No hay tareas completadas en los últimos 15 días.
                     </TableCell>
                 </TableRow>
             )}
