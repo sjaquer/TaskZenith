@@ -142,11 +142,16 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       completed: false,
       status: 'Pendiente',
     };
+
+    // Optimistic UI update
+    setTasks((prev) => [newTask, ...prev]);
+
     try {
         await setDoc(doc(db, 'tasks', newTaskId), newTask);
-        setTasks((prev) => [newTask, ...prev]);
     } catch (error) {
         console.error("Error adding task: ", error);
+        // Revert on error
+        setTasks((prev) => prev.filter(t => t.id !== newTaskId));
     }
   };
 
