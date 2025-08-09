@@ -135,12 +135,12 @@ export function TodoList() {
   };
   
   const TABS_WITH_CONTENT = [
-    { value: 'all', label: 'Todas', tasks: groupedTasks.all },
-    { value: 'estudio', label: 'Estudio', tasks: groupedTasks.estudio },
-    { value: 'trabajo', label: 'Trabajo', tasks: groupedTasks.trabajo },
-    { value: 'personal', label: 'Personal', tasks: groupedTasks.personal },
-    { value: 'proyectos', label: 'Proyectos', tasks: groupedTasks.proyectos },
-  ].filter(tab => tab.tasks.length > 0 || tab.value === 'all' || tab.value === 'personal');
+    { value: 'all', label: 'Todas' },
+    { value: 'estudio', label: 'Estudio' },
+    { value: 'trabajo', label: 'Trabajo' },
+    { value: 'personal', label: 'Personal' },
+    { value: 'proyectos', label: 'Proyectos' },
+  ];
 
 
   return (
