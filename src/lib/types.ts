@@ -18,3 +18,12 @@ export interface Task {
   projectId?: string;
   status: KanbanStatus;
 }
+
+export interface CustomDailyTask {
+  id: string;
+  title: string;
+}
+
+export interface DailyTask extends CustomDailyTask {
+  completed: boolean;
+}

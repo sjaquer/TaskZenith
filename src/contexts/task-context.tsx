@@ -1,7 +1,7 @@
 'use client';
 
-import { type Task, type Project, type KanbanStatus, type Category, type Priority } from '@/lib/types';
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { type Task, type Project, type KanbanStatus, type Category, type Priority, type DailyTask, type CustomDailyTask } from '@/lib/types';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { firebaseApp } from '@/lib/firebase';
 import { 
   getFirestore, 
@@ -11,13 +11,19 @@ import {
   writeBatch,
   setDoc,
   deleteDoc,
-  Timestamp
+  Timestamp,
+  getDoc,
+  runTransaction
 } from "firebase/firestore";
 
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
+  dailyTasks: DailyTask[];
+  customDailyTasks: CustomDailyTask[];
+  isLoaded: boolean;
   addTask: (task: Omit<Task, 'id' | 'completed' | 'status'>) => void;
+  deleteTask: (taskId: string) => void;
   toggleTaskCompletion: (taskId: string) => void;
   updateTaskStatus: (taskId: string, status: KanbanStatus) => void;
   getProjectById: (projectId: string) => Project | undefined;
@@ -25,6 +31,8 @@ interface TaskContextType {
   deleteProject: (projectId: string) => void;
   addAiTasks: (newTasks: string[], category: Category, priority: Priority) => void;
   clearAllData: () => void;
+  toggleDailyTask: (taskId: string) => void;
+  updateCustomDailyTasks: (tasks: CustomDailyTask[]) => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -32,18 +40,70 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 const db = getFirestore(firebaseApp);
 const tasksCollection = collection(db, 'tasks');
 const projectsCollection = collection(db, 'projects');
+const dailyTasksCollection = collection(db, 'dailyTasks');
+const customDailyTasksDoc = doc(db, 'config', 'customDailyTasks');
+
+
+const defaultDailyTasks: CustomDailyTask[] = [
+    { id: 'daily-1', title: 'Hacer la cama' },
+    { id: 'daily-2', title: 'Meditar 10 minutos' },
+    { id: 'daily-3', title: 'Revisar la agenda del día' },
+    { id: 'daily-4', title: 'Beber un vaso de agua al despertar' },
+    { id: 'daily-5', title: 'Planificar las 3 tareas más importantes' },
+];
 
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
+    const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([]);
+    const [customDailyTasks, setCustomDailyTasks] = useState<CustomDailyTask[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
+
+    const fetchDailyTasks = useCallback(async () => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const dailyStatusDocRef = doc(dailyTasksCollection, todayStr);
+    
+        await runTransaction(db, async (transaction) => {
+          const dailyStatusDoc = await transaction.get(dailyStatusDocRef);
+          
+          let finalCustomTasks = customDailyTasks;
+          if (customDailyTasks.length === 0) {
+            const customTasksSnapshot = await transaction.get(customDailyTasksDoc);
+            if (customTasksSnapshot.exists()) {
+              finalCustomTasks = customTasksSnapshot.data().tasks;
+            } else {
+              finalCustomTasks = defaultDailyTasks;
+              transaction.set(customDailyTasksDoc, { tasks: finalCustomTasks });
+            }
+            setCustomDailyTasks(finalCustomTasks);
+          }
+    
+          if (dailyStatusDoc.exists()) {
+            setDailyTasks(dailyStatusDoc.data().tasks as DailyTask[]);
+          } else {
+            const newDailyTasks = finalCustomTasks.map(task => ({ ...task, completed: false }));
+            transaction.set(dailyStatusDocRef, { tasks: newDailyTasks });
+            setDailyTasks(newDailyTasks);
+    
+            // Clean up old daily tasks docs
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            const oldDocRef = doc(dailyTasksCollection, yesterdayStr);
+            const oldDoc = await transaction.get(oldDocRef);
+            if (oldDoc.exists()) {
+              transaction.delete(oldDocRef);
+            }
+          }
+        });
+    }, [customDailyTasks]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const [tasksSnapshot, projectsSnapshot] = await Promise.all([
                     getDocs(tasksCollection),
-                    getDocs(projectsCollection)
+                    getDocs(projectsCollection),
                 ]);
 
                 const tasksData = tasksSnapshot.docs.map(doc => {
@@ -59,18 +119,17 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 
                 setTasks(tasksData);
                 setProjects(projectsData);
+                await fetchDailyTasks();
 
             } catch (error) {
                 console.error("Failed to load from Firestore", error);
-                setTasks([]);
-                setProjects([]);
             } finally {
                 setIsLoaded(true);
             }
         };
 
         fetchData();
-    }, []);
+    }, [fetchDailyTasks]);
 
   const addTask = async (task: Omit<Task, 'id' | 'completed' | 'status'>) => {
     const newTaskId = `task-${Date.now()}`;
@@ -85,6 +144,15 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         setTasks((prev) => [newTask, ...prev]);
     } catch (error) {
         console.error("Error adding task: ", error);
+    }
+  };
+
+  const deleteTask = async (taskId: string) => {
+    try {
+        await deleteDoc(doc(db, 'tasks', taskId));
+        setTasks((prev) => prev.filter((task) => task.id !== taskId));
+    } catch (error) {
+        console.error("Error deleting task: ", error);
     }
   };
 
@@ -178,7 +246,6 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         await deleteDoc(doc(db, 'projects', projectId));
         setProjects(prev => prev.filter(p => p.id !== projectId));
         
-        // Also remove projectId from tasks that have it
         const batch = writeBatch(db);
         const updatedTasks = tasks.map(t => {
             if (t.projectId === projectId) {
@@ -202,24 +269,57 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     tasks.forEach(task => batch.delete(doc(db, 'tasks', task.id)));
     projects.forEach(project => batch.delete(doc(db, 'projects', project.id)));
     
+    // Also delete daily tasks and custom daily tasks config
+    const todayStr = new Date().toISOString().split('T')[0];
+    batch.delete(doc(dailyTasksCollection, todayStr));
+    batch.delete(customDailyTasksDoc);
+
     try {
         await batch.commit();
         setTasks([]);
         setProjects([]);
-        // Also clear daily tasks
-        const todayKey = `dailyTasks-${new Date().toISOString().split('T')[0]}`;
-        localStorage.removeItem(todayKey);
+        const newDaily = defaultDailyTasks.map(t => ({...t, completed: false}));
+        setDailyTasks(newDaily);
+        setCustomDailyTasks(defaultDailyTasks);
+        // Set the new default daily tasks for today
+        await setDoc(doc(dailyTasksCollection, todayStr), { tasks: newDaily });
+        await setDoc(customDailyTasksDoc, { tasks: defaultDailyTasks });
     } catch (error) {
         console.error("Error clearing all data: ", error);
     }
   }
 
-  if (!isLoaded) {
-    return null;
-  }
+  const toggleDailyTask = async (taskId: string) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const dailyStatusDocRef = doc(dailyTasksCollection, todayStr);
+    
+    const updatedDailyTasks = dailyTasks.map(task =>
+        task.id === taskId ? { ...task, completed: !task.completed } : task
+    );
+    setDailyTasks(updatedDailyTasks);
+    try {
+        await setDoc(dailyStatusDocRef, { tasks: updatedDailyTasks });
+    } catch (error) {
+        console.error("Error updating daily task status:", error);
+        // Revert UI change on error
+        setDailyTasks(dailyTasks);
+    }
+  };
+
+  const updateCustomDailyTasks = async (newCustomTasks: CustomDailyTask[]) => {
+    setCustomDailyTasks(newCustomTasks);
+    try {
+      await setDoc(customDailyTasksDoc, { tasks: newCustomTasks });
+      // Force a refresh of today's tasks
+      await fetchDailyTasks();
+    } catch (error) {
+      console.error("Error updating custom daily tasks:", error);
+    }
+  };
+
 
   return (
-    <TaskContext.Provider value={{ tasks, projects, addTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, addAiTasks, clearAllData }}>
+    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, addTask, deleteTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, addAiTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks }}>
       {children}
     </TaskContext.Provider>
   );

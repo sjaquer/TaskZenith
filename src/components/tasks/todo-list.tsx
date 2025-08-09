@@ -11,8 +11,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AiTaskGenerator } from './ai-task-generator';
 import type { Category, Priority, Task } from '@/lib/types';
+import { Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
-function TaskItem({ task, onToggle }: { task: Task; onToggle: (id: string) => void }) {
+
+function TaskItem({ task, onToggle, onDelete }: { task: Task; onToggle: (id: string) => void; onDelete: (id: string) => void }) {
   const [isCompleted, setIsCompleted] = useState(false);
 
   const handleToggle = () => {
@@ -30,7 +33,7 @@ function TaskItem({ task, onToggle }: { task: Task; onToggle: (id: string) => vo
 
   return (
     <div
-      className={`flex items-center space-x-4 p-4 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all hover:bg-secondary/60 ${
+      className={`group flex items-center space-x-4 p-4 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all hover:bg-secondary/60 ${
         priorityColors[task.priority]
       } ${isCompleted ? 'task-complete-animation' : ''}`}
     >
@@ -48,13 +51,34 @@ function TaskItem({ task, onToggle }: { task: Task; onToggle: (id: string) => vo
         </label>
       </div>
       <Badge variant="outline" className="capitalize">{task.category}</Badge>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Confirmas la eliminación?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. La tarea será eliminada permanentemente de la base de datos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => onDelete(task.id)} className="bg-destructive hover:bg-destructive/90">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
 
 export function TodoList() {
-  const { tasks, projects, addTask, toggleTaskCompletion } = useTasks();
+  const { tasks, projects, addTask, toggleTaskCompletion, deleteTask } = useTasks();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskCategory, setNewTaskCategory] = useState<Category>('personal');
   const [newTaskPriority, setNewTaskPriority] = useState<Priority>('media');
@@ -103,7 +127,7 @@ export function TodoList() {
     return (
       <div className="space-y-4">
         {tasksToRender.map(task => (
-          <TaskItem key={task.id} task={task} onToggle={toggleTaskCompletion} />
+          <TaskItem key={task.id} task={task} onToggle={toggleTaskCompletion} onDelete={deleteTask} />
         ))}
       </div>
     );
