@@ -140,7 +140,7 @@ export function TodoList() {
     { value: 'trabajo', label: 'Trabajo', tasks: groupedTasks.trabajo },
     { value: 'personal', label: 'Personal', tasks: groupedTasks.personal },
     { value: 'proyectos', label: 'Proyectos', tasks: groupedTasks.proyectos },
-  ].filter(tab => tab.tasks.length > 0 || tab.value === 'all');
+  ].filter(tab => tab.tasks.length > 0 || tab.value === 'all' || tab.value === 'personal');
 
 
   return (
