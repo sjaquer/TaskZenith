@@ -32,6 +32,7 @@ interface TaskContextType {
   deleteProject: (projectId: string) => void;
   updateProject: (projectId: string, data: Partial<Omit<Project, 'id'>>) => void;
   addAiTasks: (newTasks: string[], category: Category, priority: Priority, projectId?: string) => void;
+  addVoiceTasks: (newTasks: Omit<Task, 'id' | 'completed' | 'status'>[]) => void;
   clearAllData: () => void;
   toggleDailyTask: (taskId: string) => void;
   updateCustomDailyTasks: (tasks: CustomDailyTask[]) => void;
@@ -183,6 +184,31 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         setTasks((prev) => [...createdTasks, ...prev]);
     } catch(error) {
         console.error("Error adding AI tasks: ", error);
+    }
+  };
+
+  const addVoiceTasks = async (newTasks: Omit<Task, 'id' | 'completed' | 'status'>[]) => {
+    const batch = writeBatch(db);
+    const createdTasks: Task[] = [];
+
+    newTasks.forEach((task, index) => {
+        const newTaskId = `task-voice-${Date.now()}-${index}`;
+        const newTask: Task = {
+            ...task,
+            id: newTaskId,
+            completed: false,
+            status: 'Pendiente',
+        };
+        const taskRef = doc(db, 'tasks', newTaskId);
+        batch.set(taskRef, newTask);
+        createdTasks.push(newTask);
+    });
+
+    try {
+        await batch.commit();
+        setTasks((prev) => [...createdTasks, ...prev]);
+    } catch(error) {
+        console.error("Error adding voice tasks: ", error);
     }
   };
 
@@ -344,7 +370,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, addTask, deleteTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks }}>
+    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, addTask, deleteTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, addVoiceTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks }}>
       {children}
     </TaskContext.Provider>
   );

@@ -16,28 +16,14 @@ type DailyTaskItemProps = {
 };
   
 function DailyTaskItem({ task, onToggle }: DailyTaskItemProps) {
-    const [isCompleted, setIsCompleted] = useState(false);
-
-    const handleToggle = () => {
-        setIsCompleted(true);
-        setTimeout(() => {
-        onToggle(task.id);
-        // Reset local animation state in case the parent component re-renders
-        // and this component is kept in the DOM (e.g. toggling back)
-        setTimeout(() => setIsCompleted(false), 500);
-        }, 500);
-    };
-
     return (
         <div
-        className={`flex items-center space-x-4 p-3 rounded-lg hover:bg-secondary/60 transition-all ${
-            isCompleted ? 'task-complete-animation' : ''
-        }`}
+        className={`flex items-center space-x-4 p-3 rounded-lg hover:bg-secondary/60 transition-all`}
         >
         <Checkbox
             id={task.id}
             checked={task.completed}
-            onCheckedChange={handleToggle}
+            onCheckedChange={() => onToggle(task.id)}
             aria-label={`Marcar ${task.title} como completa`}
         />
         <label

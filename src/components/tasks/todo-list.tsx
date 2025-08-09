@@ -13,6 +13,7 @@ import { AiTaskGenerator } from './ai-task-generator';
 import type { Category, Priority, Task } from '@/lib/types';
 import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { VoiceTaskGenerator } from './voice-task-generator';
 
 
 function TaskItem({ task, onToggle, onDelete }: { task: Task; onToggle: (id: string) => void; onDelete: (id: string) => void }) {
@@ -197,6 +198,7 @@ export function TodoList() {
                     <div className="flex flex-col md:flex-row gap-2">
                         <Button type="submit" className="w-full">Añadir Tarea</Button>
                         <AiTaskGenerator />
+                        <VoiceTaskGenerator />
                     </div>
                 </form>
             </CardContent>
@@ -227,4 +229,3 @@ export function TodoList() {
     </div>
   );
 }
-    
