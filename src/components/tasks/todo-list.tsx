@@ -54,18 +54,34 @@ function TaskItem({ task, onToggle }: { task: Task; onToggle: (id: string) => vo
 
 
 export function TodoList() {
-  const { tasks, addTask, toggleTaskCompletion } = useTasks();
+  const { tasks, projects, addTask, toggleTaskCompletion } = useTasks();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskCategory, setNewTaskCategory] = useState<Category>('personal');
   const [newTaskPriority, setNewTaskPriority] = useState<Priority>('media');
+  const [newTaskProjectId, setNewTaskProjectId] = useState<string | undefined>(undefined);
+
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTaskTitle.trim()) {
-      addTask({ title: newTaskTitle, category: newTaskCategory, priority: newTaskPriority });
+      addTask({ 
+        title: newTaskTitle, 
+        category: newTaskCategory, 
+        priority: newTaskPriority,
+        projectId: newTaskCategory === 'proyectos' ? newTaskProjectId : undefined,
+      });
       setNewTaskTitle('');
+      setNewTaskProjectId(undefined);
     }
   };
+  
+  const handleCategoryChange = (value: string) => {
+    const category = value as Category;
+    setNewTaskCategory(category);
+    if (category !== 'proyectos') {
+        setNewTaskProjectId(undefined);
+    }
+  }
 
   const pendingTasks = useMemo(() => tasks.filter(task => !task.completed), [tasks]);
 
@@ -106,20 +122,20 @@ export function TodoList() {
     <div className="space-y-6">
       <div className="z-10 relative">
         <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
-          Mi Lista de Tareas
+          Añadir Nueva Tarea
         </h2>
         <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg">
             <CardContent className="p-6">
-                <form onSubmit={handleAddTask} className="flex flex-col md:flex-row gap-4">
+                <form onSubmit={handleAddTask} className="flex flex-col gap-4">
                     <Input
                         value={newTaskTitle}
                         onChange={(e) => setNewTaskTitle(e.target.value)}
                         placeholder="Añadir una nueva tarea..."
                         className="flex-grow bg-background/50"
                     />
-                    <div className="flex gap-2">
-                        <Select value={newTaskCategory} onValueChange={(v) => setNewTaskCategory(v as Category)}>
-                            <SelectTrigger className="w-full md:w-[130px] capitalize">
+                    <div className="flex flex-col md:flex-row gap-2">
+                        <Select value={newTaskCategory} onValueChange={handleCategoryChange}>
+                            <SelectTrigger className="w-full capitalize">
                                 <SelectValue placeholder="Categoría" />
                             </SelectTrigger>
                             <SelectContent>
@@ -129,8 +145,22 @@ export function TodoList() {
                                 <SelectItem value="proyectos">Proyectos</SelectItem>
                             </SelectContent>
                         </Select>
+                        {newTaskCategory === 'proyectos' && (
+                            <Select value={newTaskProjectId} onValueChange={setNewTaskProjectId}>
+                                <SelectTrigger className="w-full capitalize" disabled={projects.length === 0}>
+                                    <SelectValue placeholder={projects.length === 0 ? "No hay proyectos" : "Asignar Proyecto"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {projects.map(project => (
+                                        <SelectItem key={project.id} value={project.id} className="capitalize">
+                                            {project.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                         <Select value={newTaskPriority} onValueChange={(v) => setNewTaskPriority(v as Priority)}>
-                            <SelectTrigger className="w-full md:w-[120px] capitalize">
+                            <SelectTrigger className="w-full capitalize">
                                 <SelectValue placeholder="Prioridad" />
                             </SelectTrigger>
                             <SelectContent>
@@ -140,29 +170,36 @@ export function TodoList() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button type="submit" className="w-full md:w-auto">Añadir Tarea</Button>
-                     <AiTaskGenerator />
+                    <div className="flex flex-col md:flex-row gap-2">
+                        <Button type="submit" className="w-full">Añadir Tarea</Button>
+                        <AiTaskGenerator />
+                    </div>
                 </form>
             </CardContent>
         </Card>
       </div>
-
-      <Tabs defaultValue="all" className="w-full">
-        <div className="flex justify-start items-center flex-wrap gap-4">
-            <TabsList>
-                 {TABS_WITH_CONTENT.map(tab => (
-                    <TabsTrigger key={tab.value} value={tab.value} className="capitalize">
-                      {tab.label}
-                    </TabsTrigger>
-                  ))}
-            </TabsList>
-        </div>
-        <TabsContent value="all" className="mt-6">{renderTaskList(groupedTasks.all)}</TabsContent>
-        <TabsContent value="estudio" className="mt-6">{renderTaskList(groupedTasks.estudio)}</TabsContent>
-        <TabsContent value="trabajo" className="mt-6">{renderTaskList(groupedTasks.trabajo)}</TabsContent>
-        <TabsContent value="personal" className="mt-6">{renderTaskList(groupedTasks.personal)}</TabsContent>
-        <TabsContent value="proyectos" className="mt-6">{renderTaskList(groupedTasks.proyectos)}</TabsContent>
-      </Tabs>
+      
+      <div>
+        <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
+          Mi Lista de Tareas
+        </h2>
+        <Tabs defaultValue="all" className="w-full">
+            <div className="flex justify-start items-center flex-wrap gap-4">
+                <TabsList>
+                    {TABS_WITH_CONTENT.map(tab => (
+                        <TabsTrigger key={tab.value} value={tab.value} className="capitalize">
+                        {tab.label}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+            </div>
+            <TabsContent value="all" className="mt-6">{renderTaskList(groupedTasks.all)}</TabsContent>
+            <TabsContent value="estudio" className="mt-6">{renderTaskList(groupedTasks.estudio)}</TabsContent>
+            <TabsContent value="trabajo" className="mt-6">{renderTaskList(groupedTasks.trabajo)}</TabsContent>
+            <TabsContent value="personal" className="mt-6">{renderTaskList(groupedTasks.personal)}</TabsContent>
+            <TabsContent value="proyectos" className="mt-6">{renderTaskList(groupedTasks.proyectos)}</TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
