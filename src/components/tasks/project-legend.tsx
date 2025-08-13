@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Plus, Palette, Trash2, Settings, ShieldAlert, Edit } from 'lucide-react';
+import { Plus, Palette, Trash2, Settings, ShieldAlert, Edit, X } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Textarea } from '../ui/textarea';
@@ -131,7 +131,7 @@ function ProjectEditDialog({ projectId, currentName, currentDescription, onOpenC
 }
 
 
-export function ProjectLegend() {
+export function ProjectLegend({ onProjectSelect, selectedProjectId }: { onProjectSelect: (projectId: string | null) => void, selectedProjectId: string | null }) {
   const { projects, addProject, deleteProject } = useTasks();
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectColor, setNewProjectColor] = useState(colorPalette[0]);
@@ -155,16 +155,28 @@ export function ProjectLegend() {
       <h3 className="text-sm font-semibold text-muted-foreground uppercase">Proyectos:</h3>
       {projects.length > 0 ? (
         projects.map((project) => (
-          <div key={project.id} className="flex items-center gap-2">
+          <Button
+            key={project.id}
+            variant={selectedProjectId === project.id ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => onProjectSelect(project.id)}
+            className="flex items-center gap-2 capitalize"
+          >
             <span
               className="h-4 w-4 rounded-full"
               style={{ backgroundColor: project.color }}
             />
-            <span className="text-sm font-medium capitalize">{project.name}</span>
-          </div>
+            {project.name}
+          </Button>
         ))
       ) : (
         <p className="text-sm text-muted-foreground">No hay proyectos. Añade uno para empezar.</p>
+      )}
+      {selectedProjectId && (
+          <Button variant="ghost" size="sm" onClick={() => onProjectSelect(null)}>
+              <X className="h-4 w-4 mr-2" />
+              Mostrar Todos
+          </Button>
       )}
       <div className="flex gap-2 ml-auto">
         <Popover open={isAddPopoverOpen} onOpenChange={setIsAddPopoverOpen}>

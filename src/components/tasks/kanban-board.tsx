@@ -5,13 +5,16 @@ import { useTasks } from '@/contexts/task-context';
 import type { KanbanStatus, Task } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProjectLegend } from './project-legend';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Edit } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { TaskEditDialog } from './task-edit-dialog';
+
 
 const columns: KanbanStatus[] = ['Pendiente', 'En Progreso', 'Hecho', 'Finalizado', 'Cancelado'];
 const statusToColor: Record<KanbanStatus, string> = {
@@ -22,7 +25,7 @@ const statusToColor: Record<KanbanStatus, string> = {
   'Cancelado': 'bg-red-500'
 }
 
-function KanbanCard({ task }: { task: Task }) {
+function KanbanCard({ task, onEdit }: { task: Task, onEdit: (task: Task) => void }) {
   const { getProjectById, updateTaskStatus } = useTasks();
   const project = task.projectId ? getProjectById(task.projectId) : undefined;
 
@@ -39,12 +42,16 @@ function KanbanCard({ task }: { task: Task }) {
     >
       <CardContent className="p-0">
         <div className="flex justify-between items-start">
-            <p className="font-medium text-sm mb-2">{task.title}</p>
+            <p className="font-medium text-sm mb-2 mr-2">{task.title}</p>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className="text-muted-foreground hover:text-foreground"><MoreHorizontal size={16} /></button>
+                    <button className="flex-shrink-0 text-muted-foreground hover:text-foreground"><MoreHorizontal size={16} /></button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => onEdit(task)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Editar Tarea
+                    </DropdownMenuItem>
                     {columns.filter(c => c !== task.status).map(status => (
                         <DropdownMenuItem key={status} onClick={() => updateTaskStatus(task.id, status)}>
                             Mover a {status}
@@ -59,7 +66,7 @@ function KanbanCard({ task }: { task: Task }) {
   );
 }
 
-function KanbanColumn({ status, tasks }: { status: KanbanStatus; tasks: Task[] }) {
+function KanbanColumn({ status, tasks, onEdit }: { status: KanbanStatus; tasks: Task[]; onEdit: (task: Task) => void }) {
   const { updateTaskStatus } = useTasks();
   const [isOver, setIsOver] = useState(false);
 
@@ -95,7 +102,7 @@ function KanbanColumn({ status, tasks }: { status: KanbanStatus; tasks: Task[] }
       </div>
       <div className="space-y-4 min-h-[200px] p-1">
         {tasks.map((task) => (
-          <KanbanCard key={task.id} task={task} />
+          <KanbanCard key={task.id} task={task} onEdit={onEdit} />
         ))}
       </div>
     </div>
@@ -104,22 +111,44 @@ function KanbanColumn({ status, tasks }: { status: KanbanStatus; tasks: Task[] }
 
 export function KanbanBoard() {
   const { tasks } = useTasks();
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  const filteredTasks = useMemo(() => {
+    if (!selectedProjectId) return tasks;
+    return tasks.filter(task => task.projectId === selectedProjectId);
+  }, [tasks, selectedProjectId]);
 
   const groupedTasks = useMemo(() => {
     return columns.reduce((acc, status) => {
-      acc[status] = tasks.filter((task) => task.status === status);
+      acc[status] = filteredTasks.filter((task) => task.status === status);
       return acc;
     }, {} as Record<KanbanStatus, Task[]>);
-  }, [tasks]);
+  }, [filteredTasks]);
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+  };
+
+  const closeEditDialog = () => {
+    setEditingTask(null);
+  };
 
   return (
     <div className="space-y-6">
-        <ProjectLegend />
+        <ProjectLegend onProjectSelect={setSelectedProjectId} selectedProjectId={selectedProjectId} />
         <div className="flex gap-6 pb-4 overflow-x-auto">
             {columns.map((status) => (
-                <KanbanColumn key={status} status={status} tasks={groupedTasks[status] || []} />
+                <KanbanColumn key={status} status={status} tasks={groupedTasks[status] || []} onEdit={handleEditTask} />
             ))}
         </div>
+        {editingTask && (
+            <TaskEditDialog
+                isOpen={!!editingTask}
+                onOpenChange={(open) => !open && closeEditDialog()}
+                task={editingTask}
+            />
+        )}
     </div>
   );
 }

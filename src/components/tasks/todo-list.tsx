@@ -11,12 +11,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AiTaskGenerator } from './ai-task-generator';
 import type { Category, Priority, Task } from '@/lib/types';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Edit } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { VoiceTaskGenerator } from './voice-task-generator';
+import { TaskEditDialog } from './task-edit-dialog';
 
 
-function TaskItem({ task, onToggle, onDelete }: { task: Task; onToggle: (id: string) => void; onDelete: (id: string) => void }) {
+function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: (id: string) => void; onDelete: (id: string) => void; onEdit: (task: Task) => void; }) {
   const [isCompleted, setIsCompleted] = useState(false);
 
   const handleToggle = () => {
@@ -52,27 +53,32 @@ function TaskItem({ task, onToggle, onDelete }: { task: Task; onToggle: (id: str
         </label>
       </div>
       <Badge variant="outline" className="capitalize">{task.category}</Badge>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Confirmas la eliminación?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. La tarea será eliminada permanentemente de la base de datos.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => onDelete(task.id)} className="bg-destructive hover:bg-destructive/90">
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={() => onEdit(task)}>
+            <Edit className="w-4 h-4" />
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Confirmas la eliminación?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acción no se puede deshacer. La tarea será eliminada permanentemente de la base de datos.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onDelete(task.id)} className="bg-destructive hover:bg-destructive/90">
+                Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }
@@ -84,7 +90,7 @@ export function TodoList() {
   const [newTaskCategory, setNewTaskCategory] = useState<Category>('personal');
   const [newTaskPriority, setNewTaskPriority] = useState<Priority>('media');
   const [newTaskProjectId, setNewTaskProjectId] = useState<string | undefined>(undefined);
-
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,6 +132,14 @@ export function TodoList() {
     };
   }, [pendingTasks]);
 
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+  };
+
+  const closeEditDialog = () => {
+    setEditingTask(null);
+  };
+
   const renderTaskList = (tasksToRender: Task[]) => {
     if (tasksToRender.length === 0) {
       return <p className="text-muted-foreground text-center py-8">No hay tareas pendientes en esta categoría.</p>;
@@ -133,7 +147,7 @@ export function TodoList() {
     return (
       <div className="space-y-4">
         {tasksToRender.map(task => (
-          <TaskItem key={task.id} task={task} onToggle={toggleTaskCompletion} onDelete={deleteTask} />
+          <TaskItem key={task.id} task={task} onToggle={toggleTaskCompletion} onDelete={deleteTask} onEdit={handleEditTask} />
         ))}
       </div>
     );
@@ -231,6 +245,13 @@ export function TodoList() {
             <TabsContent value="proyectos" className="mt-6">{renderTaskList(groupedTasks.proyectos)}</TabsContent>
         </Tabs>
       </div>
+      {editingTask && (
+        <TaskEditDialog
+            isOpen={!!editingTask}
+            onOpenChange={(open) => !open && closeEditDialog()}
+            task={editingTask}
+        />
+      )}
     </div>
   );
 }

@@ -7,18 +7,16 @@ import {
   getFirestore, 
   collection, 
   doc, 
-  getDocs, 
   writeBatch,
   setDoc,
   deleteDoc,
   Timestamp,
-  getDoc,
   runTransaction,
   updateDoc,
   onSnapshot,
+  getDocsFromCache,
   enableNetwork,
-  disableNetwork,
-  getDocsFromCache
+  disableNetwork
 } from "firebase/firestore";
 
 interface TaskContextType {
@@ -29,6 +27,7 @@ interface TaskContextType {
   isLoaded: boolean;
   addTask: (task: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'>) => void;
   deleteTask: (taskId: string) => void;
+  updateTask: (taskId: string, data: Partial<Omit<Task, 'id' | 'completed'>>) => void;
   toggleTaskCompletion: (taskId: string) => void;
   updateTaskStatus: (taskId: string, status: KanbanStatus) => void;
   getProjectById: (projectId: string) => Project | undefined;
@@ -115,45 +114,39 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         let unsubscribeTasks: () => void = () => {};
         let unsubscribeProjects: () => void = () => {};
     
-        const setupListeners = () => {
-            unsubscribeTasks = onSnapshot(tasksCollection, (snapshot) => {
-                const tasksData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, completedAt: doc.data().completedAt ? (doc.data().completedAt as Timestamp).toDate() : null }) as Task);
-                setTasks(tasksData);
-                if (!snapshot.metadata.fromCache) {
-                    // console.log("Tasks updated from server.");
-                }
-            }, (error) => {
-                console.error("Error listening to tasks:", error);
-            });
-    
-            unsubscribeProjects = onSnapshot(projectsCollection, (snapshot) => {
-                const projectsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
-                setProjects(projectsData);
-            }, (error) => {
-                console.error("Error listening to projects:", error);
-            });
-        };
-    
         const loadInitialData = async () => {
             try {
                 // Prioritize cache for instant load
                 const tasksCache = await getDocsFromCache(tasksCollection);
-                const projectsCache = await getDocsFromCache(projectsCollection);
-    
-                if (!tasksCache.empty || !projectsCache.empty) {
+                if (!tasksCache.empty) {
                     const tasksData = tasksCache.docs.map(doc => ({ ...doc.data(), id: doc.id, completedAt: doc.data().completedAt ? (doc.data().completedAt as Timestamp).toDate() : null }) as Task);
-                    const projectsData = projectsCache.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
                     setTasks(tasksData);
+                }
+                const projectsCache = await getDocsFromCache(projectsCollection);
+                 if (!projectsCache.empty) {
+                    const projectsData = projectsCache.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
                     setProjects(projectsData);
                 }
             } catch (error) {
                 console.log("Cache miss or error, will rely on listeners.", error);
             } finally {
+                // Fetch daily tasks and set up listeners regardless
                 await fetchDailyTasks();
                 setIsLoaded(true);
-                // After loading from cache (or not), set up realtime listeners
-                // for subsequent updates.
-                setupListeners();
+
+                unsubscribeTasks = onSnapshot(tasksCollection, (snapshot) => {
+                    const tasksData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, completedAt: doc.data().completedAt ? (doc.data().completedAt as Timestamp).toDate() : null }) as Task);
+                    setTasks(tasksData);
+                }, (error) => {
+                    console.error("Error listening to tasks:", error);
+                });
+        
+                unsubscribeProjects = onSnapshot(projectsCollection, (snapshot) => {
+                    const projectsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
+                    setProjects(projectsData);
+                }, (error) => {
+                    console.error("Error listening to projects:", error);
+                });
             }
         };
     
@@ -168,7 +161,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const addTask = async (task: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'>) => {
     const newTaskId = `task-${Date.now()}`;
     
-    const taskPayload: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'> = {
+    const taskPayload: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'projectId'> & { projectId?: string } = {
         title: task.title,
         category: task.category,
         priority: task.priority,
@@ -190,7 +183,10 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     setTasks((prev) => [newTask, ...prev]);
 
     try {
-        const taskDataForFirestore = { ...taskPayload, completed: false, status: 'Pendiente', completedAt: null };
+        const { id, ...taskDataForFirestore } = newTask;
+        if(taskDataForFirestore.projectId === undefined) {
+          delete (taskDataForFirestore as Partial<Task>).projectId;
+        }
         await setDoc(doc(db, 'tasks', newTaskId), taskDataForFirestore);
     } catch (error) {
         console.error("Error adding task: ", error);
@@ -209,6 +205,22 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         console.error("Error deleting task: ", error);
         // Revert
         setTasks(originalTasks);
+    }
+  };
+
+  const updateTask = async (taskId: string, data: Partial<Omit<Task, 'id'>>) => {
+    const originalTasks = [...tasks];
+    setTasks((prev) =>
+      prev.map((task) => (task.id === taskId ? { ...task, ...data } : task))
+    );
+  
+    try {
+      const taskRef = doc(db, 'tasks', taskId);
+      await updateDoc(taskRef, data);
+    } catch (error) {
+      console.error('Error updating task: ', error);
+      // Revert on error
+      setTasks(originalTasks);
     }
   };
 
@@ -261,7 +273,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             status: 'Pendiente',
         };
         if (taskDataForFirestore.projectId === undefined) {
-          delete taskDataForFirestore.projectId;
+          delete (taskDataForFirestore as Partial<Task>).projectId;
         }
 
         const newTask: Task = {
@@ -474,7 +486,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, addTask, deleteTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, addVoiceTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks }}>
+    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, addTask, deleteTask, updateTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, addVoiceTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks }}>
       {children}
     </TaskContext.Provider>
   );
