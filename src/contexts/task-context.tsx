@@ -112,57 +112,74 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }, [customDailyTasks]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Try to get data from cache first for a fast startup
-                const [tasksCache, projectsCache] = await Promise.all([
-                    getDocsFromCache(tasksCollection),
-                    getDocsFromCache(projectsCollection)
-                ]);
-
-                if (!tasksCache.empty || !projectsCache.empty) {
-                    const tasksData = tasksCache.docs.map(doc => ({ ...doc.data(), id: doc.id, completedAt: doc.data().completedAt ? (doc.data().completedAt as Timestamp).toDate() : null }) as Task);
-                    const projectsData = projectsCache.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
-                    setTasks(tasksData);
-                    setProjects(projectsData);
-                    await fetchDailyTasks();
-                    setIsLoaded(true);
-                }
-            } catch (error) {
-                console.log("No data in cache, will fetch from server.", error);
-            }
-
-            // Set up listeners for real-time updates from server (will also work offline)
-            const unsubscribeTasks = onSnapshot(tasksCollection, (snapshot) => {
+        let unsubscribeTasks: () => void = () => {};
+        let unsubscribeProjects: () => void = () => {};
+    
+        const setupListeners = () => {
+            unsubscribeTasks = onSnapshot(tasksCollection, (snapshot) => {
                 const tasksData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, completedAt: doc.data().completedAt ? (doc.data().completedAt as Timestamp).toDate() : null }) as Task);
                 setTasks(tasksData);
-                if (!isLoaded) fetchDailyTasks(); // ensure daily tasks are loaded after first data fetch
-                setIsLoaded(true);
+                if (!snapshot.metadata.fromCache) {
+                    // console.log("Tasks updated from server.");
+                }
             }, (error) => {
                 console.error("Error listening to tasks:", error);
-                setIsLoaded(true); // Mark as loaded even on error to unblock UI
             });
-
-            const unsubscribeProjects = onSnapshot(projectsCollection, (snapshot) => {
+    
+            unsubscribeProjects = onSnapshot(projectsCollection, (snapshot) => {
                 const projectsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
                 setProjects(projectsData);
             }, (error) => {
                 console.error("Error listening to projects:", error);
             });
-            
-            return () => {
-                unsubscribeTasks();
-                unsubscribeProjects();
-            };
         };
-
-        fetchData();
-    }, [fetchDailyTasks, isLoaded]);
+    
+        const loadInitialData = async () => {
+            try {
+                // Prioritize cache for instant load
+                const tasksCache = await getDocsFromCache(tasksCollection);
+                const projectsCache = await getDocsFromCache(projectsCollection);
+    
+                if (!tasksCache.empty || !projectsCache.empty) {
+                    const tasksData = tasksCache.docs.map(doc => ({ ...doc.data(), id: doc.id, completedAt: doc.data().completedAt ? (doc.data().completedAt as Timestamp).toDate() : null }) as Task);
+                    const projectsData = projectsCache.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
+                    setTasks(tasksData);
+                    setProjects(projectsData);
+                }
+            } catch (error) {
+                console.log("Cache miss or error, will rely on listeners.", error);
+            } finally {
+                await fetchDailyTasks();
+                setIsLoaded(true);
+                // After loading from cache (or not), set up realtime listeners
+                // for subsequent updates.
+                setupListeners();
+            }
+        };
+    
+        loadInitialData();
+    
+        return () => {
+            unsubscribeTasks();
+            unsubscribeProjects();
+        };
+    }, [fetchDailyTasks]);
 
   const addTask = async (task: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'>) => {
     const newTaskId = `task-${Date.now()}`;
+    
+    const taskPayload: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'> = {
+        title: task.title,
+        category: task.category,
+        priority: task.priority,
+      };
+
+    if (task.category === 'proyectos' && task.projectId) {
+        taskPayload.projectId = task.projectId;
+    }
+
     const newTask: Task = {
-      ...task,
+      ...taskPayload,
       id: newTaskId,
       completed: false,
       status: 'Pendiente',
@@ -173,10 +190,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     setTasks((prev) => [newTask, ...prev]);
 
     try {
-        const taskDataForFirestore = { ...task, completed: false, status: 'Pendiente', completedAt: null };
-        if (taskDataForFirestore.projectId === undefined) {
-          delete taskDataForFirestore.projectId;
-        }
+        const taskDataForFirestore = { ...taskPayload, completed: false, status: 'Pendiente', completedAt: null };
         await setDoc(doc(db, 'tasks', newTaskId), taskDataForFirestore);
     } catch (error) {
         console.error("Error adding task: ", error);
