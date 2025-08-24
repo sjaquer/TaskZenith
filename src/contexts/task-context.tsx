@@ -1,6 +1,6 @@
 'use client';
 
-import { type Task, type Project, type KanbanStatus, type Category, type Priority, type DailyTask, type CustomDailyTask } from '@/lib/types';
+import { type Task, type Project, type KanbanStatus, type Category, type Priority, type DailyTask, type CustomDailyTask, type OrganizedTasks } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { firebaseApp } from '@/lib/firebase';
 import { 
@@ -40,6 +40,7 @@ interface TaskContextType {
   clearAllData: () => void;
   toggleDailyTask: (taskId: string) => void;
   updateCustomDailyTasks: (tasks: CustomDailyTask[]) => void;
+  applyOrganizedTasks: (organizedTasks: OrganizedTasks) => Promise<void>;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -160,13 +161,13 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       };
   }, [fetchDailyTasks]);
 
-  const addTask = async (task: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'>) => {
+  const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'>>) => {
     const newTaskId = `task-${Date.now()}`;
     
-    const taskPayload: Partial<Task> = {
-        title: task.title,
-        category: task.category,
-        priority: task.priority,
+    const taskPayload: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'> = {
+        title: task.title!,
+        category: task.category!,
+        priority: task.priority!,
     };
 
     if (task.category === 'proyectos' && task.projectId) {
@@ -186,7 +187,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     try {
         const { id, ...taskDataForFirestore } = newTask;
-        const dataToSend: Omit<Task, 'id'> = { ...taskDataForFirestore };
+        const dataToSend: Partial<Omit<Task, 'id'>> = { ...taskDataForFirestore };
         if (dataToSend.projectId === undefined) {
           delete dataToSend.projectId;
         }
@@ -491,10 +492,60 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       setCustomDailyTasks(originalCustomTasks);
     }
   };
+  
+  const applyOrganizedTasks = async (organizedTasks: OrganizedTasks) => {
+    const { updatedTasks, newTasks, deletedTaskIds } = organizedTasks;
+    const originalTasks = [...tasks];
+
+    // Optimistic update
+    let tempTasks = [...tasks];
+    // Delete tasks
+    tempTasks = tempTasks.filter(t => !deletedTaskIds.includes(t.id));
+    // Update tasks
+    tempTasks = tempTasks.map(t => {
+        const found = updatedTasks.find(ut => ut.id === t.id);
+        return found ? { ...t, ...found } : t;
+    });
+    // Add new tasks
+    const tasksToAdd = newTasks.map((nt, i) => ({
+      id: `new-organized-${Date.now()}-${i}`,
+      ...nt,
+      completed: false,
+      status: 'Pendiente',
+    } as Task));
+
+    setTasks([...tempTasks, ...tasksToAdd]);
+
+    // Firestore batch write
+    try {
+      const batch = writeBatch(db);
+
+      deletedTaskIds.forEach(id => {
+          batch.delete(doc(db, 'tasks', id));
+      });
+
+      updatedTasks.forEach(task => {
+          const { id, ...data } = task;
+          batch.update(doc(db, 'tasks', id), data);
+      });
+
+      tasksToAdd.forEach(task => {
+          const { id, ...data } = task;
+          batch.set(doc(db, 'tasks', id), data);
+      });
+
+      await batch.commit();
+
+    } catch (error) {
+      console.error("Error applying organized tasks:", error);
+      setTasks(originalTasks); // Revert on error
+      throw error;
+    }
+  }
 
 
   return (
-    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, addTask, deleteTask, updateTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, addVoiceTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks }}>
+    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, addTask, deleteTask, updateTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, addVoiceTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks, applyOrganizedTasks }}>
       {children}
     </TaskContext.Provider>
   );

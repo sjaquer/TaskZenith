@@ -28,3 +28,24 @@ export interface CustomDailyTask {
 export interface DailyTask extends CustomDailyTask {
   completed: boolean;
 }
+
+
+// Types for AI Task Organizer
+export interface OrganizedTaskUpdate {
+  id: string;
+  title?: string;
+  priority?: Priority;
+}
+
+export interface OrganizedTaskNew {
+  title: string;
+  priority: Priority;
+  category: Category;
+  projectId?: string;
+}
+
+export interface OrganizedTasks {
+  updatedTasks: OrganizedTaskUpdate[];
+  newTasks: OrganizedTaskNew[];
+  deletedTaskIds: string[];
+}

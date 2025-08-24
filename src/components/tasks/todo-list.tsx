@@ -15,6 +15,7 @@ import { Trash2, Edit } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { VoiceTaskGenerator } from './voice-task-generator';
 import { TaskEditDialog } from './task-edit-dialog';
+import { AiTaskOptimizer } from './ai-task-optimizer';
 
 
 function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: (id: string) => void; onDelete: (id: string) => void; onEdit: (task: Task) => void; }) {
@@ -95,7 +96,7 @@ export function TodoList() {
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTaskTitle.trim()) {
-      const taskPayload: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'> = {
+      const taskPayload: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'>> = {
         title: newTaskTitle,
         category: newTaskCategory,
         priority: newTaskPriority,
@@ -225,9 +226,12 @@ export function TodoList() {
       </div>
       
       <div>
-        <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
-          Mi Lista de Tareas
-        </h2>
+        <div className="flex justify-between items-center flex-wrap gap-4 mb-4">
+          <h2 className="text-2xl font-bold tracking-tight uppercase text-primary/80">
+            Mi Lista de Tareas
+          </h2>
+          <AiTaskOptimizer />
+        </div>
         <Tabs defaultValue="all" className="w-full">
             <div className="flex justify-start items-center flex-wrap gap-4">
                 <TabsList>

@@ -2,6 +2,7 @@
 
 import { generateTasks, type GenerateTasksInput } from '@/ai/flows/generate-tasks';
 import { processVoiceCommand, type ProcessVoiceCommandInput } from '@/ai/flows/process-voice-command';
+import { organizeTasks, type OrganizeTasksInput, type OrganizeTasksOutput } from '@/ai/flows/organize-tasks';
 import { z } from 'zod';
 
 const generateTasksSchema = z.object({
@@ -52,4 +53,14 @@ export async function processVoiceCommandAction(input: ProcessVoiceCommandInput)
         console.error(error);
         return { error: 'Error al procesar el comando de voz.' };
     }
+}
+
+export async function organizeTasksAction(input: OrganizeTasksInput): Promise<OrganizeTasksOutput | { error: string }> {
+  try {
+    const result = await organizeTasks(input);
+    return result;
+  } catch (error) {
+    console.error(error);
+    return { error: 'Error al organizar las tareas.' };
+  }
 }
