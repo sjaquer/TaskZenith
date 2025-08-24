@@ -48,34 +48,34 @@ export default function DashboardPage() {
           <div className="flex justify-end mb-4">
              <SyncButton />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div className="lg:col-span-2 xl:col-span-3">
+            <div className="lg:col-span-2">
               <h2 className="text-2xl font-bold tracking-tight mb-4 uppercase text-primary/80">
                 Panel Principal
               </h2>
               <DailyDashboard />
             </div>
 
-            <div className="lg:col-span-2 xl:col-span-2">
+            <div className="lg:col-span-1">
               <h2 className="text-2xl font-bold tracking-tight mb-4 uppercase text-primary/80">
                 Tareas Diarias
               </h2>
               <DailyTodoList />
             </div>
 
-            <div className="md:col-span-2 lg:col-span-4 xl:col-span-5">
+            <div className="lg:col-span-3">
               <TodoList />
             </div>
             
-            <div className="md:col-span-2 lg:col-span-4 xl:col-span-3">
+            <div className="lg:col-span-3">
                <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
                 Tablero Kanban
               </h2>
               <KanbanBoard />
             </div>
             
-            <div className="md:col-span-2 lg:col-span-4 xl:col-span-2">
+            <div className="lg:col-span-3">
                <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
                 Historial de Tareas
               </h2>

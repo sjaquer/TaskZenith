@@ -93,7 +93,7 @@ function KanbanColumn({ status, tasks, onEdit }: { status: KanbanStatus; tasks: 
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`flex-1 min-w-[300px] rounded-lg p-3 transition-colors ${isOver ? 'bg-primary/20' : 'bg-secondary/30'}`}
+      className={`flex-1 min-w-[280px] sm:min-w-[300px] rounded-lg p-3 transition-colors ${isOver ? 'bg-primary/20' : 'bg-secondary/30'}`}
     >
       <div className="flex items-center gap-3 p-2 mb-4">
         <span className={`w-3 h-3 rounded-full ${statusToColor[status]}`}></span>

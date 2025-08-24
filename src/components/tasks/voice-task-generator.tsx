@@ -175,7 +175,7 @@ export function VoiceTaskGenerator() {
          <Button
           variant="default"
           size="lg"
-          className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg z-20"
+          className="fixed bottom-6 right-4 sm:right-6 h-16 w-16 rounded-full shadow-lg z-20"
         >
           <Mic className="h-8 w-8" />
           <span className="sr-only">Crear por Voz</span>
