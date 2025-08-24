@@ -21,9 +21,13 @@ import {
   KanbanSquare,
   History,
   Bot,
+  RefreshCw,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Separator } from '../ui/separator';
+import { useTasks } from '@/contexts/task-context';
+import { Button } from '../ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const menuItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -34,6 +38,25 @@ const menuItems = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { syncData, isSyncing } = useTasks();
+  const { toast } = useToast();
+
+  const handleSync = async () => {
+    try {
+      await syncData();
+      toast({
+        title: '¡Sincronizado!',
+        description: 'Tus datos están actualizados.',
+        className: 'bg-primary text-primary-foreground',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error de Sincronización',
+        description: 'No se pudieron obtener los datos más recientes.',
+      });
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -78,7 +101,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <SidebarInset>
         <header className="flex items-center justify-between p-4 border-b md:justify-end">
           <SidebarTrigger className="md:hidden" />
-          {/* Header content can go here */}
+          <Button onClick={handleSync} disabled={isSyncing} variant="outline" size="sm">
+            <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
+          </Button>
         </header>
         {children}
       </SidebarInset>
