@@ -64,7 +64,7 @@ export function TaskHistory() {
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg h-full">
-      <CardHeader className="flex flex-row justify-between items-center">
+      <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <CardTitle className="text-lg font-semibold uppercase tracking-wider">Tareas Completadas (Últimos 15 días)</CardTitle>
         <ClearCompletedTasksButton />
       </CardHeader>
