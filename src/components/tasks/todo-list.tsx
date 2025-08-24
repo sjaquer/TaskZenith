@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AiTaskGenerator } from './ai-task-generator';
 import type { Category, Priority, Task } from '@/lib/types';
-import { Trash2, Edit } from 'lucide-react';
+import { Trash2, Edit, CheckCircle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { VoiceTaskGenerator } from './voice-task-generator';
 import { TaskEditDialog } from './task-edit-dialog';
@@ -83,6 +83,37 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
     </div>
   );
 }
+
+function ClearCompletedTasksButton() {
+    const { tasks, deleteCompletedTasks } = useTasks();
+    const completedCount = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
+  
+    if (completedCount === 0) return null;
+  
+    return (
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="destructive" size="sm">
+            <Trash2 className="mr-2 h-4 w-4" /> Limpiar {completedCount} Tarea(s) Completada(s)
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Confirmas la limpieza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminarán permanentemente todas tus tareas completadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteCompletedTasks} className="bg-destructive hover:bg-destructive/90">
+              Sí, eliminar completadas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+  }
 
 
 export function TodoList() {
@@ -230,7 +261,10 @@ export function TodoList() {
           <h2 className="text-2xl font-bold tracking-tight uppercase text-primary/80">
             Mi Lista de Tareas
           </h2>
-          <AiTaskOptimizer />
+          <div className="flex items-center gap-2">
+            <AiTaskOptimizer />
+            <ClearCompletedTasksButton />
+          </div>
         </div>
         <Tabs defaultValue="all" className="w-full">
             <div className="flex justify-start items-center flex-wrap gap-4">

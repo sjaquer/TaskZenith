@@ -26,7 +26,7 @@ interface TaskContextType {
   dailyTasks: DailyTask[];
   customDailyTasks: CustomDailyTask[];
   isLoaded: boolean;
-  addTask: (task: Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'>) => void;
+  addTask: (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'>>) => void;
   deleteTask: (taskId: string) => void;
   updateTask: (taskId: string, data: Partial<Omit<Task, 'id' | 'completed'>>) => void;
   toggleTaskCompletion: (taskId: string) => void;
@@ -41,6 +41,7 @@ interface TaskContextType {
   toggleDailyTask: (taskId: string) => void;
   updateCustomDailyTasks: (tasks: CustomDailyTask[]) => void;
   applyOrganizedTasks: (organizedTasks: OrganizedTasks) => Promise<void>;
+  deleteCompletedTasks: () => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -209,6 +210,29 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
         console.error("Error deleting task: ", error);
         // Revert
+        setTasks(originalTasks);
+    }
+  };
+
+  const deleteCompletedTasks = async () => {
+    const completedTasks = tasks.filter(t => t.completed);
+    if (completedTasks.length === 0) return;
+
+    const originalTasks = [...tasks];
+    const tasksToKeep = tasks.filter(t => !t.completed);
+
+    // Optimistic update
+    setTasks(tasksToKeep);
+
+    try {
+        const batch = writeBatch(db);
+        completedTasks.forEach(task => {
+            batch.delete(doc(db, 'tasks', task.id));
+        });
+        await batch.commit();
+    } catch (error) {
+        console.error("Error deleting completed tasks: ", error);
+        // Revert on error
         setTasks(originalTasks);
     }
   };
@@ -545,7 +569,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, addTask, deleteTask, updateTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, addVoiceTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks, applyOrganizedTasks }}>
+    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, addTask, deleteTask, updateTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, addVoiceTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks, applyOrganizedTasks, deleteCompletedTasks }}>
       {children}
     </TaskContext.Provider>
   );
