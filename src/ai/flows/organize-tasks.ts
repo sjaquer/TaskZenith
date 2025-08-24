@@ -9,8 +9,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import type { OrganizedTasks } from '@/lib/types';
-
 
 // Define input schemas here to ensure they are available for the 'use server' file.
 const TaskInputSchema = z.object({
@@ -71,14 +69,18 @@ Aquí está la lista de tareas actual:
 Sigue estas reglas para optimizar la lista:
 1.  **Reescribir para Claridad:** Revisa cada título. Si un título es vago o poco claro, reescríbelo para que sea una acción específica. Por ejemplo, "Informe" debería ser "Redactar el primer borrador del informe trimestral". Si el título ya es bueno, no lo cambies.
 2.  **Ajustar Prioridades:** Evalúa la prioridad de cada tarea basándote en palabras clave como "urgente", "importante", "cuanto antes" (alta), o "si hay tiempo", "luego" (baja). Si no hay indicación, usa tu juicio. Una tarea como "Pagar la factura de la luz" probablemente tiene una prioridad más alta que "Ver nueva serie".
-3.  **Fusionar Tareas Similares:** Busca tareas que sean duplicadas o que puedan combinarse. Por ejemplo, "Comprar leche" y "Comprar pan" se pueden fusionar en "Hacer la compra (leche, pan)". Si fusionas tareas, crea una nueva tarea en 'newTasks' y añade los IDs de las tareas originales a 'deletedTaskIds'. La categoría de la nueva tarea debe ser la misma que la de las originales (si coinciden) o 'personal' si son de diferentes categorías.
+3.  **Fusionar Tareas Similares (IMPORTANTE):** Busca tareas que sean duplicadas o que puedan combinarse.
+    - **Regla de Fusión Clave:** Solo puedes fusionar tareas si pertenecen a la **misma categoría**.
+    - Si la categoría es 'proyectos', solo puedes fusionar tareas que pertenezcan al **mismo projectId**.
+    - Ejemplo: "Comprar leche" y "Comprar pan" (ambas categoría 'personal') se pueden fusionar en "Hacer la compra (leche, pan)".
+    - Si fusionas tareas, crea una nueva tarea en 'newTasks' y añade los IDs de las tareas originales a 'deletedTaskIds'.
 4.  **Eliminar Redundancias:** Si una tarea es claramente un duplicado completo de otra o es irrelevante, añádela a 'deletedTaskIds'. No elimines tareas a menos que estés muy seguro.
 5.  **Estructura de Salida:**
     - Para tareas que solo necesitan un cambio de título o prioridad, añádelas a 'updatedTasks' con su ID original.
     - Para tareas fusionadas, crea una nueva en 'newTasks' y lista los IDs originales en 'deletedTaskIds'.
     - Para tareas que simplemente se eliminan, solo añade su ID a 'deletedTaskIds'.
 
-Analiza la lista y devuelve un objeto JSON con las optimizaciones. Si no hay nada que cambiar, devuelve un objeto vacío.`,
+Analiza la lista y devuelve un objeto JSON con las optimizaciones. Si no hay nada que cambiar, devuelve un objeto con los tres arrays vacíos.`,
 });
 
 const organizeTasksFlow = ai.defineFlow(
