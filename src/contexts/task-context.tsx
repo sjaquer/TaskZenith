@@ -15,6 +15,9 @@ import {
   updateDoc,
   onSnapshot,
   getDocsFromCache,
+  getDocs,
+  query,
+  where,
 } from "firebase/firestore";
 
 interface TaskContextType {
@@ -183,7 +186,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     try {
         const { id, ...taskDataForFirestore } = newTask;
-        const dataToSend: Partial<Task> = { ...taskDataForFirestore };
+        const dataToSend: Omit<Task, 'id'> = { ...taskDataForFirestore };
         if (dataToSend.projectId === undefined) {
           delete dataToSend.projectId;
         }
@@ -399,23 +402,27 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const originalProjects = projects;
     const originalTasks = tasks;
      
+    const tasksToDelete = tasks.filter(t => t.projectId === projectId);
+    const tasksToKeep = tasks.filter(t => t.projectId !== projectId);
+    const projectsToKeep = projects.filter(p => p.id !== projectId);
+    
     // Optimistic Update
-    setProjects(prev => prev.filter(p => p.id !== projectId));
-    setTasks(prev => prev.map(t => t.projectId === projectId ? { ...t, projectId: undefined } : t));
+    setProjects(projectsToKeep);
+    setTasks(tasksToKeep);
     
     try {
         const batch = writeBatch(db);
+        // Delete the project
         batch.delete(doc(db, 'projects', projectId));
         
-        tasks.forEach(t => {
-            if (t.projectId === projectId) {
-                const taskRef = doc(db, 'tasks', t.id);
-                batch.update(taskRef, { projectId: undefined });
-            }
+        // Delete associated tasks
+        tasksToDelete.forEach(t => {
+            const taskRef = doc(db, 'tasks', t.id);
+            batch.delete(taskRef);
         });
         await batch.commit();
     } catch(error) {
-        console.error("Error deleting project: ", error);
+        console.error("Error deleting project and its tasks: ", error);
         // Revert
         setProjects(originalProjects);
         setTasks(originalTasks);
