@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '../ui/badge';
 import { Book, Briefcase, User, FolderKanban } from 'lucide-react';
+import type { Priority } from '@/lib/types';
 
 const categoryIcons: { [key: string]: React.ElementType } = {
   estudio: Book,
@@ -13,10 +14,17 @@ const categoryIcons: { [key: string]: React.ElementType } = {
   proyectos: FolderKanban,
 };
 
+const priorityOrder: Record<Priority, number> = { 'alta': 1, 'media': 2, 'baja': 3 };
+
+
 export function DailyDashboard() {
   const { tasks, toggleTaskCompletion } = useTasks();
   
-  const todaysTasks = tasks.filter(task => !task.completed).slice(0, 5);
+  const todaysTasks = tasks
+    .filter(task => !task.completed)
+    .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
+    .slice(0, 5);
+
   const completedCount = tasks.filter(task => task.completed).length;
   const pendingCount = tasks.filter(task => !task.completed).length;
 
@@ -47,7 +55,7 @@ export function DailyDashboard() {
                         {task.title}
                       </label>
                     </div>
-                    <Badge variant={task.priority === 'alta' ? 'destructive' : task.priority === 'media' ? 'secondary' : 'outline'}>{task.priority.toUpperCase()}</Badge>
+                    <Badge variant={task.priority === 'alta' ? 'destructive' : task.priority === 'media' ? 'secondary' : 'outline'} className="capitalize">{task.priority}</Badge>
                     <Icon className="w-5 h-5 text-muted-foreground" />
                   </div>
                 )

@@ -84,38 +84,6 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
   );
 }
 
-function ClearCompletedTasksButton() {
-    const { tasks, deleteCompletedTasks } = useTasks();
-    const completedCount = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
-  
-    if (completedCount === 0) return null;
-  
-    return (
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="destructive" size="sm">
-            <Trash2 className="mr-2 h-4 w-4" /> Limpiar {completedCount} Tarea(s) Completada(s)
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Confirmas la limpieza?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminarán permanentemente todas tus tareas completadas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={deleteCompletedTasks} className="bg-destructive hover:bg-destructive/90">
-              Sí, eliminar completadas
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    );
-  }
-
-
 export function TodoList() {
   const { tasks, projects, addTask, toggleTaskCompletion, deleteTask } = useTasks();
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -263,7 +231,6 @@ export function TodoList() {
           </h2>
           <div className="flex items-center gap-2">
             <AiTaskOptimizer />
-            <ClearCompletedTasksButton />
           </div>
         </div>
         <Tabs defaultValue="all" className="w-full">

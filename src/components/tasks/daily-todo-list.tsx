@@ -16,15 +16,31 @@ type DailyTaskItemProps = {
 };
   
 function DailyTaskItem({ task, onToggle }: DailyTaskItemProps) {
+    const [isCompleted, setIsCompleted] = useState(task.completed);
+
+    const handleToggle = () => {
+        setIsCompleted(true);
+        setTimeout(() => {
+          onToggle(task.id);
+        }, 500); // Animation duration
+    };
+
+    useEffect(() => {
+        setIsCompleted(task.completed);
+    }, [task.completed]);
+
     return (
         <div
-        className={`flex items-center space-x-4 p-3 rounded-lg hover:bg-secondary/60 transition-all`}
+        className={`flex items-center space-x-4 p-3 rounded-lg hover:bg-secondary/60 transition-all ${
+            isCompleted && !task.completed ? 'task-complete-animation' : ''
+        }`}
         >
         <Checkbox
             id={task.id}
             checked={task.completed}
-            onCheckedChange={() => onToggle(task.id)}
+            onCheckedChange={handleToggle}
             aria-label={`Marcar ${task.title} como completa`}
+            disabled={task.completed}
         />
         <label
             htmlFor={task.id}
