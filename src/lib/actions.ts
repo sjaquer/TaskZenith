@@ -57,6 +57,7 @@ export async function processVoiceCommandAction(input: ProcessVoiceCommandInput)
 
 export async function organizeTasksAction(input: OrganizeTasksInput): Promise<OrganizeTasksOutput | { error: string }> {
   try {
+    // La validación ahora está dentro del flujo, por lo que podemos llamarlo directamente.
     const result = await organizeTasks(input);
     return result;
   } catch (error) {

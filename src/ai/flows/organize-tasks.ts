@@ -9,9 +9,10 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import type { Category, Priority } from '@/lib/types';
+import type { OrganizedTasks } from '@/lib/types';
 
 
+// Define input schemas here to ensure they are available for the 'use server' file.
 const TaskInputSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -47,7 +48,12 @@ export type OrganizeTasksOutput = z.infer<typeof OrganizeTasksOutputSchema>;
 
 
 export async function organizeTasks(input: OrganizeTasksInput): Promise<OrganizeTasksOutput> {
-  return organizeTasksFlow(input);
+  // We can validate inside the server action now.
+  const parsedInput = OrganizeTasksInputSchema.safeParse(input);
+  if (!parsedInput.success) {
+    throw new Error('Invalid input for organizeTasks: ' + parsedInput.error.message);
+  }
+  return organizeTasksFlow(parsedInput.data);
 }
 
 
