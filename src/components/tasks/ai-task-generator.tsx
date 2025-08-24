@@ -32,6 +32,7 @@ import { Bot, Plus, Sparkles } from 'lucide-react';
 import { generateAiTasksAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Category, Priority, Task } from '@/lib/types';
+import { ScrollArea } from '../ui/scroll-area';
 
 const formSchema = z.object({
   activityDescription: z.string().min(10, 'Por favor, describe la actividad en al menos 10 caracteres.'),
@@ -124,7 +125,7 @@ export function AiTaskGenerator() {
           <Bot className="mr-2 h-4 w-4" /> Generar con IA
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="text-primary" /> Generador de Tareas con IA
@@ -133,115 +134,119 @@ export function AiTaskGenerator() {
             Describe una actividad y la dividiremos en tareas manejables para ti. Para mejores resultados en proyectos, añade una descripción al proyecto.
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="activityDescription"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción de la Actividad</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Ej: Planear una fiesta de cumpleaños sorpresa para un amigo" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
+        <div className="grid gap-4 py-4">
+            <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
                 control={form.control}
-                name="category"
+                name="activityDescription"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoría</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona una categoría" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="personal">Personal</SelectItem>
-                        <SelectItem value="trabajo">Trabajo</SelectItem>
-                        <SelectItem value="estudio">Estudio</SelectItem>
-                        <SelectItem value="proyectos">Proyectos</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Prioridad</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona una prioridad" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="baja">Baja</SelectItem>
-                        <SelectItem value="media">Media</SelectItem>
-                        <SelectItem value="alta">Alta</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
-            {category === 'proyectos' && (
-              <FormField
-                control={form.control}
-                name="projectId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Proyecto</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger disabled={projects.length === 0}>
-                          <SelectValue placeholder={projects.length > 0 ? "Selecciona un proyecto" : "No hay proyectos"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {projects.map(project => (
-                          <SelectItem key={project.id} value={project.id} className="capitalize">
-                            {project.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormItem>
+                    <FormLabel>Descripción de la Actividad</FormLabel>
+                    <FormControl>
+                        <Textarea placeholder="Ej: Planear una fiesta de cumpleaños sorpresa para un amigo" {...field} />
+                    </FormControl>
                     <FormMessage />
-                  </FormItem>
+                    </FormItem>
                 )}
-              />
-            )}
-            <div className="space-y-2">
-                <Label>Número de tareas: {numberOfTasks}</Label>
-                <Slider defaultValue={[3]} min={1} max={10} step={1} onValueChange={(value) => setNumberOfTasks(value[0])} />
-            </div>
+                />
+                <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Categoría</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Selecciona una categoría" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="personal">Personal</SelectItem>
+                            <SelectItem value="trabajo">Trabajo</SelectItem>
+                            <SelectItem value="estudio">Estudio</SelectItem>
+                            <SelectItem value="proyectos">Proyectos</SelectItem>
+                        </SelectContent>
+                        </Select>
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Prioridad</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Selecciona una prioridad" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="baja">Baja</SelectItem>
+                            <SelectItem value="media">Media</SelectItem>
+                            <SelectItem value="alta">Alta</SelectItem>
+                        </SelectContent>
+                        </Select>
+                    </FormItem>
+                    )}
+                />
+                </div>
+                {category === 'proyectos' && (
+                <FormField
+                    control={form.control}
+                    name="projectId"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Proyecto</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger disabled={projects.length === 0}>
+                            <SelectValue placeholder={projects.length > 0 ? "Selecciona un proyecto" : "No hay proyectos"} />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {projects.map(project => (
+                            <SelectItem key={project.id} value={project.id} className="capitalize">
+                                {project.name}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                )}
+                <div className="space-y-2">
+                    <Label>Número de tareas: {numberOfTasks}</Label>
+                    <Slider defaultValue={[3]} min={1} max={10} step={1} onValueChange={(value) => setNumberOfTasks(value[0])} />
+                </div>
 
-            <Button type="submit" className="w-full" disabled={isGenerating}>
-              {isGenerating ? 'Generando...' : 'Generar Tareas'}
-            </Button>
-          </form>
-        </Form>
-        {generatedTasks.length > 0 && (
-          <div className="mt-4 space-y-2">
-            <h3 className="font-semibold">Tareas Sugeridas:</h3>
-            <div className="space-y-2 rounded-md border p-2">
-              {generatedTasks.map((task, index) => (
-                <p key={index} className="text-sm p-2 bg-secondary/50 rounded-md">{task}</p>
-              ))}
+                <Button type="submit" className="w-full" disabled={isGenerating}>
+                {isGenerating ? 'Generando...' : 'Generar Tareas'}
+                </Button>
+            </form>
+            </Form>
+            {generatedTasks.length > 0 && (
+            <div className="mt-4 space-y-2">
+                <h3 className="font-semibold">Tareas Sugeridas:</h3>
+                <ScrollArea className="h-40 w-full rounded-md border">
+                  <div className="p-4 space-y-2">
+                    {generatedTasks.map((task, index) => (
+                      <p key={index} className="text-sm p-2 bg-secondary/50 rounded-md">{task}</p>
+                    ))}
+                  </div>
+                </ScrollArea>
+                <Button onClick={handleAddTasks} className="w-full mt-2">
+                <Plus className="mr-2 h-4 w-4" /> Añadir a Mi Lista
+                </Button>
             </div>
-            <Button onClick={handleAddTasks} className="w-full">
-              <Plus className="mr-2 h-4 w-4" /> Añadir a Mi Lista
-            </Button>
-          </div>
-        )}
+            )}
+        </div>
       </DialogContent>
     </Dialog>
   );

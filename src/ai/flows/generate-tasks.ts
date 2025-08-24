@@ -52,8 +52,8 @@ Estás generando tareas para el proyecto: **{{projectContext.name}}**.
 {{#if projectContext.description}}
 Descripción del proyecto: {{projectContext.description}}
 {{/if}}
-{{#if projectContext.existingTasks}}
-Tareas existentes en este proyecto que puedes usar como referencia de estilo y alcance:
+{{#if projectContext.existingTasks.length}}
+Tareas existentes en este proyecto que puedes usar como referencia de estilo y alcance (evita generar duplicados):
 {{#each projectContext.existingTasks}}
 - {{this}}
 {{/each}}
