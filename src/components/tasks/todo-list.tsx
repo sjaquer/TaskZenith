@@ -217,14 +217,13 @@ export function TodoList() {
                     <div className="flex flex-col md:flex-row gap-2">
                         <Button type="submit" className="w-full">Añadir Tarea</Button>
                         <AiTaskGenerator />
-                        <VoiceTaskGenerator />
                     </div>
                 </form>
             </CardContent>
         </Card>
       </div>
       
-      <div>
+      <div className="relative">
         <div className="flex justify-between items-center flex-wrap gap-4 mb-4">
           <h2 className="text-2xl font-bold tracking-tight uppercase text-primary/80">
             Mi Lista de Tareas
@@ -249,6 +248,7 @@ export function TodoList() {
             <TabsContent value="personal" className="mt-6">{renderTaskList(groupedTasks.personal)}</TabsContent>
             <TabsContent value="proyectos" className="mt-6">{renderTaskList(groupedTasks.proyectos)}</TabsContent>
         </Tabs>
+        <VoiceTaskGenerator />
       </div>
       {editingTask && (
         <TaskEditDialog

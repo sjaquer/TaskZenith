@@ -22,7 +22,7 @@ export function VoiceTaskGenerator() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const { projects, addVoiceTasks } = useTasks();
+  const { projects, addVoiceTasks, getProjectById } = useTasks();
   const { toast } = useToast();
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -107,9 +107,19 @@ export function VoiceTaskGenerator() {
       });
     } else if (result.tasks && result.tasks.length > 0) {
       addVoiceTasks(result.tasks);
+
+      const taskDetails = result.tasks.map(task => {
+        let detail = `- "${task.title}" (Prioridad: ${task.priority}, Categoría: ${task.category}`;
+        if (task.projectId) {
+          const project = getProjectById(task.projectId);
+          detail += `, Proyecto: ${project?.name || 'N/A'}`;
+        }
+        return detail + ')';
+      }).join('\n');
+
       toast({
-        title: '¡Tareas creadas!',
-        description: `${result.tasks.length} tarea(s) ha(n) sido añadida(s) desde tu comando de voz.`,
+        title: `¡${result.tasks.length} tarea(s) creada(s)!`,
+        description: <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4"><code className="text-white whitespace-pre-wrap">{taskDetails}</code></pre>,
         className: 'bg-primary text-primary-foreground',
       });
       setIsOpen(false);
@@ -136,8 +146,13 @@ export function VoiceTaskGenerator() {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <Mic className="mr-2 h-4 w-4" /> Crear por Voz
+         <Button
+          variant="default"
+          size="lg"
+          className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg z-20"
+        >
+          <Mic className="h-8 w-8" />
+          <span className="sr-only">Crear por Voz</span>
         </Button>
       </DialogTrigger>
       <DialogContent>
