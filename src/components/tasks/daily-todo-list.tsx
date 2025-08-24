@@ -16,23 +16,20 @@ type DailyTaskItemProps = {
 };
   
 function DailyTaskItem({ task, onToggle }: DailyTaskItemProps) {
-    const [isCompleted, setIsCompleted] = useState(task.completed);
+    const [isAnimating, setIsAnimating] = useState(false);
 
     const handleToggle = () => {
-        setIsCompleted(true);
-        setTimeout(() => {
-          onToggle(task.id);
-        }, 500); // Animation duration
+      if (!task.completed) {
+        setIsAnimating(true);
+        onToggle(task.id);
+        setTimeout(() => setIsAnimating(false), 600); // Duration of celebration animation
+      }
     };
-
-    useEffect(() => {
-        setIsCompleted(task.completed);
-    }, [task.completed]);
 
     return (
         <div
         className={`flex items-center space-x-4 p-3 rounded-lg hover:bg-secondary/60 transition-all ${
-            isCompleted && !task.completed ? 'task-complete-animation' : ''
+            isAnimating ? 'task-celebrate-animation' : ''
         }`}
         >
         <Checkbox
