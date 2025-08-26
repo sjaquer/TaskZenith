@@ -21,9 +21,12 @@ import {
   KanbanSquare,
   History,
   Bot,
+  Palette,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Separator } from '../ui/separator';
+import { useTheme } from '@/contexts/theme-context';
+import { Button } from '../ui/button';
 
 const menuItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -34,6 +37,7 @@ const menuItems = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { setCustomizerOpen } = useTheme();
 
   return (
     <SidebarProvider>
@@ -78,6 +82,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <SidebarInset>
         <header className="flex items-center justify-between p-4 border-b md:justify-end">
           <SidebarTrigger className="md:hidden" />
+          <Button variant="ghost" size="icon" onClick={() => setCustomizerOpen(true)}>
+            <Palette className="h-5 w-5" />
+            <span className="sr-only">Personalizar Interfaz</span>
+          </Button>
         </header>
         {children}
       </SidebarInset>

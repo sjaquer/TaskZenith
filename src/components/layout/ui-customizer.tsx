@@ -1,0 +1,131 @@
+'use client';
+
+import { useTheme, predefinedThemes } from '@/contexts/theme-context';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { ScrollArea } from '../ui/scroll-area';
+import { Paintbrush, RotateCcw } from 'lucide-react';
+
+function HSLToHex(h: number, s: number, l: number): string {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+}
+  
+function hexToHSL(hex: string): { h: number, s: number, l: number } | null {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!result) return null;
+
+    let r = parseInt(result[1], 16) / 255;
+    let g = parseInt(result[2], 16) / 255;
+    let b = parseInt(result[3], 16) / 255;
+
+    let max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
+
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+
+    return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+export function UICustomizer() {
+  const { theme, setTheme, isCustomizerOpen, setCustomizerOpen, resetToDefault } = useTheme();
+
+  const handleColorChange = (key: keyof typeof theme, value: string) => {
+    const hsl = hexToHSL(value);
+    if(hsl) {
+        setTheme({ ...theme, [key]: `${hsl.h} ${hsl.s}% ${hsl.l}%` });
+    }
+  };
+
+  const getColorValue = (key: keyof typeof theme) => {
+    const [h, s, l] = theme[key].split(' ').map(v => parseFloat(v.replace('%', '')));
+    return HSLToHex(h,s,l);
+  }
+
+  return (
+    <Sheet open={isCustomizerOpen} onOpenChange={setCustomizerOpen}>
+      <SheetContent className="w-[300px] sm:w-[400px]">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Paintbrush className="w-5 h-5 text-primary" />
+            Personalizar Interfaz
+          </SheetTitle>
+          <SheetDescription>
+            Ajusta los colores a tu gusto. Los cambios se guardan automáticamente en este dispositivo.
+          </SheetDescription>
+        </SheetHeader>
+        <ScrollArea className="h-[calc(100%-120px)] mt-4 pr-4">
+            <div className="space-y-8">
+                <div>
+                    <h3 className="text-sm font-medium mb-4">Temas Prediseñados</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                    {predefinedThemes.map((pTheme) => (
+                        <Button
+                        key={pTheme.name}
+                        variant="outline"
+                        className="h-16 flex flex-col justify-center items-start p-2"
+                        onClick={() => setTheme(pTheme.colors)}
+                        >
+                        <span className="text-xs font-semibold mb-1">{pTheme.name}</span>
+                        <div className="flex gap-1">
+                            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: `hsl(${pTheme.colors.background})` }} />
+                            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: `hsl(${pTheme.colors.primary})` }} />
+                            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: `hsl(${pTheme.colors.accent})` }} />
+                        </div>
+                        </Button>
+                    ))}
+                    </div>
+                </div>
+
+                <div>
+                    <h3 className="text-sm font-medium mb-4">Colores Manuales</h3>
+                    <div className="space-y-4">
+                        {(Object.keys(theme) as Array<keyof typeof theme>).map(key => (
+                           <div key={key} className="flex items-center justify-between">
+                             <Label htmlFor={`color-${key}`} className="capitalize">{key}</Label>
+                             <div className="relative">
+                                <input
+                                    type="color"
+                                    id={`color-${key}`}
+                                    value={getColorValue(key)}
+                                    onChange={(e) => handleColorChange(key, e.target.value)}
+                                    className="w-24 h-10 p-1 bg-card border border-border rounded-md cursor-pointer appearance-none"
+                                />
+                             </div>
+                           </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </ScrollArea>
+        <div className="absolute bottom-4 right-6">
+            <Button variant="ghost" onClick={resetToDefault}>
+                <RotateCcw className="mr-2 h-4 w-4" /> Resetear
+            </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}

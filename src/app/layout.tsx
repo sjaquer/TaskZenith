@@ -3,6 +3,8 @@ import './globals.css';
 import { TaskProvider } from '@/contexts/task-context';
 import { Toaster } from '@/components/ui/toaster';
 import { Poppins } from 'next/font/google';
+import { ThemeProvider } from '@/contexts/theme-context';
+import { UICustomizer } from '@/components/layout/ui-customizer';
 
 const poppins = Poppins({ 
   subsets: ['latin'],
@@ -34,10 +36,13 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className={`${poppins.className} antialiased overflow-x-hidden`}>
-        <TaskProvider>
-            {children}
-            <Toaster />
-        </TaskProvider>
+        <ThemeProvider>
+          <TaskProvider>
+              {children}
+              <Toaster />
+              <UICustomizer />
+          </TaskProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
