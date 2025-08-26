@@ -61,6 +61,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 // Helper function to apply theme to CSS variables
 const applyTheme = (theme: ColorTheme) => {
+  if(typeof window === 'undefined') return;
   const root = document.documentElement;
   Object.entries(theme).forEach(([key, value]) => {
     root.style.setProperty(`--${key}`, value);
@@ -73,21 +74,33 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [isCustomizerOpen, setCustomizerOpen] = useState(false);
 
   useEffect(() => {
-    // Load theme from localStorage on initial render
     const savedTheme = localStorage.getItem('taskzenith-theme');
-    if (savedTheme) {
-      const parsedTheme = JSON.parse(savedTheme);
-      setThemeState(parsedTheme);
-      applyTheme(parsedTheme);
-    } else {
-        applyTheme(defaultTheme);
-    }
-
     const savedLayout = localStorage.getItem('taskzenith-layout');
-    if (savedLayout) {
-        setLayoutConfigState(JSON.parse(savedLayout));
+    
+    let initialTheme = defaultTheme;
+    if (savedTheme) {
+      try {
+        initialTheme = JSON.parse(savedTheme);
+      } catch (e) {
+        console.error("Failed to parse theme from localStorage", e);
+      }
     }
+    setThemeState(initialTheme);
+    applyTheme(initialTheme);
 
+    if (savedLayout) {
+      try {
+        const parsedLayout = JSON.parse(savedLayout);
+        // Ensure all keys are present, falling back to default if not
+        const mergedLayout = { ...defaultLayout, ...parsedLayout };
+        setLayoutConfigState(mergedLayout);
+      } catch(e) {
+        console.error("Failed to parse layout from localStorage", e);
+        setLayoutConfigState(defaultLayout);
+      }
+    } else {
+      setLayoutConfigState(defaultLayout);
+    }
   }, []);
 
   const setTheme = (newTheme: ColorTheme) => {
