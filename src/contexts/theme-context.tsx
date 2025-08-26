@@ -16,6 +16,7 @@ type LayoutConfig = {
     showTodoList: boolean;
     showKanban: boolean;
     showHistory: boolean;
+    enableDueDates: boolean;
 }
 
 type PredefinedTheme = {
@@ -47,6 +48,7 @@ const defaultLayout: LayoutConfig = {
     showTodoList: true,
     showKanban: true,
     showHistory: true,
+    enableDueDates: true,
 };
 
 export const predefinedThemes: PredefinedTheme[] = [

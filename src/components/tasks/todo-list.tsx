@@ -11,12 +11,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AiTaskGenerator } from './ai-task-generator';
 import type { Category, Priority, Task } from '@/lib/types';
-import { Trash2, Edit, CheckCircle } from 'lucide-react';
+import { Trash2, Edit, CheckCircle, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { VoiceTaskGenerator } from './voice-task-generator';
 import { TaskEditDialog } from './task-edit-dialog';
 import { AiTaskOptimizer } from './ai-task-optimizer';
-
+import { useTheme } from '@/contexts/theme-context';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Calendar } from '../ui/calendar';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: (id: string) => void; onDelete: (id: string) => void; onEdit: (task: Task) => void; }) {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -33,6 +38,8 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
     media: 'border-l-4 border-yellow-500/70',
     alta: 'border-l-4 border-red-500/70',
   };
+
+  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
 
   return (
     <div
@@ -52,6 +59,12 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
         >
           {task.title}
         </label>
+        {task.dueDate && (
+          <div className={`flex items-center gap-1 text-xs mt-1 ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
+            <Clock className="w-3 h-3" />
+            <span>{format(new Date(task.dueDate), "d MMM, HH:mm'h'", { locale: es })}</span>
+          </div>
+        )}
       </div>
       <Badge variant="outline" className="capitalize">{task.category}</Badge>
       <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -86,10 +99,12 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
 
 export function TodoList() {
   const { tasks, projects, addTask, toggleTaskCompletion, deleteTask } = useTasks();
+  const { layoutConfig } = useTheme();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskCategory, setNewTaskCategory] = useState<Category>('personal');
   const [newTaskPriority, setNewTaskPriority] = useState<Priority>('media');
   const [newTaskProjectId, setNewTaskProjectId] = useState<string | undefined>(undefined);
+  const [dueDate, setDueDate] = useState<Date | undefined>();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const handleAddTask = (e: React.FormEvent) => {
@@ -99,6 +114,7 @@ export function TodoList() {
         title: newTaskTitle,
         category: newTaskCategory,
         priority: newTaskPriority,
+        dueDate: dueDate || null,
       };
 
       if (newTaskCategory === 'proyectos' && newTaskProjectId) {
@@ -108,6 +124,7 @@ export function TodoList() {
       addTask(taskPayload);
       setNewTaskTitle('');
       setNewTaskProjectId(undefined);
+      setDueDate(undefined);
     }
   };
   
@@ -177,7 +194,7 @@ export function TodoList() {
                         placeholder="Añadir una nueva tarea..."
                         className="flex-grow bg-background/50"
                     />
-                    <div className="flex flex-col md:flex-row gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                         <Select value={newTaskCategory} onValueChange={handleCategoryChange}>
                             <SelectTrigger className="w-full capitalize">
                                 <SelectValue placeholder="Categoría" />
@@ -214,6 +231,30 @@ export function TodoList() {
                             </SelectContent>
                         </Select>
                     </div>
+                     {layoutConfig.enableDueDates && (
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !dueDate && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dueDate ? format(dueDate, "PPP", { locale: es }) : <span>Fecha de vencimiento (Opcional)</span>}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={dueDate}
+                                onSelect={setDueDate}
+                                initialFocus
+                            />
+                            </PopoverContent>
+                        </Popover>
+                    )}
                     <div className="flex flex-col md:flex-row gap-2">
                         <Button type="submit" className="w-full">Añadir Tarea</Button>
                         <AiTaskGenerator />

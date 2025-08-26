@@ -18,6 +18,7 @@ export interface Task {
   createdAt: Date;
   startedAt?: Date | null;
   completedAt?: Date | null;
+  dueDate?: Date | null;
   projectId?: string;
   status: KanbanStatus;
 }

@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { RefreshCw, Palette } from 'lucide-react';
 import { TaskStatsCards } from '@/components/tasks/task-stats-cards';
 import { useTheme } from '@/contexts/theme-context';
+import { DueTasksWidget } from '@/components/tasks/due-tasks-widget';
 
 function SyncButton() {
   const { syncData, isSyncing } = useTasks();
@@ -64,17 +65,18 @@ export default function DashboardPage() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-6">
                 {layoutConfig.showStats && (
-                    <>
-                    <h2 className="text-2xl font-bold tracking-tight mb-4 uppercase text-primary/80">
+                  <>
+                    <h2 className="text-2xl font-bold tracking-tight uppercase text-primary/80">
                         Panel Principal
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <TaskStatsCards />
                     </div>
-                    </>
+                  </>
                 )}
+                {layoutConfig.enableDueDates && <DueTasksWidget />}
             </div>
 
             <div className="lg:col-span-1">

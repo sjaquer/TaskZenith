@@ -82,9 +82,10 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
               return { 
                 ...data, 
                 id: doc.id, 
-                createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(), // Fallback for old data
+                createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(),
                 startedAt: data.startedAt ? (data.startedAt as Timestamp).toDate() : null,
-                completedAt: data.completedAt ? (data.completedAt as Timestamp).toDate() : null 
+                completedAt: data.completedAt ? (data.completedAt as Timestamp).toDate() : null,
+                dueDate: data.dueDate ? (data.dueDate as Timestamp).toDate() : null,
               } as Task
             });
             setTasks(tasksData);
@@ -111,7 +112,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
           if (localTasks && localProjects) {
               const parsedTasks = JSON.parse(localTasks) as Task[];
               const parsedProjects = JSON.parse(localProjects) as Project[];
-              setTasks(parsedTasks.map(t => ({...t, createdAt: t.createdAt ? new Date(t.createdAt) : new Date(), startedAt: t.startedAt ? new Date(t.startedAt) : null, completedAt: t.completedAt ? new Date(t.completedAt) : null})));
+              setTasks(parsedTasks.map(t => ({...t, createdAt: t.createdAt ? new Date(t.createdAt) : new Date(), startedAt: t.startedAt ? new Date(t.startedAt) : null, completedAt: t.completedAt ? new Date(t.completedAt) : null, dueDate: t.dueDate ? new Date(t.dueDate) : null })));
               setProjects(parsedProjects);
           } else {
               // First time load or empty localStorage
@@ -181,6 +182,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         category: task.category!,
         priority: task.priority!,
         createdAt: new Date(),
+        dueDate: task.dueDate || null,
     };
 
     if (task.category === 'proyectos' && task.projectId) {

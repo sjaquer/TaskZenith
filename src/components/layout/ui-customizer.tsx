@@ -11,7 +11,7 @@ import {
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
-import { Paintbrush, RotateCcw, LayoutTemplate } from 'lucide-react';
+import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 
@@ -51,12 +51,13 @@ function hexToHSL(hex: string): { h: number, s: number, l: number } | null {
     return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
 
-const layoutOptions: { key: keyof ReturnType<typeof useTheme>['layoutConfig']; label: string }[] = [
-    { key: 'showStats', label: 'Tarjetas de Estadísticas' },
-    { key: 'showDailyTasks', label: 'Tareas Diarias' },
-    { key: 'showTodoList', label: 'Lista de Tareas Principal' },
-    { key: 'showKanban', label: 'Tablero Kanban' },
-    { key: 'showHistory', label: 'Historial de Tareas' },
+const layoutOptions: { key: keyof ReturnType<typeof useTheme>['layoutConfig']; label: string, icon: React.ElementType }[] = [
+    { key: 'showStats', label: 'Tarjetas de Estadísticas', icon: LayoutTemplate },
+    { key: 'showDailyTasks', label: 'Tareas Diarias', icon: LayoutTemplate },
+    { key: 'showTodoList', label: 'Lista de Tareas Principal', icon: LayoutTemplate },
+    { key: 'showKanban', label: 'Tablero Kanban', icon: LayoutTemplate },
+    { key: 'showHistory', label: 'Historial de Tareas', icon: LayoutTemplate },
+    { key: 'enableDueDates', label: 'Habilitar Fechas de Vencimiento', icon: CalendarClock }
 ];
 
 export function UICustomizer() {
@@ -138,12 +139,15 @@ export function UICustomizer() {
                 <div>
                     <h3 className="flex items-center text-sm font-medium mb-4">
                         <LayoutTemplate className="w-4 h-4 mr-2" />
-                        Configurar Layout
+                        Configurar UI
                     </h3>
                     <div className="space-y-4">
-                        {layoutOptions.map(({ key, label }) => (
+                        {layoutOptions.map(({ key, label, icon: Icon }) => (
                             <div key={key} className="flex items-center justify-between">
-                                <Label htmlFor={`layout-${key}`}>{label}</Label>
+                                <Label htmlFor={`layout-${key}`} className='flex items-center gap-2'>
+                                  <Icon className="w-4 h-4 text-muted-foreground" />
+                                  {label}
+                                </Label>
                                 <Switch
                                     id={`layout-${key}`}
                                     checked={layoutConfig[key]}

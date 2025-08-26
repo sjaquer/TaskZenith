@@ -19,12 +19,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from '@/contexts/theme-context';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { CalendarIcon } from 'lucide-react';
+import { Calendar } from '../ui/calendar';
 
 const formSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   category: z.enum(['estudio', 'trabajo', 'personal', 'proyectos']),
   priority: z.enum(['baja', 'media', 'alta']),
   projectId: z.string().optional(),
+  dueDate: z.date().optional().nullable(),
 });
 
 type TaskEditDialogProps = {
@@ -35,6 +43,7 @@ type TaskEditDialogProps = {
 
 export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogProps) {
   const { projects, updateTask } = useTasks();
+  const { layoutConfig } = useTheme();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -44,6 +53,7 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
       category: task.category,
       priority: task.priority,
       projectId: task.projectId || undefined,
+      dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
     },
   });
   
@@ -53,6 +63,7 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
       category: task.category,
       priority: task.priority,
       projectId: task.projectId || undefined,
+      dueDate: task.dueDate ? new Date(task.dueDate) : null,
     });
   }, [task, form]);
 
@@ -159,6 +170,37 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                   )}
               />
             </div>
+          )}
+
+          {layoutConfig.enableDueDates && (
+            <Controller
+              control={form.control}
+              name="dueDate"
+              render={({ field }) => (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {field.value ? format(field.value, "PPP", { locale: es }) : <span>Fecha de vencimiento</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={field.value ?? undefined}
+                      onSelect={field.onChange}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
+            />
           )}
           
           <DialogFooter>
