@@ -69,6 +69,18 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
 
   const category = form.watch('category');
 
+  const handleDateSelect = (date: Date | undefined, field: any) => {
+    if (!date) {
+      field.onChange(null);
+      return;
+    }
+    const now = new Date();
+    date.setHours(now.getHours());
+    date.setMinutes(now.getMinutes());
+    date.setSeconds(now.getSeconds());
+    field.onChange(date);
+  };
+
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const dataToUpdate: Partial<Task> = {
         ...values,
@@ -187,14 +199,14 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {field.value ? format(field.value, "PPP", { locale: es }) : <span>Fecha de vencimiento</span>}
+                      {field.value ? format(field.value, "PPP HH:mm", { locale: es }) : <span>Fecha de vencimiento</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
                       selected={field.value ?? undefined}
-                      onSelect={field.onChange}
+                      onSelect={(date) => handleDateSelect(date, field)}
                       initialFocus
                     />
                   </PopoverContent>

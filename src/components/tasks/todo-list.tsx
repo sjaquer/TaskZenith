@@ -136,6 +136,18 @@ export function TodoList() {
     }
   }
 
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) {
+      setDueDate(undefined);
+      return;
+    }
+    const now = new Date();
+    date.setHours(now.getHours());
+    date.setMinutes(now.getMinutes());
+    date.setSeconds(now.getSeconds());
+    setDueDate(date);
+  };
+
   const pendingTasks = useMemo(() => tasks.filter(task => !task.completed), [tasks]);
 
 
@@ -242,14 +254,14 @@ export function TodoList() {
                                 )}
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {dueDate ? format(dueDate, "PPP", { locale: es }) : <span>Fecha de vencimiento (Opcional)</span>}
+                                {dueDate ? format(dueDate, "PPP HH:mm", { locale: es }) : <span>Fecha de vencimiento (Opcional)</span>}
                             </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
                             <Calendar
                                 mode="single"
                                 selected={dueDate}
-                                onSelect={setDueDate}
+                                onSelect={handleDateSelect}
                                 initialFocus
                             />
                             </PopoverContent>
