@@ -10,6 +10,7 @@ import { useTasks } from '@/contexts/task-context';
 import { useToast } from '@/hooks/use-toast';
 import { RefreshCw } from 'lucide-react';
 import { WeeklyAnalyticsDashboard } from '@/components/tasks/weekly-analytics-dashboard';
+import { TaskStatsCards } from '@/components/tasks/task-stats-cards';
 
 function SyncButton() {
   const { syncData, isSyncing } = useTasks();
@@ -54,6 +55,9 @@ export default function DashboardPage() {
               <h2 className="text-2xl font-bold tracking-tight mb-4 uppercase text-primary/80">
                 Panel Principal
               </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <TaskStatsCards />
+              </div>
               <WeeklyAnalyticsDashboard />
             </div>
 
