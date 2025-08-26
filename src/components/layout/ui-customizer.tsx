@@ -80,7 +80,7 @@ export function UICustomizer() {
 
   return (
     <Sheet open={isCustomizerOpen} onOpenChange={setCustomizerOpen}>
-      <SheetContent className="w-[300px] sm:w-[400px]">
+      <SheetContent className="w-[300px] sm:w-[400px] flex flex-col">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Paintbrush className="w-5 h-5 text-primary" />
@@ -90,7 +90,7 @@ export function UICustomizer() {
             Ajusta los colores y la visibilidad de los componentes. Los cambios se guardan automáticamente.
           </SheetDescription>
         </SheetHeader>
-        <ScrollArea className="h-[calc(100%-120px)] mt-4 pr-4">
+        <ScrollArea className="flex-1 mt-4 -mr-6 pr-6">
             <div className="space-y-8">
                 <div>
                     <h3 className="text-sm font-medium mb-4">Temas Prediseñados</h3>
@@ -155,8 +155,8 @@ export function UICustomizer() {
                 </div>
             </div>
         </ScrollArea>
-        <div className="absolute bottom-4 right-6">
-            <Button variant="ghost" onClick={resetToDefault}>
+        <div className="mt-auto pt-4 border-t border-border -mx-6 px-6">
+            <Button variant="ghost" onClick={resetToDefault} className="w-full justify-center">
                 <RotateCcw className="mr-2 h-4 w-4" /> Resetear
             </Button>
         </div>
