@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useTasks } from '@/contexts/task-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Clock, CalendarCheck2 } from 'lucide-react';
+import { AlertTriangle, Clock, CalendarCheck2, Info } from 'lucide-react';
 import type { Task } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -67,9 +67,7 @@ export function DueTasksWidget() {
     return { overdue: overdueTasks, upcoming: upcomingTasks };
   }, [tasks]);
 
-  if (overdue.length === 0 && upcoming.length === 0) {
-    return null; // No renderizar nada si no hay tareas relevantes
-  }
+  const hasTasks = overdue.length > 0 || upcoming.length > 0;
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg">
@@ -77,27 +75,37 @@ export function DueTasksWidget() {
         <CardTitle className="text-lg font-semibold uppercase tracking-wider">Tareas Urgentes</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {overdue.length > 0 && (
-          <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold mb-2 text-destructive">
-              <AlertTriangle className="w-4 h-4" />
-              Vencidas
-            </h3>
-            <div className="space-y-1">
-              {overdue.map(task => <DueTaskItem key={task.id} task={task} />)}
-            </div>
+        {!hasTasks ? (
+           <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-4">
+            <Info className="w-8 h-8 mb-2 text-accent" />
+            <p className="text-sm">Aquí aparecerán tus tareas con fecha de vencimiento próxima.</p>
+            <p className="text-xs mt-1">¡Asigna fechas a tus tareas para verlas aquí!</p>
           </div>
-        )}
-        {upcoming.length > 0 && (
+        ) : (
+            <>
+            {overdue.length > 0 && (
             <div>
-                <h3 className="flex items-center gap-2 text-sm font-semibold mb-2 text-yellow-500">
-                <CalendarCheck2 className="w-4 h-4" />
-                Próximas a Vencer (24h)
+                <h3 className="flex items-center gap-2 text-sm font-semibold mb-2 text-destructive">
+                <AlertTriangle className="w-4 h-4" />
+                Vencidas
                 </h3>
                 <div className="space-y-1">
-                {upcoming.map(task => <DueTaskItem key={task.id} task={task} />)}
+                {overdue.map(task => <DueTaskItem key={task.id} task={task} />)}
                 </div>
             </div>
+            )}
+            {upcoming.length > 0 && (
+                <div>
+                    <h3 className="flex items-center gap-2 text-sm font-semibold mb-2 text-yellow-500">
+                    <CalendarCheck2 className="w-4 h-4" />
+                    Próximas a Vencer (24h)
+                    </h3>
+                    <div className="space-y-1">
+                    {upcoming.map(task => <DueTaskItem key={task.id} task={task} />)}
+                    </div>
+                </div>
+            )}
+            </>
         )}
       </CardContent>
     </Card>
