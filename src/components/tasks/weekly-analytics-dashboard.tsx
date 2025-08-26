@@ -73,8 +73,11 @@ export function WeeklyAnalyticsDashboard() {
 
   }, [tasks]);
 
-  const chartConfig = {
+  const barChartConfig = {
     completed: { label: 'Tareas Completadas', color: 'hsl(var(--primary))' },
+  };
+
+  const pieChartConfig = {
     ...Object.entries(categoryConfig).reduce((acc, [key, val]) => {
         acc[val.label] = { label: val.label, color: val.color };
         return acc;
@@ -87,16 +90,18 @@ export function WeeklyAnalyticsDashboard() {
             <CardHeader>
                 <CardTitle className="text-lg font-semibold uppercase tracking-wider">Tareas Completadas esta Semana</CardTitle>
             </CardHeader>
-            <CardContent className="h-[300px] w-full">
-                <ResponsiveContainer>
-                    <BarChart data={analyticsData.weeklyCompletionData}>
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
-                    <YAxis allowDecimals={false}/>
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="completed" fill="var(--color-completed)" radius={4} />
-                    </BarChart>
-                </ResponsiveContainer>
+            <CardContent>
+                <ChartContainer config={barChartConfig} className="h-[250px] w-full">
+                    <ResponsiveContainer>
+                        <BarChart data={analyticsData.weeklyCompletionData}>
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                        <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
+                        <YAxis allowDecimals={false}/>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="completed" fill="var(--color-completed)" radius={4} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </ChartContainer>
             </CardContent>
         </Card>
 
@@ -138,7 +143,7 @@ export function WeeklyAnalyticsDashboard() {
                 <CardTitle className="text-lg font-semibold uppercase tracking-wider">Distribución por Categoría (Tareas de la Semana)</CardTitle>
             </CardHeader>
             <CardContent className="h-[300px] w-full flex justify-center">
-                <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[300px]">
+                <ChartContainer config={pieChartConfig} className="mx-auto aspect-square max-h-[300px]">
                     <PieChart>
                     <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
                     <Pie data={analyticsData.categoryChartData} dataKey="value" nameKey="name" innerRadius={60}>
@@ -151,7 +156,6 @@ export function WeeklyAnalyticsDashboard() {
                 </ChartContainer>
             </CardContent>
         </Card>
-
     </div>
   );
 }
