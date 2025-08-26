@@ -82,10 +82,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <SidebarInset>
         <header className="flex items-center justify-between p-4 border-b md:justify-end">
           <SidebarTrigger className="md:hidden" />
-          <Button variant="ghost" size="icon" onClick={() => setCustomizerOpen(true)}>
-            <Palette className="h-5 w-5" />
-            <span className="sr-only">Personalizar Interfaz</span>
-          </Button>
         </header>
         {children}
       </SidebarInset>

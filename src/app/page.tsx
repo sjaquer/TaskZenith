@@ -8,9 +8,10 @@ import { PageWrapper } from '@/components/layout/page-wrapper';
 import { Button } from '@/components/ui/button';
 import { useTasks } from '@/contexts/task-context';
 import { useToast } from '@/hooks/use-toast';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Palette } from 'lucide-react';
 import { WeeklyAnalyticsDashboard } from '@/components/tasks/weekly-analytics-dashboard';
 import { TaskStatsCards } from '@/components/tasks/task-stats-cards';
+import { useTheme } from '@/contexts/theme-context';
 
 function SyncButton() {
   const { syncData, isSyncing } = useTasks();
@@ -41,13 +42,24 @@ function SyncButton() {
   );
 }
 
+function CustomizeButton() {
+    const { setCustomizerOpen } = useTheme();
+    return (
+        <Button variant="outline" onClick={() => setCustomizerOpen(true)}>
+            <Palette className="mr-2 h-4 w-4" />
+            Personalizar
+        </Button>
+    )
+}
+
 export default function DashboardPage() {
   return (
     <PageWrapper>
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-background to-blue-950/20">
         <main className="flex-1 p-4 md:p-6 lg:p-8">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end gap-2 mb-4">
              <SyncButton />
+             <CustomizeButton />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
