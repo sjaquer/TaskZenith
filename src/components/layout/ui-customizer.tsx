@@ -11,7 +11,9 @@ import {
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
-import { Paintbrush, RotateCcw } from 'lucide-react';
+import { Paintbrush, RotateCcw, LayoutTemplate } from 'lucide-react';
+import { Separator } from '../ui/separator';
+import { Switch } from '../ui/switch';
 
 function HSLToHex(h: number, s: number, l: number): string {
     l /= 100;
@@ -49,14 +51,26 @@ function hexToHSL(hex: string): { h: number, s: number, l: number } | null {
     return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
 
+const layoutOptions: { key: keyof ReturnType<typeof useTheme>['layoutConfig']; label: string }[] = [
+    { key: 'showStats', label: 'Tarjetas de Estadísticas' },
+    { key: 'showDailyTasks', label: 'Tareas Diarias' },
+    { key: 'showTodoList', label: 'Lista de Tareas Principal' },
+    { key: 'showKanban', label: 'Tablero Kanban' },
+    { key: 'showHistory', label: 'Historial de Tareas' },
+];
+
 export function UICustomizer() {
-  const { theme, setTheme, isCustomizerOpen, setCustomizerOpen, resetToDefault } = useTheme();
+  const { theme, setTheme, isCustomizerOpen, setCustomizerOpen, resetToDefault, layoutConfig, setLayoutConfig } = useTheme();
 
   const handleColorChange = (key: keyof typeof theme, value: string) => {
     const hsl = hexToHSL(value);
     if(hsl) {
         setTheme({ ...theme, [key]: `${hsl.h} ${hsl.s}% ${hsl.l}%` });
     }
+  };
+
+  const handleLayoutChange = (key: keyof typeof layoutConfig, value: boolean) => {
+    setLayoutConfig({ ...layoutConfig, [key]: value });
   };
 
   const getColorValue = (key: keyof typeof theme) => {
@@ -73,7 +87,7 @@ export function UICustomizer() {
             Personalizar Interfaz
           </SheetTitle>
           <SheetDescription>
-            Ajusta los colores a tu gusto. Los cambios se guardan automáticamente en este dispositivo.
+            Ajusta los colores y la visibilidad de los componentes. Los cambios se guardan automáticamente.
           </SheetDescription>
         </SheetHeader>
         <ScrollArea className="h-[calc(100%-120px)] mt-4 pr-4">
@@ -115,6 +129,27 @@ export function UICustomizer() {
                                 />
                              </div>
                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                    <h3 className="flex items-center text-sm font-medium mb-4">
+                        <LayoutTemplate className="w-4 h-4 mr-2" />
+                        Configurar Layout
+                    </h3>
+                    <div className="space-y-4">
+                        {layoutOptions.map(({ key, label }) => (
+                            <div key={key} className="flex items-center justify-between">
+                                <Label htmlFor={`layout-${key}`}>{label}</Label>
+                                <Switch
+                                    id={`layout-${key}`}
+                                    checked={layoutConfig[key]}
+                                    onCheckedChange={(checked) => handleLayoutChange(key, checked)}
+                                />
+                            </div>
                         ))}
                     </div>
                 </div>

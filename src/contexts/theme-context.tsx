@@ -10,6 +10,14 @@ type ColorTheme = {
   accent: string;
 };
 
+type LayoutConfig = {
+    showStats: boolean;
+    showDailyTasks: boolean;
+    showTodoList: boolean;
+    showKanban: boolean;
+    showHistory: boolean;
+}
+
 type PredefinedTheme = {
   name: string;
   colors: ColorTheme;
@@ -17,8 +25,10 @@ type PredefinedTheme = {
 
 interface ThemeContextType {
   theme: ColorTheme;
+  layoutConfig: LayoutConfig;
   isCustomizerOpen: boolean;
   setTheme: (theme: ColorTheme) => void;
+  setLayoutConfig: (config: LayoutConfig) => void;
   setCustomizerOpen: (isOpen: boolean) => void;
   resetToDefault: () => void;
 }
@@ -29,6 +39,14 @@ const defaultTheme: ColorTheme = {
   card: '220 20% 15%',
   primary: '203 89% 39%',
   accent: '45 89% 51%',
+};
+
+const defaultLayout: LayoutConfig = {
+    showStats: true,
+    showDailyTasks: true,
+    showTodoList: true,
+    showKanban: true,
+    showHistory: true,
 };
 
 export const predefinedThemes: PredefinedTheme[] = [
@@ -51,6 +69,7 @@ const applyTheme = (theme: ColorTheme) => {
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState<ColorTheme>(defaultTheme);
+  const [layoutConfig, setLayoutConfigState] = useState<LayoutConfig>(defaultLayout);
   const [isCustomizerOpen, setCustomizerOpen] = useState(false);
 
   useEffect(() => {
@@ -63,6 +82,12 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     } else {
         applyTheme(defaultTheme);
     }
+
+    const savedLayout = localStorage.getItem('taskzenith-layout');
+    if (savedLayout) {
+        setLayoutConfigState(JSON.parse(savedLayout));
+    }
+
   }, []);
 
   const setTheme = (newTheme: ColorTheme) => {
@@ -71,12 +96,18 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     applyTheme(newTheme);
   };
   
+  const setLayoutConfig = (newConfig: LayoutConfig) => {
+    setLayoutConfigState(newConfig);
+    localStorage.setItem('taskzenith-layout', JSON.stringify(newConfig));
+  }
+
   const resetToDefault = () => {
     setTheme(defaultTheme);
+    setLayoutConfig(defaultLayout);
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, isCustomizerOpen, setCustomizerOpen, resetToDefault }}>
+    <ThemeContext.Provider value={{ theme, setTheme, layoutConfig, setLayoutConfig, isCustomizerOpen, setCustomizerOpen, resetToDefault }}>
       {children}
     </ThemeContext.Provider>
   );

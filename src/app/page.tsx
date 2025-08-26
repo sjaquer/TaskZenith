@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { useTasks } from '@/contexts/task-context';
 import { useToast } from '@/hooks/use-toast';
 import { RefreshCw, Palette } from 'lucide-react';
-import { WeeklyAnalyticsDashboard } from '@/components/tasks/weekly-analytics-dashboard';
 import { TaskStatsCards } from '@/components/tasks/task-stats-cards';
 import { useTheme } from '@/contexts/theme-context';
 
@@ -53,6 +52,8 @@ function CustomizeButton() {
 }
 
 export default function DashboardPage() {
+  const { layoutConfig } = useTheme();
+
   return (
     <PageWrapper>
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-background to-blue-950/20">
@@ -64,39 +65,52 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             <div className="lg:col-span-2">
-              <h2 className="text-2xl font-bold tracking-tight mb-4 uppercase text-primary/80">
-                Panel Principal
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <TaskStatsCards />
-              </div>
-              <WeeklyAnalyticsDashboard />
+                {layoutConfig.showStats && (
+                    <>
+                    <h2 className="text-2xl font-bold tracking-tight mb-4 uppercase text-primary/80">
+                        Panel Principal
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <TaskStatsCards />
+                    </div>
+                    </>
+                )}
             </div>
 
             <div className="lg:col-span-1">
-              <h2 className="text-2xl font-bold tracking-tight mb-4 uppercase text-primary/80">
-                Tareas Diarias
-              </h2>
-              <DailyTodoList />
+                {layoutConfig.showDailyTasks && (
+                    <>
+                    <h2 className="text-2xl font-bold tracking-tight mb-4 uppercase text-primary/80">
+                        Tareas Diarias
+                    </h2>
+                    <DailyTodoList />
+                    </>
+                )}
             </div>
 
-            <div className="lg:col-span-3">
-              <TodoList />
-            </div>
+            {layoutConfig.showTodoList && (
+                <div className="lg:col-span-3">
+                    <TodoList />
+                </div>
+            )}
             
-            <div className="lg:col-span-3">
-               <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
-                Tablero Kanban
-              </h2>
-              <KanbanBoard />
-            </div>
+            {layoutConfig.showKanban && (
+                <div className="lg:col-span-3">
+                    <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
+                        Tablero Kanban
+                    </h2>
+                    <KanbanBoard />
+                </div>
+            )}
             
-            <div className="lg:col-span-3">
-               <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
-                Historial de Tareas
-              </h2>
-              <TaskHistory />
-            </div>
+            {layoutConfig.showHistory && (
+                <div className="lg:col-span-3">
+                    <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
+                        Historial de Tareas
+                    </h2>
+                    <TaskHistory />
+                </div>
+            )}
           </div>
         </main>
       </div>
