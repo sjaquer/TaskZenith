@@ -15,6 +15,8 @@ export interface Task {
   category: Category;
   priority: Priority;
   completed: boolean;
+  createdAt: Date;
+  startedAt?: Date | null;
   completedAt?: Date | null;
   projectId?: string;
   status: KanbanStatus;

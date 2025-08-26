@@ -24,7 +24,7 @@ interface TaskContextType {
   customDailyTasks: CustomDailyTask[];
   isLoaded: boolean;
   isSyncing: boolean;
-  addTask: (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'>>) => void;
+  addTask: (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt'>>) => void;
   deleteTask: (taskId: string) => void;
   updateTask: (taskId: string, data: Partial<Omit<Task, 'id' | 'completed'>>) => void;
   toggleTaskCompletion: (taskId: string) => void;
@@ -34,7 +34,7 @@ interface TaskContextType {
   deleteProject: (projectId: string) => void;
   updateProject: (projectId: string, data: Partial<Omit<Project, 'id'>>) => void;
   addAiTasks: (newTasks: string[], category: Category, priority: Priority, projectId?: string) => void;
-  addVoiceTasks: (newTasks: Omit<Task, 'id' | 'completed' | 'status'>[]) => void;
+  addVoiceTasks: (newTasks: Omit<Task, 'id' | 'completed' | 'status' | 'createdAt'>[]) => void;
   clearAllData: () => void;
   toggleDailyTask: (taskId: string) => void;
   updateCustomDailyTasks: (tasks: CustomDailyTask[]) => void;
@@ -77,7 +77,16 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         setIsSyncing(true);
         try {
             const tasksSnapshot = await getDocs(tasksCollection);
-            const tasksData = tasksSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, completedAt: doc.data().completedAt ? (doc.data().completedAt as Timestamp).toDate() : null }) as Task);
+            const tasksData = tasksSnapshot.docs.map(doc => {
+              const data = doc.data();
+              return { 
+                ...data, 
+                id: doc.id, 
+                createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(), // Fallback for old data
+                startedAt: data.startedAt ? (data.startedAt as Timestamp).toDate() : null,
+                completedAt: data.completedAt ? (data.completedAt as Timestamp).toDate() : null 
+              } as Task
+            });
             setTasks(tasksData);
 
             const projectsSnapshot = await getDocs(projectsCollection);
@@ -102,7 +111,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
           if (localTasks && localProjects) {
               const parsedTasks = JSON.parse(localTasks) as Task[];
               const parsedProjects = JSON.parse(localProjects) as Project[];
-              setTasks(parsedTasks.map(t => ({...t, completedAt: t.completedAt ? new Date(t.completedAt) : null})));
+              setTasks(parsedTasks.map(t => ({...t, createdAt: t.createdAt ? new Date(t.createdAt) : new Date(), startedAt: t.startedAt ? new Date(t.startedAt) : null, completedAt: t.completedAt ? new Date(t.completedAt) : null})));
               setProjects(parsedProjects);
           } else {
               // First time load or empty localStorage
@@ -171,6 +180,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         title: task.title!,
         category: task.category!,
         priority: task.priority!,
+        createdAt: new Date(),
     };
 
     if (task.category === 'proyectos' && task.projectId) {
@@ -258,6 +268,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             priority,
             completed: false,
             status: 'Pendiente',
+            createdAt: new Date(),
             completedAt: null
         };
         if (category === 'proyectos' && projectId) {
@@ -282,7 +293,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addVoiceTasks = async (newTasks: Omit<Task, 'id' | 'completed' | 'status'>[]) => {
+  const addVoiceTasks = async (newTasks: Omit<Task, 'id' | 'completed' | 'status' | 'createdAt'>[]) => {
     const batch = writeBatch(db);
     const createdTasks: Task[] = [];
 
@@ -292,6 +303,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             ...task,
             completed: false,
             status: 'Pendiente',
+            createdAt: new Date(),
         };
         if (taskDataForFirestore.projectId === undefined) {
           delete taskDataForFirestore.projectId;
@@ -347,23 +359,29 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     if (!taskToUpdate) return;
   
     const isCompleted = status === 'Finalizado' || status === 'Cancelado';
-    const updatedTaskData = {
+    const updatedTaskData: Partial<Task> = {
       status,
       completed: isCompleted,
-      completedAt:
-        isCompleted && !taskToUpdate.completedAt
-          ? new Date()
-          : status !== 'Finalizado' && status !== 'Cancelado'
-          ? null
-          : taskToUpdate.completedAt,
     };
   
+    if (isCompleted) {
+      if (!taskToUpdate.completedAt) {
+        updatedTaskData.completedAt = new Date();
+      }
+    } else {
+      updatedTaskData.completedAt = null;
+    }
+
+    if (status === 'En Progreso' && !taskToUpdate.startedAt) {
+      updatedTaskData.startedAt = new Date();
+    }
+  
     setTasks((prev) =>
-      prev.map((task) => (task.id === taskId ? { ...task, ...updatedTaskData } : task))
+      prev.map((task) => (task.id === taskId ? { ...task, ...updatedTaskData } as Task : task))
     );
   
     try {
-      await updateDoc(doc(db, 'tasks', taskId), updatedTaskData);
+      await updateDoc(doc(db, 'tasks', taskId), updatedTaskData as any);
     } catch (error) {
       console.error('Error updating task status: ', error);
       setTasks(tasks); // Revert
@@ -504,6 +522,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       ...nt,
       completed: false,
       status: 'Pendiente',
+      createdAt: new Date(),
       completedAt: null,
     } as Task));
 
@@ -523,7 +542,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
       tasksToAdd.forEach(task => {
           const { id, ...data } = task;
-          batch.set(doc(db, 'tasks', id), data);
+          batch.set(doc(db, 'tasks', id), data as any);
       });
 
       await batch.commit();

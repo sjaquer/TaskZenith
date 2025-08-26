@@ -1,6 +1,5 @@
 'use client';
 
-import { DailyDashboard } from '@/components/tasks/daily-dashboard';
 import { TodoList } from '@/components/tasks/todo-list';
 import { KanbanBoard } from '@/components/tasks/kanban-board';
 import { TaskHistory } from '@/components/tasks/task-history';
@@ -10,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useTasks } from '@/contexts/task-context';
 import { useToast } from '@/hooks/use-toast';
 import { RefreshCw } from 'lucide-react';
+import { WeeklyAnalyticsDashboard } from '@/components/tasks/weekly-analytics-dashboard';
 
 function SyncButton() {
   const { syncData, isSyncing } = useTasks();
@@ -54,7 +54,7 @@ export default function DashboardPage() {
               <h2 className="text-2xl font-bold tracking-tight mb-4 uppercase text-primary/80">
                 Panel Principal
               </h2>
-              <DailyDashboard />
+              <WeeklyAnalyticsDashboard />
             </div>
 
             <div className="lg:col-span-1">
