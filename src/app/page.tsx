@@ -12,6 +12,7 @@ import { RefreshCw, Palette } from 'lucide-react';
 import { TaskStatsCards } from '@/components/tasks/task-stats-cards';
 import { useTheme } from '@/contexts/theme-context';
 import { DueTasksWidget } from '@/components/tasks/due-tasks-widget';
+import { HighPriorityTasksWidget } from '@/components/tasks/high-priority-tasks-widget';
 
 function SyncButton() {
   const { syncData, isSyncing } = useTasks();
@@ -77,6 +78,7 @@ export default function DashboardPage() {
                   </>
                 )}
                 {layoutConfig.enableDueDates && <DueTasksWidget />}
+                {layoutConfig.showPriorityTasks && <HighPriorityTasksWidget />}
             </div>
 
             <div className="lg:col-span-1">
