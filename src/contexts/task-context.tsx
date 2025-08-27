@@ -116,25 +116,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             setIsSyncing(false);
         }
     }, [userId, getCollections]);
-
-
-    useEffect(() => {
-        if (authLoading) return;
-
-        const loadData = async () => {
-            if (userId) {
-                await syncData();
-                await fetchDailyTasks();
-                setIsLoaded(true);
-            } else {
-                // User is logged out, clear all data
-                clearLocalData();
-            }
-        };
-      
-        loadData();
-    }, [userId, authLoading, syncData, fetchDailyTasks]);
-
+    
     const fetchDailyTasks = useCallback(async () => {
         if (!userId) return;
         
@@ -179,6 +161,25 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             console.log("Could not fetch daily tasks, possibly offline.", e);
         }
     }, [userId, getCollections]);
+
+
+    useEffect(() => {
+        if (authLoading) return;
+
+        const loadData = async () => {
+            if (userId) {
+                await syncData();
+                await fetchDailyTasks();
+                setIsLoaded(true);
+            } else {
+                // User is logged out, clear all data
+                clearLocalData();
+            }
+        };
+      
+        loadData();
+    }, [userId, authLoading, syncData, fetchDailyTasks]);
+
 
   const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'userId'>>) => {
     if (!userId) return;
@@ -594,3 +595,5 @@ export const useTasks = () => {
   }
   return context;
 };
+
+    
