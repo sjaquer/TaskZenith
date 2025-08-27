@@ -167,13 +167,13 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         const loadInitialData = async () => {
-            if (userId && !isLoaded) { // Only load if we have a user and data hasn't been loaded yet
-                // We no longer sync automatically. The user will do it manually.
-                // We just load the daily tasks which are specific to the day.
+            if (userId) { 
+                if (tasks.length === 0 && projects.length === 0) {
+                    await syncData();
+                }
                 await fetchDailyTasks();
                 setIsLoaded(true);
             } else if (!userId) {
-                // User is logged out, clear all data and reset loaded state
                 clearLocalData();
             }
         };
@@ -181,7 +181,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         if (!authLoading) {
           loadInitialData();
         }
-    }, [userId, authLoading, isLoaded, fetchDailyTasks, clearLocalData]);
+    }, [userId, authLoading]);
 
 
   const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'userId'>>) => {
