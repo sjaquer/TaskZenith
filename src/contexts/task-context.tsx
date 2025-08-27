@@ -180,7 +180,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       
         loadInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userId, authLoading]);
+    }, [userId, authLoading, isLoaded]);
 
 
   const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'userId'>>) => {
