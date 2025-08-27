@@ -11,7 +11,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarInset,
-  SidebarTrigger,
   SidebarFooter,
   useSidebar,
 } from '@/components/ui/sidebar';
@@ -55,21 +54,12 @@ function BottomNavBar() {
 }
 
 function MobileHeader() {
-    const { toggleSidebar } = useSidebar();
     return (
         <header className="flex md:hidden items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
                 <Bot className="w-7 h-7 text-accent" />
                 <h1 className="text-lg font-semibold font-headline">TaskZenith</h1>
             </div>
-            <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleSidebar}
-            >
-                <PanelLeft className="w-6 h-6" />
-                <span className="sr-only">Toggle Sidebar</span>
-            </Button>
         </header>
     );
 }
@@ -94,7 +84,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Bot className="w-8 h-8 text-accent" />
             <h1 className="text-xl font-semibold font-headline group-data-[collapsible=icon]:hidden">TaskZenith</h1>
           </div>
-          <SidebarTrigger className="group-data-[collapsible=icon]:hidden" />
         </SidebarHeader>
         <SidebarContent />
         <SidebarFooter>
