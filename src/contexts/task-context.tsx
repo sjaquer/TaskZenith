@@ -37,6 +37,7 @@ interface TaskContextType {
   deleteProject: (projectId: string) => void;
   updateProject: (projectId: string, data: Partial<Omit<Project, 'id' | 'userId'>>) => void;
   addAiTasks: (newTasks: string[], category: Category, priority: Priority, projectId?: string) => void;
+  addVoiceTasks: (newTasks: (Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'userId'>)[]) => void;
   clearAllData: () => void;
   toggleDailyTask: (taskId: string) => void;
   updateCustomDailyTasks: (tasks: CustomDailyTask[]) => void;
@@ -167,7 +168,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         const loadInitialData = async () => {
             if (userId && !isLoaded) { // Only load if we have a user and data hasn't been loaded yet
-                await syncData();
+                // We no longer sync automatically. The user will do it manually.
+                // We just load the daily tasks which are specific to the day.
                 await fetchDailyTasks();
                 setIsLoaded(true);
             } else if (!userId) {
@@ -179,7 +181,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         if (!authLoading) {
           loadInitialData();
         }
-    }, [userId, authLoading, isLoaded, syncData, fetchDailyTasks, clearLocalData]);
+    }, [userId, authLoading, isLoaded, fetchDailyTasks, clearLocalData]);
 
 
   const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'userId'>>) => {
@@ -288,6 +290,37 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
           newTaskData.projectId = projectId;
         }
 
+        const newTask: Task = { ...newTaskData, id: newDocRef.id };
+        batch.set(newDocRef, newTaskData);
+        createdTasks.push(newTask);
+    });
+
+    setTasks((prev) => [...createdTasks, ...prev]);
+    try {
+        await batch.commit();
+    } catch(error) {
+        console.error("Error adding AI tasks: ", error);
+        setTasks((prev) => prev.filter(t => !createdTasks.some(ct => ct.id === t.id)));
+    }
+  };
+
+  const addVoiceTasks = async (newTasks: (Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'userId'>)[]) => {
+    if (!userId) return;
+    const { tasksCollection } = getCollections();
+    const batch = writeBatch(db);
+    const createdTasks: Task[] = [];
+
+    newTasks.forEach((task) => {
+        const newDocRef = doc(tasksCollection);
+        const newTaskData: Omit<Task, 'id'> = {
+            ...task,
+            userId,
+            completed: false,
+            status: 'Pendiente',
+            createdAt: new Date(),
+            completedAt: null
+        };
+        
         const newTask: Task = { ...newTaskData, id: newDocRef.id };
         batch.set(newDocRef, newTaskData);
         createdTasks.push(newTask);
@@ -559,7 +592,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, isSyncing, addTask, deleteTask, updateTask, toggleTaskCompletion, restoreTask, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks, applyOrganizedTasks, deleteCompletedTasks, syncData, clearLocalData }}>
+    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, isSyncing, addTask, deleteTask, updateTask, toggleTaskCompletion, restoreTask, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, addVoiceTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks, applyOrganizedTasks, deleteCompletedTasks, syncData, clearLocalData }}>
       {children}
     </TaskContext.Provider>
   );
