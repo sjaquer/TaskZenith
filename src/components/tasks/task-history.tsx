@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, RotateCcw } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -52,7 +52,7 @@ function ClearCompletedTasksButton() {
 }
 
 export function TaskHistory() {
-  const { tasks } = useTasks();
+  const { tasks, restoreTask } = useTasks();
 
   const completedTasks = useMemo(() => {
     const fifteenDaysAgo = new Date();
@@ -76,7 +76,8 @@ export function TaskHistory() {
               <TableHead>Tarea</TableHead>
               <TableHead>Categoría</TableHead>
               <TableHead>Prioridad</TableHead>
-              <TableHead className="text-right">Completada el</TableHead>
+              <TableHead>Completada el</TableHead>
+              <TableHead className="text-right">Acción</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -92,14 +93,19 @@ export function TaskHistory() {
                                 {task.priority}
                             </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell>
                             {task.completedAt && format(new Date(task.completedAt), "PPP", { locale: es })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                            <Button variant="ghost" size="icon" onClick={() => restoreTask(task.id)} title="Restaurar Tarea">
+                                <RotateCcw className="h-4 w-4 text-primary" />
+                            </Button>
                         </TableCell>
                     </TableRow>
                 ))
             ) : (
                 <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                         No hay tareas completadas en los últimos 15 días.
                     </TableCell>
                 </TableRow>

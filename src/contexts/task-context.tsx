@@ -30,13 +30,13 @@ interface TaskContextType {
   deleteTask: (taskId: string) => void;
   updateTask: (taskId: string, data: Partial<Omit<Task, 'id' | 'completed' | 'userId'>>) => void;
   toggleTaskCompletion: (taskId: string) => void;
+  restoreTask: (taskId: string) => void;
   updateTaskStatus: (taskId: string, status: KanbanStatus) => void;
   getProjectById: (projectId: string) => Project | undefined;
   addProject: (project: Omit<Project, 'id' | 'userId'>) => void;
   deleteProject: (projectId: string) => void;
   updateProject: (projectId: string, data: Partial<Omit<Project, 'id' | 'userId'>>) => void;
   addAiTasks: (newTasks: string[], category: Category, priority: Priority, projectId?: string) => void;
-  addVoiceTasks: (newTasks: Omit<Task, 'id' | 'completed' | 'status' | 'createdAt' | 'userId'>[]) => void;
   clearAllData: () => void;
   toggleDailyTask: (taskId: string) => void;
   updateCustomDailyTasks: (tasks: CustomDailyTask[]) => void;
@@ -302,43 +302,6 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addVoiceTasks = async (newTasks: Omit<Task, 'id' | 'completed' | 'status' | 'createdAt' | 'userId'>[]) => {
-    if (!userId) return;
-    const { tasksCollection } = getCollections();
-    const batch = writeBatch(db);
-    const createdTasks: Task[] = [];
-
-    newTasks.forEach((task) => {
-        const newDocRef = doc(tasksCollection);
-        const taskDataForFirestore: Partial<Task> = {
-            ...task,
-            userId,
-            completed: false,
-            status: 'Pendiente',
-            createdAt: new Date(),
-        };
-        if (taskDataForFirestore.projectId === undefined) {
-          delete taskDataForFirestore.projectId;
-        }
-
-        const newTask: Task = {
-            id: newDocRef.id,
-            ...taskDataForFirestore,
-        } as Task;
-        
-        batch.set(newDocRef, taskDataForFirestore);
-        createdTasks.push(newTask);
-    });
-
-    setTasks((prev) => [...createdTasks, ...prev]);
-    try {
-        await batch.commit();
-    } catch(error) {
-        console.error("Error adding voice tasks: ", error);
-        setTasks((prev) => prev.filter(t => !createdTasks.some(ct => ct.id === t.id)));
-    }
-  };
-
   const toggleTaskCompletion = async (taskId: string) => {
     const taskToUpdate = tasks.find(t => t.id === taskId);
     if (!taskToUpdate || !userId) return;
@@ -364,6 +327,19 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         console.error("Error toggling task completion: ", error);
         setTasks(tasks.map(t => t.id === taskId ? taskToUpdate : t));
     }
+  };
+
+  const restoreTask = async (taskId: string) => {
+    const taskToUpdate = tasks.find((t) => t.id === taskId);
+    if (!taskToUpdate || !userId) return;
+
+    const updatedData = {
+      completed: false,
+      completedAt: null,
+      status: 'Pendiente' as KanbanStatus,
+    };
+
+    updateTask(taskId, updatedData);
   };
 
   const updateTaskStatus = async (taskId: string, status: KanbanStatus) => {
@@ -583,7 +559,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, isSyncing, addTask, deleteTask, updateTask, toggleTaskCompletion, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, addVoiceTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks, applyOrganizedTasks, deleteCompletedTasks, syncData, clearLocalData }}>
+    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, isSyncing, addTask, deleteTask, updateTask, toggleTaskCompletion, restoreTask, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks, applyOrganizedTasks, deleteCompletedTasks, syncData, clearLocalData }}>
       {children}
     </TaskContext.Provider>
   );

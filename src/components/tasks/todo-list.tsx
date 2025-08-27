@@ -11,9 +11,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AiTaskGenerator } from './ai-task-generator';
 import type { Category, Priority, Task } from '@/lib/types';
-import { Trash2, Edit, CheckCircle, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { Trash2, Edit, Clock } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { VoiceTaskGenerator } from './voice-task-generator';
 import { TaskEditDialog } from './task-edit-dialog';
 import { AiTaskOptimizer } from './ai-task-optimizer';
 import { useTheme } from '@/contexts/theme-context';
@@ -22,6 +21,7 @@ import { Calendar } from '../ui/calendar';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Calendar as CalendarIcon } from 'lucide-react';
 
 function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: (id: string) => void; onDelete: (id: string) => void; onEdit: (task: Task) => void; }) {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -301,7 +301,6 @@ export function TodoList() {
             <TabsContent value="personal" className="mt-6">{renderTaskList(groupedTasks.personal)}</TabsContent>
             <TabsContent value="proyectos" className="mt-6">{renderTaskList(groupedTasks.proyectos)}</TabsContent>
         </Tabs>
-        <VoiceTaskGenerator />
       </div>
       {editingTask && (
         <TaskEditDialog
