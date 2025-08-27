@@ -23,9 +23,8 @@ import {
   Crab,
   Fish,
   Bird,
-  Snail
+  Turtle,
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useAuth } from '@/contexts/auth-context';
 import { useTasks } from '@/contexts/task-context';
 import { Button } from '../ui/button';
@@ -48,7 +47,7 @@ const iconMap: Record<ProfileIcon, React.ElementType> = {
     crab: Crab,
     fish: Fish,
     bird: Bird,
-    snail: Snail,
+    turtle: Turtle,
 };
 
 function BottomNavBar() {
@@ -81,12 +80,10 @@ function MainHeader() {
 
     return (
         <header className="flex items-center justify-between p-4 border-b bg-card/80 backdrop-blur-sm sticky top-0 z-40">
-            <div className="flex items-center gap-2">
-                 <button onClick={() => setSidebarOpen(true)} className="flex items-center gap-3">
-                    <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
-                    <h1 className="text-xl font-semibold font-headline hidden md:block">TaskZenith</h1>
-                </button>
-            </div>
+            <button onClick={() => setSidebarOpen(true)} className="flex items-center gap-3">
+                <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
+                <h1 className="text-xl font-semibold font-headline hidden md:block">TaskZenith</h1>
+            </button>
             
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-sm font-semibold">

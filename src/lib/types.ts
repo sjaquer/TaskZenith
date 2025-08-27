@@ -55,7 +55,7 @@ export interface OrganizedTasks {
   deletedTaskIds: string[];
 }
 
-export type ProfileIcon = 'whale' | 'crab' | 'fish' | 'bird' | 'snail' | 'user';
+export type ProfileIcon = 'user' | 'whale' | 'crab' | 'fish' | 'bird' | 'turtle';
 
 export interface UserProfile {
   displayName?: string;

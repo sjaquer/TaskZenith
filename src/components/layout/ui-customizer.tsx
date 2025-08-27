@@ -11,7 +11,7 @@ import {
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
-import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, UserCircle, Whale, Crab, Fish, Bird, Snail } from 'lucide-react';
+import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, UserCircle, Whale, Crab, Fish, Bird, Turtle } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { useAuth } from '@/contexts/auth-context';
@@ -64,13 +64,13 @@ const layoutOptions: { key: keyof ReturnType<typeof useTheme>['layoutConfig']; l
     { key: 'showPriorityTasks', label: 'Mostrar Tareas Prioritarias', icon: AlertOctagon },
 ];
 
-const profileIcons: { name: ProfileIcon; icon: React.ElementType }[] = [
-    { name: 'user', icon: UserCircle },
-    { name: 'whale', icon: Whale },
-    { name: 'crab', icon: Crab },
-    { name: 'fish', icon: Fish },
-    { name: 'bird', icon: Bird },
-    { name: 'snail', icon: Snail },
+const profileIcons: { name: ProfileIcon; icon: React.ElementType, label: string }[] = [
+    { name: 'user', icon: UserCircle, label: 'Usuario' },
+    { name: 'whale', icon: Whale, label: 'Ballena' },
+    { name: 'crab', icon: Crab, label: 'Cangrejo' },
+    { name: 'fish', icon: Fish, label: 'Pez' },
+    { name: 'bird', icon: Bird, label: 'Pájaro' },
+    { name: 'turtle', icon: Turtle, label: 'Tortuga' },
 ];
 
 export function UICustomizer() {
@@ -161,18 +161,18 @@ export function UICustomizer() {
                       Ícono de Perfil
                   </h3>
                   <div className="grid grid-cols-3 gap-2">
-                    {profileIcons.map(({ name, icon: Icon }) => (
+                    {profileIcons.map(({ name, icon: Icon, label }) => (
                       <Button
                         key={name}
                         variant="outline"
-                        size="icon"
                         className={cn(
-                          'h-16 w-full',
+                          'h-16 w-full flex-col gap-1',
                           userProfile?.profileIcon === name && 'border-primary ring-2 ring-primary'
                         )}
                         onClick={() => handleIconChange(name)}
                       >
                         <Icon className="w-8 h-8" />
+                        <span className="text-xs">{label}</span>
                       </Button>
                     ))}
                   </div>
