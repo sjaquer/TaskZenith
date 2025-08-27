@@ -24,7 +24,7 @@ const statusToColor: Record<KanbanStatus, string> = {
   'Cancelado': 'bg-red-500'
 }
 
-function KanbanCard({ task, onEdit }: { task: Task, onEdit: (task: Task) => void }) {
+function KanbanCard({ task, onEdit, selectedProjectId }: { task: Task, onEdit: (task: Task) => void, selectedProjectId: string | null }) {
   const { getProjectById, updateTaskStatus } = useTasks();
   const project = task.projectId ? getProjectById(task.projectId) : undefined;
 
@@ -32,6 +32,12 @@ function KanbanCard({ task, onEdit }: { task: Task, onEdit: (task: Task) => void
     e.dataTransfer.setData('taskId', task.id);
   };
   
+  const isVisible = !selectedProjectId || task.projectId === selectedProjectId;
+
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <Card
       draggable
@@ -65,7 +71,7 @@ function KanbanCard({ task, onEdit }: { task: Task, onEdit: (task: Task) => void
   );
 }
 
-function KanbanColumn({ status, tasks, onEdit }: { status: KanbanStatus; tasks: Task[]; onEdit: (task: Task) => void }) {
+function KanbanColumn({ status, tasks, onEdit, selectedProjectId }: { status: KanbanStatus; tasks: Task[]; onEdit: (task: Task) => void; selectedProjectId: string | null }) {
   const { updateTaskStatus } = useTasks();
   const [isOver, setIsOver] = useState(false);
 
@@ -87,6 +93,8 @@ function KanbanColumn({ status, tasks, onEdit }: { status: KanbanStatus; tasks: 
     setIsOver(false);
   };
 
+  const visibleTasks = tasks.filter(task => !selectedProjectId || task.projectId === selectedProjectId);
+
   return (
     <div
       onDragOver={handleDragOver}
@@ -97,11 +105,11 @@ function KanbanColumn({ status, tasks, onEdit }: { status: KanbanStatus; tasks: 
       <div className="flex items-center gap-3 p-2 mb-4">
         <span className={`w-3 h-3 rounded-full ${statusToColor[status]}`}></span>
         <h3 className="font-semibold uppercase tracking-wider">{status}</h3>
-        <span className="text-sm font-bold text-muted-foreground bg-secondary/50 rounded-full px-2 py-0.5">{tasks.length}</span>
+        <span className="text-sm font-bold text-muted-foreground bg-secondary/50 rounded-full px-2 py-0.5">{visibleTasks.length}</span>
       </div>
       <div className="space-y-4 min-h-[200px] p-1">
         {tasks.map((task) => (
-          <KanbanCard key={task.id} task={task} onEdit={onEdit} />
+          <KanbanCard key={task.id} task={task} onEdit={onEdit} selectedProjectId={selectedProjectId} />
         ))}
       </div>
     </div>
@@ -113,17 +121,12 @@ export function KanbanBoard() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  const filteredTasks = useMemo(() => {
-    if (!selectedProjectId) return tasks;
-    return tasks.filter(task => task.projectId === selectedProjectId);
-  }, [tasks, selectedProjectId]);
-
   const groupedTasks = useMemo(() => {
     return columns.reduce((acc, status) => {
-      acc[status] = filteredTasks.filter((task) => task.status === status);
+      acc[status] = tasks.filter((task) => task.status === status);
       return acc;
     }, {} as Record<KanbanStatus, Task[]>);
-  }, [filteredTasks]);
+  }, [tasks]);
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
@@ -138,7 +141,13 @@ export function KanbanBoard() {
         <ProjectLegend onProjectSelect={setSelectedProjectId} selectedProjectId={selectedProjectId} />
         <div className="flex gap-6 pb-4 overflow-x-auto">
             {columns.map((status) => (
-                <KanbanColumn key={status} status={status} tasks={groupedTasks[status] || []} onEdit={handleEditTask} />
+                <KanbanColumn 
+                    key={status} 
+                    status={status} 
+                    tasks={groupedTasks[status] || []} 
+                    onEdit={handleEditTask}
+                    selectedProjectId={selectedProjectId}
+                />
             ))}
         </div>
         {editingTask && (
