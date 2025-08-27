@@ -28,17 +28,8 @@ import { Separator } from '../ui/separator';
 import { useAuth } from '@/contexts/auth-context';
 import { useTasks } from '@/contexts/task-context';
 import { Button } from '../ui/button';
-import { SheetTitle } from '../ui/sheet';
-
-const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/todo', label: 'To-Do List', icon: ListTodo },
-  { href: '/dashboard/kanban', label: 'Kanban Board', icon: KanbanSquare },
-  { href: '/dashboard/history', label: 'History', icon: History },
-];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const { user, logout } = useAuth();
   const { clearLocalData } = useTasks();
   const router = useRouter();
@@ -58,25 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <h1 className="text-xl font-semibold font-headline">TaskZenith</h1>
           </div>
         </SidebarHeader>
-        <SidebarContent>
-          <SheetTitle className="sr-only">Menú Principal</SheetTitle>
-          <SidebarMenu>
-            {menuItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === item.href}
-                  tooltip={item.label}
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarContent>
+        <SidebarContent />
         <SidebarFooter>
           <Separator className="my-2" />
           <div className="p-4 flex items-center justify-between">

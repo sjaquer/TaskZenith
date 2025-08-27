@@ -3,14 +3,22 @@
 import * as React from 'react';
 import {Slot} from '@radix-ui/react-slot';
 import {VariantProps, cva} from 'class-variance-authority';
-import {PanelLeft} from 'lucide-react';
+import {
+  History,
+  KanbanSquare,
+  LayoutDashboard,
+  ListTodo,
+  PanelLeft,
+} from 'lucide-react';
+import Link from 'next/link';
+import {usePathname} from 'next/navigation';
 
 import {useIsMobile} from '@/hooks/use-mobile';
 import {cn} from '@/lib/utils';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Separator} from '@/components/ui/separator';
-import {Sheet, SheetContent} from '@/components/ui/sheet';
+import {Sheet, SheetContent, SheetTitle} from '@/components/ui/sheet';
 import {Skeleton} from '@/components/ui/skeleton';
 import {
   Tooltip,
@@ -156,6 +164,38 @@ const SidebarProvider = React.forwardRef<
 );
 SidebarProvider.displayName = 'SidebarProvider';
 
+const menuItems = [
+  {href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard},
+  {href: '/dashboard/todo', label: 'To-Do List', icon: ListTodo},
+  {href: '/dashboard/kanban', label: 'Kanban Board', icon: KanbanSquare},
+  {href: '/dashboard/history', label: 'History', icon: History},
+];
+
+const SidebarMenuContent = () => {
+  const pathname = usePathname();
+
+  return (
+    <SidebarContent>
+      <SidebarMenu>
+        {menuItems.map((item) => (
+          <SidebarMenuItem key={item.href}>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === item.href}
+              tooltip={item.label}
+            >
+              <Link href={item.href}>
+                <item.icon />
+                <span>{item.label}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ))}
+      </SidebarMenu>
+    </SidebarContent>
+  );
+};
+
 const Sidebar = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> & {
@@ -176,6 +216,13 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const {isMobile, state, openMobile, setOpenMobile} = useSidebar();
+    const childrenArray = React.Children.toArray(children);
+    const header = childrenArray.find(
+      (child) => (child as React.ReactElement).type === SidebarHeader
+    );
+    const footer = childrenArray.find(
+      (child) => (child as React.ReactElement).type === SidebarFooter
+    );
 
     if (collapsible === 'none') {
       return (
@@ -187,7 +234,9 @@ const Sidebar = React.forwardRef<
           ref={ref}
           {...props}
         >
-          {children}
+          {header}
+          <SidebarMenuContent />
+          {footer}
         </div>
       );
     }
@@ -206,7 +255,12 @@ const Sidebar = React.forwardRef<
             }
             side={side}
           >
-            <div className="flex h-full w-full flex-col">{children}</div>
+            <div className="flex h-full w-full flex-col">
+              <SheetTitle className="sr-only">Menú Principal</SheetTitle>
+              {header}
+              <SidebarMenuContent />
+              {footer}
+            </div>
           </SheetContent>
         </Sheet>
       );
@@ -250,7 +304,9 @@ const Sidebar = React.forwardRef<
             data-sidebar="sidebar"
             className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
           >
-            {children}
+            {header}
+            <SidebarMenuContent />
+            {footer}
           </div>
         </div>
       </div>
