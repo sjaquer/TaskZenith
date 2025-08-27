@@ -206,9 +206,9 @@ export function TodoList() {
                         placeholder="Añadir una nueva tarea..."
                         className="flex-grow bg-background/50"
                     />
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-2">
                         <Select value={newTaskCategory} onValueChange={handleCategoryChange}>
-                            <SelectTrigger className="flex-1 min-w-[120px] capitalize">
+                            <SelectTrigger className="w-full sm:w-auto sm:flex-1 min-w-[120px] capitalize">
                                 <SelectValue placeholder="Categoría" />
                             </SelectTrigger>
                             <SelectContent>
@@ -220,7 +220,7 @@ export function TodoList() {
                         </Select>
                         {newTaskCategory === 'proyectos' && (
                             <Select value={newTaskProjectId} onValueChange={setNewTaskProjectId}>
-                                <SelectTrigger className="flex-1 min-w-[120px] capitalize" disabled={projects.length === 0}>
+                                <SelectTrigger className="w-full sm:w-auto sm:flex-1 min-w-[120px] capitalize" disabled={projects.length === 0}>
                                     <SelectValue placeholder={projects.length === 0 ? "No hay proyectos" : "Asignar Proyecto"} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -233,7 +233,7 @@ export function TodoList() {
                             </Select>
                         )}
                         <Select value={newTaskPriority} onValueChange={(v) => setNewTaskPriority(v as Priority)}>
-                            <SelectTrigger className="flex-1 min-w-[120px] capitalize">
+                            <SelectTrigger className="w-full sm:w-auto sm:flex-1 min-w-[120px] capitalize">
                                 <SelectValue placeholder="Prioridad" />
                             </SelectTrigger>
                             <SelectContent>
@@ -268,8 +268,8 @@ export function TodoList() {
                         </Popover>
                     )}
                     <div className="flex flex-col sm:flex-row gap-2">
-                        <Button type="submit" className="w-full">Añadir Tarea</Button>
-                        <AiTaskGenerator />
+                        <Button type="submit" className="w-full sm:w-auto sm:flex-1">Añadir Tarea</Button>
+                        <div className="w-full sm:w-auto sm:flex-1"><AiTaskGenerator /></div>
                     </div>
                 </form>
             </CardContent>

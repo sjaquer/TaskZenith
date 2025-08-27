@@ -121,7 +121,7 @@ export function AiTaskGenerator() {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" className="w-full">
           <Bot className="mr-2 h-4 w-4" /> Generar con IA
         </Button>
       </DialogTrigger>
