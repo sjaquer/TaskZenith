@@ -28,6 +28,7 @@ import { useTasks } from '@/contexts/task-context';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import Image from 'next/image';
 
 
 const menuItems = [
@@ -66,12 +67,17 @@ function MainHeader() {
     return (
         <header className="flex items-center justify-between p-4 border-b bg-card/80 backdrop-blur-sm sticky top-0 z-40">
             <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setSidebarOpen(true)}>
-                    <PanelLeft className="w-6 h-6" />
-                    <span className="sr-only">Abrir Menú</span>
-                </Button>
-                <Bot className="w-7 h-7 text-accent hidden md:block" />
-                <h1 className="text-lg font-semibold font-headline hidden md:block">TaskZenith</h1>
+                 <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="md:hidden flex items-center gap-2 text-lg font-semibold font-headline"
+                    >
+                    <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
+                    <h1>TaskZenith</h1>
+                </button>
+                <div className="hidden md:flex">
+                     <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
+                     <h1 className="text-lg font-semibold font-headline ml-2">TaskZenith</h1>
+                </div>
             </div>
             
             <div className="flex items-center gap-4">
@@ -117,10 +123,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-1">
             <Sidebar>
                 <SidebarHeader className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Bot className="w-8 h-8 text-accent" />
+                    <button className="flex items-center gap-3">
+                        <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
                         <h1 className="text-xl font-semibold font-headline">TaskZenith</h1>
-                    </div>
+                    </button>
                 </SidebarHeader>
                 <SidebarContent />
             </Sidebar>

@@ -16,6 +16,7 @@ import {useIsMobile} from '@/hooks/use-mobile';
 import {cn} from '@/lib/utils';
 import {Button} from '@/components/ui/button';
 import {Sheet, SheetContent, SheetHeader, SheetTitle} from '@/components/ui/sheet';
+import Image from 'next/image';
 
 type SidebarContext = {
   open: boolean;
@@ -118,7 +119,7 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const {isMobile, open, setOpen} = useSidebar();
+    const {open, setOpen} = useSidebar();
     const childrenArray = React.Children.toArray(children);
     const header = childrenArray.find(
       (child) => (child as React.ReactElement).type === SidebarHeader
@@ -127,20 +128,15 @@ const Sidebar = React.forwardRef<
       (child) => (child as React.ReactElement).type === SidebarFooter
     );
     
-    if (!isMobile) {
-        return null; // Sidebar is only for mobile now, rendered as a Sheet
-    }
-
     return (
       <Sheet open={open} onOpenChange={setOpen} {...props}>
         <SheetContent
           ref={ref}
-          className={cn("w-3/4 bg-card p-0 text-foreground", className)}
+          className={cn("w-3/4 md:w-auto md:max-w-xs bg-card p-0 text-foreground", className)}
           side="left"
         >
           <div className="flex h-full w-full flex-col">
             <SheetHeader className="p-4 border-b">
-                <SheetTitle className="sr-only">Menú Principal</SheetTitle>
                 {header}
             </SheetHeader>
             <SidebarMenuContent />
