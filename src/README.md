@@ -83,6 +83,7 @@ TaskZenith/
 │       │   └── process-voice-command.ts
 │       └── genkit.ts
 ├── .env
+├── .env.example
 ├── package.json
 ├── tailwind.config.ts
 └── tsconfig.json
@@ -116,26 +117,37 @@ cd TaskZenith
 npm install
 ```
 
-### 3. Configura las Variables de Entorno
+### 3. Configura las Variables de Entorno (¡MUY IMPORTANTE!)
 
-Antes de iniciar, debes configurar tus credenciales.
-Crea un archivo llamado `.env` en la raíz del proyecto (puedes duplicar y renombrar el archivo `.env.example`) y añade tus claves:
+Para que la aplicación funcione, necesitas conectar tus propias claves de Firebase y Gemini.
 
+1.  **Crea el archivo `.env`:** Busca el archivo llamado `.env.example` en la raíz del proyecto. Crea una copia de este archivo y renómbrala a `.env`.
+
+2.  **Obtén tus claves de Firebase:**
+    *   Ve a la [Consola de Firebase](https://console.firebase.google.com/).
+    *   Crea un nuevo proyecto (o selecciona uno que ya tengas).
+    *   Dentro de tu proyecto, ve a **Autenticación** (en el menú de la izquierda) y habilita el proveedor de **Correo electrónico y contraseña**.
+    *   Ve a **Configuración del proyecto** (el ícono de engranaje en la esquina superior izquierda).
+    *   En la pestaña **General**, desplázate hacia abajo hasta "Tus apps".
+    *   Haz clic en el ícono `</>` para crear una nueva **Aplicación web**.
+    *   Dale un apodo a tu app y registra la aplicación.
+    *   Firebase te mostrará un objeto `firebaseConfig`. Copia los valores de este objeto en las variables `NEXT_PUBLIC_*` correspondientes en tu archivo `.env`.
+
+3.  **Obtén tu clave de Gemini:**
+    *   Ve a [Google AI Studio](https://aistudio.google.com/app/apikey).
+    *   Haz clic en "Crear clave de API" y copia la clave generada.
+    *   Pega esta clave en la variable `GEMINI_API_KEY` de tu archivo `.env`.
+
+Tu archivo `.env` debería verse así, pero con tus propios valores:
 ```env
-# Firebase Configuration - Required
-# IMPORTANT: These variables must be prefixed with NEXT_PUBLIC_ to be exposed to the browser.
-NEXT_PUBLIC_FIREBASE_API_KEY="TU_API_KEY_DE_FIREBASE"
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="TU_AUTH_DOMAIN_DE_FIREBASE"
-NEXT_PUBLIC_FIREBASE_PROJECT_ID="TU_PROJECT_ID_DE_FIREBASE"
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="TU_STORAGE_BUCKET_DE_FIREBASE"
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="TU_MESSAGING_SENDER_ID_DE_FIREBASE"
-NEXT_PUBLIC_FIREBASE_APP_ID="TU_APP_ID_DE_FIREBASE"
-
-# Genkit/Gemini API Key - Required for AI features
-# This key is used on the server-side, so it does not need the NEXT_PUBLIC_ prefix.
-GEMINI_API_KEY="TU_API_KEY_DE_GEMINI"
+NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSy...Bg"
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="tu-proyecto.firebaseapp.com"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID="tu-proyecto"
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="tu-proyecto.appspot.com"
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="1234567890"
+NEXT_PUBLIC_FIREBASE_APP_ID="1:12345:web:abcd123"
+GEMINI_API_KEY="AIzaSy...C0"
 ```
-Puedes encontrar tus credenciales de Firebase en la configuración de tu proyecto en la [Consola de Firebase](https://console.firebase.google.com/). La `GEMINI_API_KEY` la obtienes desde [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 ### 4. Ejecuta en Modo Desarrollo
 
@@ -155,44 +167,9 @@ npm run build
 
 ## ✅ Uso y Personalización
 
-Para adaptar este proyecto a tu propia cuenta y necesidades, sigue estos pasos:
-
-### 1. Configuración de Firebase y Gemini
-
-El corazón de la aplicación (base de datos y IA) se configura a través de variables de entorno.
-
-*   **Archivo Clave:** `.env`
-*   **Qué hacer:**
-    1.  Crea una copia del archivo `.env.example` y renómbrala a `.env`.
-    2.  Ve a la [Consola de Firebase](https://console.firebase.google.com/).
-    3.  Crea un nuevo proyecto o selecciona uno existente.
-    4.  En la configuración de tu proyecto, ve a la sección "Tus apps" y crea una nueva aplicación web.
-    5.  Firebase te proporcionará un objeto de configuración `firebaseConfig`. Copia los valores de ese objeto en las variables `NEXT_PUBLIC_FIREBASE_*` correspondientes en tu archivo `.env`.
-    6.  Ve a [Google AI Studio](https://aistudio.google.com/app/apikey) para generar una clave de API para Gemini y pégala en la variable `GEMINI_API_KEY`.
-
-### 2. Lógica de Inteligencia Artificial (Genkit)
-
-Puedes personalizar cómo la IA interpreta los comandos o genera las tareas.
-
-*   **Archivos Clave:**
-    *   `src/ai/flows/generate-tasks.ts`: Controla cómo se generan las subtareas a partir de una descripción.
-    *   `src/ai/flows/process-voice-command.ts`: Controla cómo se interpretan los comandos de voz.
-*   **Qué hacer:**
-    *   **Ajustar los Prompts:** Dentro de cada archivo, encontrarás una variable `...Prompt`. Puedes modificar el texto del `prompt` para cambiar las instrucciones que le das al modelo de IA. Por ejemplo, puedes hacer que sea más estricto con las categorías, que use un tono diferente o que pida más detalles.
-    *   **Cambiar el Modelo:** En `src/ai/genkit.ts`, puedes cambiar el modelo de Gemini por otro que se ajuste mejor a tus necesidades (ej. `gemini-pro-vision` si quisieras analizar imágenes en el futuro).
-
-### 3. Estilos y Apariencia
-
-*   **Colores y Tema:**
-    *   `src/app/globals.css`: Aquí puedes cambiar los valores de las variables CSS (ej. `--primary`, `--background`) para alterar la paleta de colores de toda la aplicación.
-*   **Fuentes y Componentes:**
-    *   `tailwind.config.ts`: Modifica este archivo para extender la configuración de Tailwind, como añadir nuevas fuentes o espaciados.
-    *   `src/components/ui/`: Estos son los componentes de ShadCN. Puedes personalizarlos directamente si lo necesitas.
-
-### 4. Contenido y Tareas por Defecto
-
-*   **Tareas Diarias:**
-    *   `src/contexts/task-context.tsx`: Dentro de este archivo, busca la variable `defaultDailyTasks`. Puedes modificar esta lista para cambiar las tareas diarias que aparecen por defecto para un nuevo usuario.
+*   **Estilos:** Modifica la paleta de colores y las fuentes en `src/app/globals.css` y `tailwind.config.ts`.
+*   **Lógica de IA:** Ajusta los `prompts` en los archivos dentro de `src/ai/flows/` para cambiar el comportamiento del asistente de IA.
+*   **Datos:** La gestión de datos se centraliza en `src/contexts/task-context.tsx`, que interactúa directamente con Firestore.
 
 ---
 
