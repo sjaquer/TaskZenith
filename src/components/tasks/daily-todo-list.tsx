@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Timer, Settings, Plus, Trash2 } from 'lucide-react';
 import { useTasks } from '@/contexts/task-context';
-import { useAuth } from '@/contexts/auth-context';
 
 type DailyTaskItemProps = {
     task: { id: string; title: string; completed: boolean };
@@ -54,7 +53,6 @@ function DailyTaskItem({ task, onToggle }: DailyTaskItemProps) {
 
 export function DailyTodoList() {
   const { dailyTasks, toggleDailyTask, updateCustomDailyTasks, customDailyTasks, isLoaded } = useTasks();
-  const { user } = useAuth();
   const [timeRemaining, setTimeRemaining] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editableCustomTasks, setEditableCustomTasks] = useState(customDailyTasks);
@@ -110,10 +108,6 @@ export function DailyTodoList() {
 
   const completedCount = dailyTasks.filter(task => task.completed).length;
   const progress = dailyTasks.length > 0 ? (completedCount / dailyTasks.length) * 100 : 0;
-
-  if (!user) {
-    return null; // Don't render if no user
-  }
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg h-full flex flex-col">

@@ -4,18 +4,15 @@ import { useTasks } from '@/contexts/task-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMemo } from 'react';
 import { Check, ListTodo } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-context';
 
 export function TaskStatsCards() {
   const { tasks } = useTasks();
-  const { user } = useAuth();
 
   const stats = useMemo(() => {
-    const userTasks = user ? tasks.filter(task => task.userId === user.uid) : [];
-    const pending = userTasks.filter(task => !task.completed).length;
-    const completed = userTasks.filter(task => task.completed).length;
+    const pending = tasks.filter(task => !task.completed).length;
+    const completed = tasks.filter(task => task.completed).length;
     return { pending, completed };
-  }, [tasks, user]);
+  }, [tasks]);
 
   return (
     <>

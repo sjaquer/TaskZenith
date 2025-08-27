@@ -7,7 +7,6 @@ import { AlertOctagon, Info } from 'lucide-react';
 import type { Task } from '@/lib/types';
 import { TaskEditDialog } from './task-edit-dialog';
 import { useState } from 'react';
-import { useAuth } from '@/contexts/auth-context';
 
 function PriorityTaskItem({ task }: { task: Task }) {
   const { getProjectById } = useTasks();
@@ -44,14 +43,12 @@ function PriorityTaskItem({ task }: { task: Task }) {
 
 export function HighPriorityTasksWidget() {
   const { tasks } = useTasks();
-  const { user } = useAuth();
 
   const highPriorityTasks = useMemo(() => {
-    const userTasks = user ? tasks.filter(task => task.userId === user.uid) : [];
-    return userTasks.filter(
+    return tasks.filter(
       (task) => !task.completed && task.priority === 'alta'
     ).sort((a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  }, [tasks, user]);
+  }, [tasks]);
 
   const hasTasks = highPriorityTasks.length > 0;
 

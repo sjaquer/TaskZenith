@@ -91,7 +91,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         setIsSyncing(true);
         try {
             const { tasksCollection, projectsCollection } = getCollections();
-            const tasksSnapshot = await getDocs(tasksCollection);
+            
+            const tasksSnapshot = await getDocs(query(tasksCollection, where("userId", "==", userId)));
             const tasksData = tasksSnapshot.docs.map(doc => {
               const data = doc.data();
               return { 
@@ -105,7 +106,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             });
             setTasks(tasksData);
 
-            const projectsSnapshot = await getDocs(projectsCollection);
+            const projectsSnapshot = await getDocs(query(projectsCollection, where("userId", "==", userId)));
             const projectsData = projectsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
             setProjects(projectsData);
             
@@ -166,19 +167,20 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         if (authLoading) return;
 
-        const loadData = async () => {
-            if (userId) {
+        const loadInitialData = async () => {
+            if (userId && !isLoaded) { // Only load if we have a user and data hasn't been loaded yet
                 await syncData();
                 await fetchDailyTasks();
                 setIsLoaded(true);
-            } else {
-                // User is logged out, clear all data
+            } else if (!userId) {
+                // User is logged out, clear all data and reset loaded state
                 clearLocalData();
             }
         };
       
-        loadData();
-    }, [userId, authLoading, syncData, fetchDailyTasks]);
+        loadInitialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userId, authLoading]);
 
 
   const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'userId'>>) => {
