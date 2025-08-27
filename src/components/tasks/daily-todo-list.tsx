@@ -21,8 +21,12 @@ function DailyTaskItem({ task, onToggle }: DailyTaskItemProps) {
     const handleToggle = () => {
       if (!task.completed) {
         setIsAnimating(true);
-        onToggle(task.id);
-        setTimeout(() => setIsAnimating(false), 600); // Duration of celebration animation
+        setTimeout(() => {
+          onToggle(task.id);
+          setIsAnimating(false);
+        }, 600); // Duration of celebration animation
+      } else {
+        onToggle(task.id); // Allow un-checking without animation
       }
     };
 
@@ -33,15 +37,14 @@ function DailyTaskItem({ task, onToggle }: DailyTaskItemProps) {
         }`}
         >
         <Checkbox
-            id={task.id}
+            id={`daily-${task.id}`}
             checked={task.completed}
             onCheckedChange={handleToggle}
             aria-label={`Marcar ${task.title} como completa`}
-            disabled={task.completed}
         />
         <label
-            htmlFor={task.id}
-            className={`flex-1 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
+            htmlFor={`daily-${task.id}`}
+            className={`flex-1 font-medium leading-none cursor-pointer ${
             task.completed ? 'line-through text-muted-foreground' : ''
             }`}
         >

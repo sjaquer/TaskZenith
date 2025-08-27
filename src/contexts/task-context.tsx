@@ -78,13 +78,13 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         };
     }, [userId]);
 
-    const clearLocalData = () => {
+    const clearLocalData = useCallback(() => {
         setTasks([]);
         setProjects([]);
         setDailyTasks([]);
         setCustomDailyTasks([]);
         setIsLoaded(false);
-    };
+    }, []);
 
     const syncData = useCallback(async () => {
         if (!userId) return;
@@ -92,7 +92,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         try {
             const { tasksCollection, projectsCollection } = getCollections();
             
-            const tasksSnapshot = await getDocs(query(tasksCollection, where("userId", "==", userId)));
+            const tasksSnapshot = await getDocs(query(tasksCollection));
             const tasksData = tasksSnapshot.docs.map(doc => {
               const data = doc.data();
               return { 
@@ -106,7 +106,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             });
             setTasks(tasksData);
 
-            const projectsSnapshot = await getDocs(query(projectsCollection, where("userId", "==", userId)));
+            const projectsSnapshot = await getDocs(query(projectsCollection));
             const projectsData = projectsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
             setProjects(projectsData);
             
@@ -165,8 +165,6 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
 
     useEffect(() => {
-        if (authLoading) return;
-
         const loadInitialData = async () => {
             if (userId && !isLoaded) { // Only load if we have a user and data hasn't been loaded yet
                 await syncData();
@@ -178,9 +176,10 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             }
         };
       
-        loadInitialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userId, authLoading, isLoaded]);
+        if (!authLoading) {
+          loadInitialData();
+        }
+    }, [userId, authLoading, isLoaded, syncData, fetchDailyTasks, clearLocalData]);
 
 
   const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'userId'>>) => {
@@ -597,5 +596,3 @@ export const useTasks = () => {
   }
   return context;
 };
-
-    
