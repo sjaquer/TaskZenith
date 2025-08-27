@@ -38,29 +38,7 @@ export function VoiceTaskGenerator() {
     if (typeof window !== 'undefined') {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'es-ES';
-
-            recognition.onresult = (event) => {
-                let finalTranscript = '';
-                let interimTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
-                    }
-                }
-                setTranscript(finalTranscript + interimTranscript);
-            };
-
-            recognition.onend = () => {
-                setIsListening(false);
-            };
-
-            recognitionRef.current = recognition;
+            recognitionRef.current = new SpeechRecognition();
         }
     }
   }, []);
@@ -68,10 +46,43 @@ export function VoiceTaskGenerator() {
   const handleListen = () => {
     if (isListening) {
       recognitionRef.current?.stop();
+      setIsListening(false);
     } else {
       if (recognitionRef.current) {
         setTranscript('');
         setProcessedTasks([]);
+        
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = 'es-ES';
+
+        recognitionRef.current.onresult = (event) => {
+            let finalTranscript = '';
+            let interimTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            setTranscript(finalTranscript + interimTranscript);
+        };
+
+        recognitionRef.current.onend = () => {
+            setIsListening(false);
+        };
+        
+        recognitionRef.current.onerror = (event) => {
+            console.error('Speech recognition error', event.error);
+            setIsListening(false);
+            toast({
+                variant: 'destructive',
+                title: 'Error de Voz',
+                description: 'No se pudo iniciar el reconocimiento de voz. Revisa los permisos del micrófono.',
+            });
+        };
+
         recognitionRef.current.start();
         setIsListening(true);
       } else {
