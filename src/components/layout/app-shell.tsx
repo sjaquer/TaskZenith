@@ -24,7 +24,6 @@ import {
   PanelLeft,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Separator } from '../ui/separator';
 import { useAuth } from '@/contexts/auth-context';
 import { useTasks } from '@/contexts/task-context';
 import { Button } from '../ui/button';
@@ -87,7 +86,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </SidebarHeader>
         <SidebarContent />
         <SidebarFooter>
-          <Separator className="my-2" />
           <div className="p-4 flex items-center justify-between">
             <div className='flex items-center gap-3 overflow-hidden'>
               <Avatar>
