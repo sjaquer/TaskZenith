@@ -14,6 +14,7 @@ import {
   getDocs,
   query,
   where,
+  getDoc,
 } from "firebase/firestore";
 import { useAuth } from './auth-context';
 import { db } from '@/lib/firebase';
@@ -85,12 +86,12 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         setIsLoaded(false);
     };
 
-    const syncData = async () => {
+    const syncData = useCallback(async () => {
         if (!userId) return;
         setIsSyncing(true);
         try {
             const { tasksCollection, projectsCollection } = getCollections();
-            const tasksSnapshot = await getDocs(query(tasksCollection));
+            const tasksSnapshot = await getDocs(tasksCollection);
             const tasksData = tasksSnapshot.docs.map(doc => {
               const data = doc.data();
               return { 
@@ -104,7 +105,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             });
             setTasks(tasksData);
 
-            const projectsSnapshot = await getDocs(query(projectsCollection));
+            const projectsSnapshot = await getDocs(projectsCollection);
             const projectsData = projectsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
             setProjects(projectsData);
             
@@ -114,7 +115,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setIsSyncing(false);
         }
-    };
+    }, [userId, getCollections]);
 
 
     useEffect(() => {
@@ -132,7 +133,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         };
       
         loadData();
-    }, [userId, authLoading]);
+    }, [userId, authLoading, syncData, fetchDailyTasks]);
 
     const fetchDailyTasks = useCallback(async () => {
         if (!userId) return;
@@ -145,39 +146,39 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             await runTransaction(db, async (transaction) => {
               const dailyStatusDoc = await transaction.get(dailyStatusDocRef);
               
-              let finalCustomTasks = customDailyTasks;
-              if (customDailyTasks.length === 0) {
-                const customTasksSnapshot = await transaction.get(customDailyTasksDoc);
-                if (customTasksSnapshot.exists()) {
-                  finalCustomTasks = customTasksSnapshot.data().tasks;
-                } else {
-                  finalCustomTasks = defaultDailyTasks;
-                  transaction.set(customDailyTasksDoc, { tasks: finalCustomTasks });
-                }
-                setCustomDailyTasks(finalCustomTasks);
+              const customTasksSnapshot = await transaction.get(customDailyTasksDoc);
+              let finalCustomTasks;
+              
+              if (customTasksSnapshot.exists()) {
+                finalCustomTasks = customTasksSnapshot.data().tasks;
+              } else {
+                finalCustomTasks = defaultDailyTasks;
+                transaction.set(customDailyTasksDoc, { tasks: finalCustomTasks });
               }
+              setCustomDailyTasks(finalCustomTasks);
         
               if (dailyStatusDoc.exists()) {
-                setDailyTasks(dailyStatusDoc.data().tasks as DailyTask[]);
+                const existingDailyTasks = dailyStatusDoc.data().tasks as DailyTask[];
+                // Sync with latest custom tasks
+                const syncedDailyTasks = finalCustomTasks.map((ct: CustomDailyTask) => {
+                    const existing = existingDailyTasks.find(dt => dt.id === ct.id);
+                    return existing ? existing : { ...ct, completed: false };
+                });
+                setDailyTasks(syncedDailyTasks);
+                if (JSON.stringify(syncedDailyTasks) !== JSON.stringify(existingDailyTasks)) {
+                    transaction.set(dailyStatusDocRef, { tasks: syncedDailyTasks });
+                }
+
               } else {
-                const newDailyTasks = finalCustomTasks.map(task => ({ ...task, completed: false }));
+                const newDailyTasks = finalCustomTasks.map((task: CustomDailyTask) => ({ ...task, completed: false }));
                 transaction.set(dailyStatusDocRef, { tasks: newDailyTasks });
                 setDailyTasks(newDailyTasks);
-        
-                const yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                const yesterdayStr = yesterday.toISOString().split('T')[0];
-                const oldDocRef = doc(dailyTasksCollection, yesterdayStr);
-                const oldDoc = await transaction.get(oldDocRef);
-                if (oldDoc.exists()) {
-                  transaction.delete(oldDocRef);
-                }
               }
             });
         } catch (e) {
             console.log("Could not fetch daily tasks, possibly offline.", e);
         }
-    }, [userId, customDailyTasks, getCollections]);
+    }, [userId, getCollections]);
 
   const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'userId'>>) => {
     if (!userId) return;
@@ -256,7 +257,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   
     try {
       const taskRef = doc(tasksCollection, taskId);
-      await updateDoc(taskRef, data);
+      await updateDoc(taskRef, data as any);
     } catch (error) {
       console.error('Error updating task: ', error);
       setTasks(originalTasks);
@@ -407,15 +408,16 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const { projectsCollection } = getCollections();
     const newDocRef = doc(projectsCollection);
 
-    const newProject: Project = {
+    const projectPayload: Omit<Project, 'id'> = {
       ...project,
-      id: newDocRef.id,
       userId,
-    };
+    }
+
+    const newProject: Project = { ...projectPayload, id: newDocRef.id };
 
     setProjects(prev => [...prev, newProject]);
     try {
-        await setDoc(newDocRef, newProject);
+        await setDoc(newDocRef, projectPayload);
     } catch(error) {
         console.error("Error adding project: ", error);
         setProjects(prev => prev.filter(p => p.id !== newDocRef.id));
@@ -470,24 +472,25 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     
     try {
         const batch = writeBatch(db);
-        const tasksSnapshot = await getDocs(tasksCollection);
+        const tasksSnapshot = await getDocs(query(tasksCollection));
         tasksSnapshot.forEach(doc => batch.delete(doc.ref));
         
-        const projectsSnapshot = await getDocs(projectsCollection);
+        const projectsSnapshot = await getDocs(query(projectsCollection));
         projectsSnapshot.forEach(doc => batch.delete(doc.ref));
 
-        const todayStr = new Date().toISOString().split('T')[0];
-        batch.delete(doc(dailyTasksCollection, todayStr));
-        batch.delete(customDailyTasksDoc);
+        const dailyTasksSnapshot = await getDocs(query(dailyTasksCollection));
+        dailyTasksSnapshot.forEach(doc => batch.delete(doc.ref));
+        
+        const customDailyDocSnap = await getDoc(customDailyTasksDoc);
+        if (customDailyDocSnap.exists()) {
+          batch.delete(customDailyTasksDoc);
+        }
 
         await batch.commit();
 
         const newDaily = defaultDailyTasks.map(t => ({...t, completed: false}));
         setDailyTasks(newDaily);
         setCustomDailyTasks(defaultDailyTasks);
-
-        await setDoc(doc(dailyTasksCollection, todayStr), { tasks: newDaily });
-        await setDoc(customDailyTasksDoc, { tasks: defaultDailyTasks });
 
     } catch (error) {
         console.error("Error clearing all data: ", error);
@@ -505,7 +508,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     );
     setDailyTasks(updatedDailyTasks);
     try {
-        await setDoc(dailyStatusDocRef, { tasks: updatedDailyTasks });
+        await setDoc(dailyStatusDocRef, { tasks: updatedDailyTasks }, { merge: true });
     } catch (error) {
         console.error("Error updating daily task status:", error);
         setDailyTasks(dailyTasks);
@@ -515,13 +518,14 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const updateCustomDailyTasks = async (newCustomTasks: CustomDailyTask[]) => {
     if (!userId) return;
     const { customDailyTasksDoc } = getCollections();
+    const oldCustomDailyTasks = customDailyTasks;
     setCustomDailyTasks(newCustomTasks);
     try {
       await setDoc(customDailyTasksDoc, { tasks: newCustomTasks });
       await fetchDailyTasks();
     } catch (error) {
       console.error("Error updating custom daily tasks:", error);
-      // Revert
+      setCustomDailyTasks(oldCustomDailyTasks);
     }
   };
   
@@ -529,6 +533,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     if (!userId) return;
     const { tasksCollection } = getCollections();
     const { updatedTasks, newTasks, deletedTaskIds } = organizedTasks;
+    const originalTasks = [...tasks];
 
     let tempTasks = [...tasks];
     tempTasks = tempTasks.filter(t => !deletedTaskIds.includes(t.id));
@@ -569,7 +574,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     } catch (error) {
       console.error("Error applying organized tasks:", error);
-      setTasks(tasks); // Revert on error
+      setTasks(originalTasks); // Revert on error
       throw error;
     }
   }
