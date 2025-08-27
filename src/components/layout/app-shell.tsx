@@ -66,7 +66,7 @@ function MainHeader() {
     return (
         <header className="flex items-center justify-between p-4 border-b bg-card/80 backdrop-blur-sm sticky top-0 z-40">
             <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(true)}>
+                <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setSidebarOpen(true)}>
                     <PanelLeft className="w-6 h-6" />
                     <span className="sr-only">Abrir Menú</span>
                 </Button>
