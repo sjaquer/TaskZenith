@@ -2,6 +2,7 @@
 import admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
 import { config } from 'dotenv';
+import path from 'path';
 
 // Load environment variables from .env file
 config({ path: `.env` });
@@ -10,7 +11,7 @@ config({ path: `.env` });
 const TARGET_USER_EMAIL = "jaquesebastian0@gmail.com";
 // Path to your Firebase Admin SDK service account key
 // IMPORTANT: Make sure this file is in your .gitignore
-const serviceAccountPath = './firebase-admin-sdk.json';
+const serviceAccountPath = path.resolve(__dirname, '../../firebase-admin-sdk.json');
 
 // --- INITIALIZE FIREBASE ADMIN SDK ---
 try {
