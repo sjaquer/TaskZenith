@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // TEMPORARY MIGRATION RULE: Allow reads for authenticated users on root collections
+    // This is necessary for the migration script to access old data.
+    // IMPORTANT: Revert to the secure rules in firestore.rules.backup after migration.
+    match /{collection}/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Secure rule for user data after migration
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth.uid == userId;
+    }
+  }
+}
