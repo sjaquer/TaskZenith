@@ -1,36 +1,71 @@
 'use client';
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { auth } from '@/lib/firebase';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  updateProfile,
+  updateProfile as updateAuthProfile,
   type User,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
 } from 'firebase/auth';
+import type { UserProfile, ProfileIcon } from '@/lib/types';
+
 
 interface AuthContextType {
   user: User | null;
+  userProfile: UserProfile | null;
   loading: boolean;
   signup: (email: string, password: string, displayName: string) => Promise<void>;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => Promise<void>;
+  updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  const updateUserProfile = useCallback(async (data: Partial<UserProfile>) => {
+    if (!user) return;
+    const userDocRef = doc(db, 'users', user.uid);
+    await setDoc(userDocRef, data, { merge: true });
+    // No need to set userProfile here, onSnapshot will do it.
+  }, [user]);
+
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
-      setLoading(false);
+      if (user) {
+        // Now also fetch the user profile from Firestore
+        const userDocRef = doc(db, 'users', user.uid);
+        
+        const unsubProfile = onSnapshot(userDocRef, (doc) => {
+          if (doc.exists()) {
+            setUserProfile(doc.data() as UserProfile);
+          } else {
+             // Create a default profile if it doesn't exist
+            const defaultProfile: UserProfile = { displayName: user.displayName || 'Usuario', profileIcon: 'user' };
+            setDoc(userDocRef, defaultProfile);
+            setUserProfile(defaultProfile);
+          }
+          setLoading(false);
+        });
+
+        return () => unsubProfile();
+
+      } else {
+        setUserProfile(null);
+        setLoading(false);
+      }
     });
 
     return () => unsubscribe();
@@ -38,8 +73,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signup = async (email: string, password: string, displayName: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    if (userCredential.user) {
-      await updateProfile(userCredential.user, { displayName });
+    const user = userCredential.user;
+    if (user) {
+      // Update Firebase Auth profile
+      await updateAuthProfile(user, { displayName });
+      // Create user document in Firestore
+      const userDocRef = doc(db, 'users', user.uid);
+      const profile: UserProfile = { displayName, profileIcon: 'user' };
+      await setDoc(userDocRef, profile);
+      // Manually set state to avoid waiting for onSnapshot
+      setUser(user);
+      setUserProfile(profile);
     }
   };
 
@@ -53,7 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await signOut(auth);
   };
 
-  const value = { user, loading, signup, login, logout };
+  const value = { user, userProfile, loading, signup, login, logout, updateUserProfile };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

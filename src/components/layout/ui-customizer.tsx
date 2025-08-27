@@ -11,9 +11,12 @@ import {
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
-import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon } from 'lucide-react';
+import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, UserCircle, Whale, Crab, Fish, Bird, Snail } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
+import { useAuth } from '@/contexts/auth-context';
+import type { ProfileIcon } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 function HSLToHex(h: number, s: number, l: number): string {
     l /= 100;
@@ -61,8 +64,18 @@ const layoutOptions: { key: keyof ReturnType<typeof useTheme>['layoutConfig']; l
     { key: 'showPriorityTasks', label: 'Mostrar Tareas Prioritarias', icon: AlertOctagon },
 ];
 
+const profileIcons: { name: ProfileIcon; icon: React.ElementType }[] = [
+    { name: 'user', icon: UserCircle },
+    { name: 'whale', icon: Whale },
+    { name: 'crab', icon: Crab },
+    { name: 'fish', icon: Fish },
+    { name: 'bird', icon: Bird },
+    { name: 'snail', icon: Snail },
+];
+
 export function UICustomizer() {
   const { theme, setTheme, isCustomizerOpen, setCustomizerOpen, resetToDefault, layoutConfig, setLayoutConfig } = useTheme();
+  const { userProfile, updateUserProfile } = useAuth();
 
   const handleColorChange = (key: keyof typeof theme, value: string) => {
     const hsl = hexToHSL(value);
@@ -74,6 +87,11 @@ export function UICustomizer() {
   const handleLayoutChange = (key: keyof typeof layoutConfig, value: boolean) => {
     setLayoutConfig({ ...layoutConfig, [key]: value });
   };
+  
+  const handleIconChange = (iconName: ProfileIcon) => {
+    updateUserProfile({ profileIcon: iconName });
+  };
+
 
   const getColorValue = (key: keyof typeof theme) => {
     const [h, s, l] = theme[key].split(' ').map(v => parseFloat(v.replace('%', '')));
@@ -133,6 +151,31 @@ export function UICustomizer() {
                            </div>
                         ))}
                     </div>
+                </div>
+
+                <Separator />
+                
+                <div>
+                  <h3 className="flex items-center text-sm font-medium mb-4">
+                      <UserCircle className="w-4 h-4 mr-2" />
+                      Ícono de Perfil
+                  </h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    {profileIcons.map(({ name, icon: Icon }) => (
+                      <Button
+                        key={name}
+                        variant="outline"
+                        size="icon"
+                        className={cn(
+                          'h-16 w-full',
+                          userProfile?.profileIcon === name && 'border-primary ring-2 ring-primary'
+                        )}
+                        onClick={() => handleIconChange(name)}
+                      >
+                        <Icon className="w-8 h-8" />
+                      </Button>
+                    ))}
+                  </div>
                 </div>
 
                 <Separator />

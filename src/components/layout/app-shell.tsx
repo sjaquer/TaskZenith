@@ -18,6 +18,12 @@ import {
   KanbanSquare,
   History,
   LogOut,
+  UserCircle,
+  Whale,
+  Crab,
+  Fish,
+  Bird,
+  Snail
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useAuth } from '@/contexts/auth-context';
@@ -26,6 +32,7 @@ import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import Image from 'next/image';
+import type { ProfileIcon } from '@/lib/types';
 
 
 const menuItems = [
@@ -34,6 +41,15 @@ const menuItems = [
     {href: '/dashboard/kanban', label: 'Kanban', icon: KanbanSquare},
     {href: '/dashboard/history', label: 'Historial', icon: History},
 ];
+
+const iconMap: Record<ProfileIcon, React.ElementType> = {
+    user: UserCircle,
+    whale: Whale,
+    crab: Crab,
+    fish: Fish,
+    bird: Bird,
+    snail: Snail,
+};
 
 function BottomNavBar() {
     const pathname = usePathname();
@@ -50,7 +66,7 @@ function BottomNavBar() {
 }
 
 function MainHeader() {
-    const { user, logout } = useAuth();
+    const { user, userProfile, logout } = useAuth();
     const { clearLocalData } = useTasks();
     const router = useRouter();
     const { setOpen: setSidebarOpen } = useSidebar();
@@ -61,39 +77,32 @@ function MainHeader() {
         router.push('/login');
     };
 
+    const UserAvatar = userProfile?.profileIcon ? iconMap[userProfile.profileIcon] : UserCircle;
+
     return (
         <header className="flex items-center justify-between p-4 border-b bg-card/80 backdrop-blur-sm sticky top-0 z-40">
             <div className="flex items-center gap-2">
-                 <div className="hidden md:flex">
-                     <button onClick={() => setSidebarOpen(true)} className="flex items-center gap-3">
-                        <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
-                        <h1 className="text-xl font-semibold font-headline">TaskZenith</h1>
-                    </button>
-                </div>
-                 <div className="flex items-center gap-3 md:hidden">
+                 <button onClick={() => setSidebarOpen(true)} className="flex items-center gap-3">
                     <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
-                    <h1 className="text-xl font-semibold font-headline">TaskZenith</h1>
-                </div>
+                    <h1 className="text-xl font-semibold font-headline hidden md:block">TaskZenith</h1>
+                </button>
             </div>
             
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                     <p className="hidden sm:block">Hola,</p>
-                    <p>{user?.displayName || 'Usuario'}</p>
+                    <p>{userProfile?.displayName || user?.displayName || 'Usuario'}</p>
                 </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                            <Avatar>
-                                <AvatarImage src={user?.photoURL || "https://placehold.co/100x100.png"} alt={user?.displayName || 'User'} data-ai-hint="profile picture" />
-                                <AvatarFallback>{user?.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
-                            </Avatar>
+                           <UserAvatar className="h-8 w-8" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none">{user?.displayName}</p>
+                                <p className="text-sm font-medium leading-none">{userProfile?.displayName || user?.displayName}</p>
                                 <p className="text-xs leading-none text-muted-foreground">
                                     {user?.email}
                                 </p>
