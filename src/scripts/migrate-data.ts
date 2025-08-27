@@ -5,10 +5,11 @@ import { config } from 'dotenv';
 import path from 'path';
 
 // Load environment variables from .env file
-config({ path: `.env` });
+config({ path: path.resolve(__dirname, '../../.env') });
 
 // --- SCRIPT CONFIGURATION ---
-const TARGET_USER_EMAIL = "jaquesebastian0@gmail.com";
+// The specific User ID to which the data will be migrated.
+const TARGET_USER_ID = "R5nxgOa4MBQ9Zn8DhFpRXseLawi2"; 
 // Path to your Firebase Admin SDK service account key
 // IMPORTANT: Make sure this file is in your .gitignore
 const serviceAccountPath = path.resolve(__dirname, '../../firebase-admin-sdk.json');
@@ -17,7 +18,6 @@ const serviceAccountPath = path.resolve(__dirname, '../../firebase-admin-sdk.jso
 try {
   const serviceAccount = require(serviceAccountPath);
 
-  // Check if the app is already initialized to prevent errors
   if (!admin.apps.length) {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
@@ -28,32 +28,14 @@ try {
   console.error("🔴 ERROR: Could not initialize Firebase Admin SDK.");
   console.error("Please ensure 'firebase-admin-sdk.json' exists in the root directory and is configured correctly.");
   console.error("You can download it from your Firebase project settings > Service accounts.");
-  process.exit(1); // Exit script if initialization fails
+  process.exit(1);
 }
 
 const db = getFirestore();
-const auth = admin.auth();
 
 console.log("✅ Firebase Admin SDK initialized successfully.");
 
 // --- MIGRATION LOGIC ---
-
-/**
- * Fetches the user ID (uid) for the specified email address.
- * @param email The user's email.
- * @returns The user's UID.
- */
-async function getUserIdByEmail(email: string): Promise<string> {
-  try {
-    const userRecord = await auth.getUserByEmail(email);
-    console.log(`✅ Found user: ${userRecord.displayName} (UID: ${userRecord.uid})`);
-    return userRecord.uid;
-  } catch (error) {
-    console.error(`🔴 ERROR: Could not find user with email '${email}'.`);
-    console.error("Please make sure you have created this user in the TaskZenith application first.");
-    throw error; // Re-throw to stop the script
-  }
-}
 
 /**
  * Migrates documents from a root collection to a user's subcollection.
@@ -117,14 +99,12 @@ async function migrateCollection(rootCollectionName: string, userId: string) {
  * Main function to run the entire migration process.
  */
 async function runMigration() {
-  console.log("🚀 Starting data migration process...");
+  console.log("🚀 Starting data migration process for user:", TARGET_USER_ID);
   
   try {
-    const userId = await getUserIdByEmail(TARGET_USER_EMAIL);
-    
     // Migrate collections one by one
-    await migrateCollection('tasks', userId);
-    await migrateCollection('projects', userId);
+    await migrateCollection('tasks', TARGET_USER_ID);
+    await migrateCollection('projects', TARGET_USER_ID);
     
     console.log("\n🎉 --- MIGRATION COMPLETE! --- 🎉");
     console.log("All existing tasks and projects have been successfully linked to the user account.");
