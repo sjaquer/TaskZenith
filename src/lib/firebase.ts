@@ -1,3 +1,4 @@
+'use client';
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
@@ -12,6 +13,19 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
+
+// Validate that all firebase config values are present
+const missingConfigKeys = Object.entries(firebaseConfig)
+  .filter(([, value]) => !value)
+  .map(([key]) => key);
+
+if (missingConfigKeys.length > 0) {
+    const errorMessage = `Faltan las siguientes variables de entorno de Firebase: ${missingConfigKeys.join(', ')}. Asegúrate de crear un archivo .env en la raíz del proyecto y añadir todas las claves necesarias. Consulta el archivo README.md para más detalles.`;
+    console.error(errorMessage);
+    // You might want to throw an error or handle this case differently depending on your needs.
+    // For this app, we'll log the error but allow it to proceed, which will likely result in Firebase errors downstream.
+}
+
 
 // Initialize Firebase
 const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
