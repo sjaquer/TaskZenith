@@ -28,6 +28,7 @@ import { Separator } from '../ui/separator';
 import { useAuth } from '@/contexts/auth-context';
 import { useTasks } from '@/contexts/task-context';
 import { Button } from '../ui/button';
+import { SheetTitle } from '../ui/sheet';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -58,6 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </SidebarHeader>
         <SidebarContent>
+          <SheetTitle className="sr-only">Menú Principal</SheetTitle>
           <SidebarMenu>
             {menuItems.map((item) => (
               <SidebarMenuItem key={item.href}>
