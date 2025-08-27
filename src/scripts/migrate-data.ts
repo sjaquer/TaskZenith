@@ -105,12 +105,15 @@ async function runMigration() {
     // Migrate collections one by one
     await migrateCollection('tasks', TARGET_USER_ID);
     await migrateCollection('projects', TARGET_USER_ID);
+    await migrateCollection('config', TARGET_USER_ID);
+    await migrateCollection('dailyTasks', TARGET_USER_ID);
     
     console.log("\n🎉 --- MIGRATION COMPLETE! --- 🎉");
     console.log("All existing tasks and projects have been successfully linked to the user account.");
 
   } catch (error) {
     console.error("\n❌ Migration failed. Please check the errors above.");
+    console.error(error);
     process.exit(1); // Exit with an error code
   }
 }
