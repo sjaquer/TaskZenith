@@ -17,10 +17,7 @@ import {
   ListTodo,
   KanbanSquare,
   History,
-  Bot,
   LogOut,
-  PanelLeft,
-  Settings,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useAuth } from '@/contexts/auth-context';
@@ -67,16 +64,15 @@ function MainHeader() {
     return (
         <header className="flex items-center justify-between p-4 border-b bg-card/80 backdrop-blur-sm sticky top-0 z-40">
             <div className="flex items-center gap-2">
-                 <button
-                    onClick={() => setSidebarOpen(true)}
-                    className="md:hidden flex items-center gap-2 text-lg font-semibold font-headline"
-                    >
+                 <div className="hidden md:flex">
+                     <button onClick={() => setSidebarOpen(true)} className="flex items-center gap-3">
+                        <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
+                        <h1 className="text-xl font-semibold font-headline">TaskZenith</h1>
+                    </button>
+                </div>
+                 <div className="flex items-center gap-3 md:hidden">
                     <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
-                    <h1>TaskZenith</h1>
-                </button>
-                <div className="hidden md:flex">
-                     <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
-                     <h1 className="text-lg font-semibold font-headline ml-2">TaskZenith</h1>
+                    <h1 className="text-xl font-semibold font-headline">TaskZenith</h1>
                 </div>
             </div>
             
@@ -122,13 +118,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <MainHeader />
         <div className="flex flex-1">
             <Sidebar>
-                <SidebarHeader className="p-4 flex items-center justify-between">
-                    <button className="flex items-center gap-3">
+                <SidebarHeader>
+                    <div className="flex items-center gap-3">
                         <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
                         <h1 className="text-xl font-semibold font-headline">TaskZenith</h1>
-                    </button>
+                    </div>
                 </SidebarHeader>
-                <SidebarContent />
             </Sidebar>
             <main className="flex-1 pb-16 md:pb-0">
                 {children}
