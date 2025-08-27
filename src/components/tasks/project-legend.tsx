@@ -53,14 +53,14 @@ function DeleteDataConfirmation() {
       <AlertDialogTrigger asChild>
         <Button variant="destructive" size="sm">
           <Trash2 className="h-4 w-4 mr-2" />
-          Borrar todos los datos
+          Borrar datos de la cuenta
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2"><ShieldAlert className="text-destructive"/>¿Estás absolutamente seguro?</AlertDialogTitle>
           <AlertDialogDescription>
-            Esta acción no se puede deshacer. Esto eliminará permanentemente todas tus tareas y proyectos. Por favor, introduce el PIN <strong>{correctPin}</strong> para confirmar.
+            Esta acción no se puede deshacer. Esto eliminará permanentemente todas tus tareas y proyectos de esta cuenta. Por favor, introduce el PIN <strong>{correctPin}</strong> para confirmar.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <Input

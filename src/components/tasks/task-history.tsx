@@ -17,11 +17,16 @@ import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useAuth } from '@/contexts/auth-context';
 
 
 function ClearCompletedTasksButton() {
     const { tasks, deleteCompletedTasks } = useTasks();
-    const completedCount = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
+    const { user } = useAuth();
+    const completedCount = useMemo(() => {
+      const userTasks = user ? tasks.filter(t => t.userId === user.uid) : [];
+      return userTasks.filter(t => t.completed).length
+    }, [tasks, user]);
   
     if (completedCount === 0) return null;
   
@@ -52,15 +57,17 @@ function ClearCompletedTasksButton() {
 
 export function TaskHistory() {
   const { tasks } = useTasks();
+  const { user } = useAuth();
 
   const completedTasks = useMemo(() => {
+    const userTasks = user ? tasks.filter(task => task.userId === user.uid) : [];
     const fifteenDaysAgo = new Date();
     fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
 
-    return tasks
+    return userTasks
       .filter(task => task.completed && task.completedAt && new Date(task.completedAt) > fifteenDaysAgo)
       .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
-  }, [tasks]);
+  }, [tasks, user]);
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg h-full">

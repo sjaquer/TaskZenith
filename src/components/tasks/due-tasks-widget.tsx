@@ -7,6 +7,7 @@ import { AlertTriangle, Clock, CalendarCheck2, Info } from 'lucide-react';
 import type { Task } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useAuth } from '@/contexts/auth-context';
 
 function useRelativeTime(date: Date | null) {
     const [relativeTime, setRelativeTime] = useState('');
@@ -51,21 +52,23 @@ function DueTaskItem({ task }: { task: Task }) {
 
 export function DueTasksWidget() {
   const { tasks } = useTasks();
+  const { user } = useAuth();
 
   const { overdue, upcoming } = useMemo(() => {
+    const userTasks = user ? tasks.filter(task => task.userId === user.uid) : [];
     const now = new Date();
     const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-    const overdueTasks = tasks.filter(
+    const overdueTasks = userTasks.filter(
       (task) => !task.completed && task.dueDate && new Date(task.dueDate) < now
     ).sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
     
-    const upcomingTasks = tasks.filter(
+    const upcomingTasks = userTasks.filter(
       (task) => !task.completed && task.dueDate && new Date(task.dueDate) > now && new Date(task.dueDate) <= twentyFourHoursFromNow
     ).sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
     
     return { overdue: overdueTasks, upcoming: upcomingTasks };
-  }, [tasks]);
+  }, [tasks, user]);
 
   const hasTasks = overdue.length > 0 || upcoming.length > 0;
 

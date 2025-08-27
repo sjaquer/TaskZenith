@@ -4,6 +4,16 @@ import { generateTasks, type GenerateTasksInput } from '@/ai/flows/generate-task
 import { processVoiceCommand, type ProcessVoiceCommandInput } from '@/ai/flows/process-voice-command';
 import { organizeTasks, type OrganizeTasksInput, type OrganizeTasksOutput } from '@/ai/flows/organize-tasks';
 import { z } from 'zod';
+import { auth } from './firebase';
+
+// Helper to get the current user's ID
+async function getUserId() {
+    // This is a placeholder. In a real app, you would get the user from the session.
+    // For server actions, this is complex. We will assume for now flows get the userId they need.
+    // In a full implementation, you'd use a library like next-auth or manage sessions.
+    return auth.currentUser?.uid;
+}
+
 
 const generateTasksSchema = z.object({
   activityDescription: z.string(),
@@ -16,6 +26,9 @@ const generateTasksSchema = z.object({
 });
 
 export async function generateAiTasksAction(input: GenerateTasksInput) {
+  const userId = await getUserId();
+  if (!userId) return { error: 'Debes iniciar sesión para usar esta función.' };
+
   const parsedInput = generateTasksSchema.safeParse(input);
   if (!parsedInput.success) {
     console.error(parsedInput.error.flatten());
@@ -40,6 +53,9 @@ const processVoiceCommandSchema = z.object({
 });
 
 export async function processVoiceCommandAction(input: ProcessVoiceCommandInput) {
+    const userId = await getUserId();
+    if (!userId) return { error: 'Debes iniciar sesión para usar esta función.' };
+
     const parsedInput = processVoiceCommandSchema.safeParse(input);
     if (!parsedInput.success) {
         console.error(parsedInput.error.flatten());
@@ -56,8 +72,10 @@ export async function processVoiceCommandAction(input: ProcessVoiceCommandInput)
 }
 
 export async function organizeTasksAction(input: OrganizeTasksInput): Promise<OrganizeTasksOutput | { error: string }> {
+  const userId = await getUserId();
+  if (!userId) return { error: 'Debes iniciar sesión para usar esta función.' };
+  
   try {
-    // La validación ahora está dentro del flujo, por lo que podemos llamarlo directamente.
     const result = await organizeTasks(input);
     return result;
   } catch (error) {

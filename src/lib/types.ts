@@ -7,6 +7,7 @@ export interface Project {
   name: string;
   color: string;
   description?: string;
+  userId: string;
 }
 
 export interface Task {
@@ -21,6 +22,7 @@ export interface Task {
   dueDate?: Date | null;
   projectId?: string;
   status: KanbanStatus;
+  userId: string;
 }
 
 export interface CustomDailyTask {

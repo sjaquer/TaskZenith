@@ -22,6 +22,7 @@ import { Calendar } from '../ui/calendar';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
 
 function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: (id: string) => void; onDelete: (id: string) => void; onEdit: (task: Task) => void; }) {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -98,6 +99,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
 }
 
 export function TodoList() {
+  const { user } = useAuth();
   const { tasks, projects, addTask, toggleTaskCompletion, deleteTask } = useTasks();
   const { layoutConfig } = useTheme();
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -109,8 +111,8 @@ export function TodoList() {
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newTaskTitle.trim()) {
-      const taskPayload: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'>> = {
+    if (newTaskTitle.trim() && user) {
+      const taskPayload: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'userId'>> = {
         title: newTaskTitle,
         category: newTaskCategory,
         priority: newTaskPriority,

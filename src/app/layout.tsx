@@ -4,7 +4,7 @@ import { TaskProvider } from '@/contexts/task-context';
 import { Toaster } from '@/components/ui/toaster';
 import { Poppins } from 'next/font/google';
 import { ThemeProvider } from '@/contexts/theme-context';
-import { UICustomizer } from '@/components/layout/ui-customizer';
+import { AuthProvider } from '@/contexts/auth-context';
 
 const poppins = Poppins({ 
   subsets: ['latin'],
@@ -32,16 +32,17 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="httpshttps://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className={`${poppins.className} antialiased overflow-x-hidden`}>
         <ThemeProvider>
-          <TaskProvider>
-              {children}
-              <Toaster />
-              <UICustomizer />
-          </TaskProvider>
+          <AuthProvider>
+            <TaskProvider>
+                {children}
+                <Toaster />
+            </TaskProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

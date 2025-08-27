@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { TaskEditDialog } from './task-edit-dialog';
+import { useAuth } from '@/contexts/auth-context';
 
 
 const columns: KanbanStatus[] = ['Pendiente', 'En Progreso', 'Hecho', 'Finalizado', 'Cancelado'];
@@ -111,13 +112,19 @@ function KanbanColumn({ status, tasks, onEdit }: { status: KanbanStatus; tasks: 
 
 export function KanbanBoard() {
   const { tasks } = useTasks();
+  const { user } = useAuth();
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
+  const userTasks = useMemo(() => {
+    if (!user) return [];
+    return tasks.filter(task => task.userId === user.uid);
+  }, [tasks, user]);
+
   const filteredTasks = useMemo(() => {
-    if (!selectedProjectId) return tasks;
-    return tasks.filter(task => task.projectId === selectedProjectId);
-  }, [tasks, selectedProjectId]);
+    if (!selectedProjectId) return userTasks;
+    return userTasks.filter(task => task.projectId === selectedProjectId);
+  }, [userTasks, selectedProjectId]);
 
   const groupedTasks = useMemo(() => {
     return columns.reduce((acc, status) => {

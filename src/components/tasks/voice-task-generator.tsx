@@ -19,11 +19,13 @@ import type { Task, Category, Priority, Project } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
+import { useAuth } from '@/contexts/auth-context';
 
 // This is the type that comes from the AI flow
-type ProcessedTask = Omit<Task, 'id' | 'completed' | 'status' | 'completedAt'> & { localId: number };
+type ProcessedTask = Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'userId'> & { localId: number };
 
 export function VoiceTaskGenerator() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -44,6 +46,10 @@ export function VoiceTaskGenerator() {
   }, []);
 
   const handleListen = () => {
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Acción requerida', description: 'Debes iniciar sesión para usar esta función.' });
+        return;
+    }
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
