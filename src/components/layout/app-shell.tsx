@@ -88,12 +88,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader className="p-4">
+      <Sidebar collapsible="icon">
+        <SidebarHeader className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Bot className="w-8 h-8 text-accent" />
-            <h1 className="text-xl font-semibold font-headline">TaskZenith</h1>
+            <h1 className="text-xl font-semibold font-headline group-data-[collapsible=icon]:hidden">TaskZenith</h1>
           </div>
+          <SidebarTrigger className="group-data-[collapsible=icon]:hidden" />
         </SidebarHeader>
         <SidebarContent />
         <SidebarFooter>
@@ -104,7 +105,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <AvatarImage src={user?.photoURL || "https://placehold.co/100x100.png"} alt={user?.displayName || 'User'} data-ai-hint="profile picture" />
                 <AvatarFallback>{user?.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
-              <div className="flex flex-col overflow-hidden">
+              <div className="flex flex-col overflow-hidden group-data-[collapsible=icon]:hidden">
                 <span className="font-semibold text-sm truncate">{user?.displayName || 'Usuario'}</span>
                 <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
               </div>
