@@ -65,53 +65,55 @@ export function TaskHistory() {
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg h-full">
-      <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <CardTitle className="text-lg font-semibold uppercase tracking-wider">Tareas Completadas (Últimos 15 días)</CardTitle>
         <ClearCompletedTasksButton />
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tarea</TableHead>
-              <TableHead>Categoría</TableHead>
-              <TableHead>Prioridad</TableHead>
-              <TableHead>Completada el</TableHead>
-              <TableHead className="text-right">Acción</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {completedTasks.length > 0 ? (
-                completedTasks.map(task => (
-                    <TableRow key={task.id} className="hover:bg-secondary/60">
-                        <TableCell className="font-medium">{task.title}</TableCell>
-                        <TableCell>
-                            <Badge variant="secondary" className="capitalize">{task.category}</Badge>
-                        </TableCell>
-                        <TableCell>
-                             <Badge variant={task.priority === 'alta' ? 'destructive' : task.priority === 'media' ? 'secondary' : 'outline'} className="uppercase">
-                                {task.priority}
-                            </Badge>
-                        </TableCell>
-                        <TableCell>
-                            {task.completedAt && format(new Date(task.completedAt), "PPP", { locale: es })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                            <Button variant="ghost" size="icon" onClick={() => restoreTask(task.id)} title="Restaurar Tarea">
-                                <RotateCcw className="h-4 w-4 text-primary" />
-                            </Button>
-                        </TableCell>
-                    </TableRow>
-                ))
-            ) : (
-                <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                        No hay tareas completadas en los últimos 15 días.
-                    </TableCell>
-                </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tarea</TableHead>
+                <TableHead>Categoría</TableHead>
+                <TableHead>Prioridad</TableHead>
+                <TableHead>Completada el</TableHead>
+                <TableHead className="text-right">Acción</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {completedTasks.length > 0 ? (
+                  completedTasks.map(task => (
+                      <TableRow key={task.id} className="hover:bg-secondary/60">
+                          <TableCell className="font-medium">{task.title}</TableCell>
+                          <TableCell>
+                              <Badge variant="secondary" className="capitalize">{task.category}</Badge>
+                          </TableCell>
+                          <TableCell>
+                               <Badge variant={task.priority === 'alta' ? 'destructive' : task.priority === 'media' ? 'secondary' : 'outline'} className="uppercase">
+                                  {task.priority}
+                              </Badge>
+                          </TableCell>
+                          <TableCell>
+                              {task.completedAt && format(new Date(task.completedAt), "PPP", { locale: es })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                              <Button variant="ghost" size="icon" onClick={() => restoreTask(task.id)} title="Restaurar Tarea">
+                                  <RotateCcw className="h-4 w-4 text-primary" />
+                              </Button>
+                          </TableCell>
+                      </TableRow>
+                  ))
+              ) : (
+                  <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                          No hay tareas completadas en los últimos 15 días.
+                      </TableCell>
+                  </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

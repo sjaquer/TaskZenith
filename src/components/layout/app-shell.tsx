@@ -78,25 +78,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
           <Separator className="my-2" />
           <div className="p-4 flex items-center justify-between">
-            <div className='flex items-center gap-3'>
+            <div className='flex items-center gap-3 overflow-hidden'>
               <Avatar>
                 <AvatarImage src={user?.photoURL || "https://placehold.co/100x100.png"} alt={user?.displayName || 'User'} data-ai-hint="profile picture" />
                 <AvatarFallback>{user?.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
-              <div className="flex flex-col">
-                <span className="font-semibold text-sm">{user?.displayName || 'Usuario'}</span>
-                <span className="text-xs text-muted-foreground">{user?.email}</span>
+              <div className="flex flex-col overflow-hidden">
+                <span className="font-semibold text-sm truncate">{user?.displayName || 'Usuario'}</span>
+                <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout} title="Cerrar Sesión">
+            <Button variant="ghost" size="icon" onClick={handleLogout} title="Cerrar Sesión" className="flex-shrink-0">
               <LogOut className="w-5 h-5 text-muted-foreground" />
             </Button>
           </div>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex items-center justify-between p-4 border-b md:justify-end">
-          <SidebarTrigger className="md:hidden" />
+        <header className="flex items-center justify-between p-4 border-b md:hidden">
+          <SidebarTrigger />
         </header>
         {children}
       </SidebarInset>

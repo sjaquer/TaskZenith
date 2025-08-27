@@ -114,14 +114,15 @@ export function DailyTodoList() {
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <h2 className="text-xl font-bold tracking-tight uppercase text-primary/80">
           TAREAS DIARIAS
         </h2>
-        <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
                 <Timer className="w-4 h-4 text-accent" />
-                <span>{timeRemaining} para reiniciar</span>
+                <span className="hidden sm:inline">{timeRemaining} para reiniciar</span>
+                <span className="sm:hidden">{timeRemaining}</span>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
                 <DialogTrigger asChild>

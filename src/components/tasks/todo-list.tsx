@@ -43,7 +43,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
 
   return (
     <div
-      className={`group flex items-center space-x-4 p-4 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all hover:bg-secondary/60 ${
+      className={`group flex items-center space-x-2 sm:space-x-4 p-4 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all hover:bg-secondary/60 ${
         priorityColors[task.priority]
       } ${isCompleted ? 'task-complete-animation' : ''}`}
     >
@@ -52,10 +52,10 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
         onCheckedChange={handleToggle}
         aria-label={`Completar ${task.title}`}
       />
-      <div className="flex-1">
+      <div className="flex-1 overflow-hidden">
         <label
           htmlFor={`task-todo-${task.id}`}
-          className="font-medium leading-none cursor-pointer"
+          className="font-medium leading-none cursor-pointer truncate"
         >
           {task.title}
         </label>
@@ -66,7 +66,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
           </div>
         )}
       </div>
-      <Badge variant="outline" className="capitalize">{task.category}</Badge>
+      <Badge variant="outline" className="capitalize hidden sm:inline-flex">{task.category}</Badge>
       <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
         <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={() => onEdit(task)}>
             <Edit className="w-4 h-4" />
@@ -277,7 +277,7 @@ export function TodoList() {
       </div>
       
       <div className="relative">
-        <div className="flex justify-between items-center flex-wrap gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center flex-wrap gap-4 mb-4">
           <h2 className="text-2xl font-bold tracking-tight uppercase text-primary/80">
             Mi Lista de Tareas
           </h2>
@@ -286,10 +286,10 @@ export function TodoList() {
           </div>
         </div>
         <Tabs defaultValue="all" className="w-full">
-            <div className="flex justify-start items-center flex-wrap gap-4">
-                <TabsList>
+            <div className="overflow-x-auto pb-2">
+                <TabsList className="w-full sm:w-auto">
                     {TABS_WITH_CONTENT.map(tab => (
-                        <TabsTrigger key={tab.value} value={tab.value} className="capitalize">
+                        <TabsTrigger key={tab.value} value={tab.value} className="capitalize flex-shrink-0">
                         {tab.label}
                         </TabsTrigger>
                     ))}

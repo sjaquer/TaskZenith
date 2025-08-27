@@ -24,7 +24,7 @@ const statusToColor: Record<KanbanStatus, string> = {
   'Cancelado': 'bg-red-500'
 }
 
-function KanbanCard({ task, onEdit, selectedProjectId }: { task: Task, onEdit: (task: Task) => void, selectedProjectId: string | null }) {
+function KanbanCard({ task, onEdit }: { task: Task, onEdit: (task: Task) => void }) {
   const { getProjectById, updateTaskStatus } = useTasks();
   const project = task.projectId ? getProjectById(task.projectId) : undefined;
 
@@ -32,12 +32,6 @@ function KanbanCard({ task, onEdit, selectedProjectId }: { task: Task, onEdit: (
     e.dataTransfer.setData('taskId', task.id);
   };
   
-  const isVisible = !selectedProjectId || task.projectId === selectedProjectId;
-
-  if (!isVisible) {
-    return null;
-  }
-
   return (
     <Card
       draggable
@@ -71,9 +65,10 @@ function KanbanCard({ task, onEdit, selectedProjectId }: { task: Task, onEdit: (
   );
 }
 
-function KanbanColumn({ status, tasks, onEdit, selectedProjectId }: { status: KanbanStatus; tasks: Task[]; onEdit: (task: Task) => void; selectedProjectId: string | null }) {
+function KanbanColumn({ status, tasks }: { status: KanbanStatus; tasks: Task[]; }) {
   const { updateTaskStatus } = useTasks();
   const [isOver, setIsOver] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -92,8 +87,10 @@ function KanbanColumn({ status, tasks, onEdit, selectedProjectId }: { status: Ka
     }
     setIsOver(false);
   };
-
-  const visibleTasks = tasks.filter(task => !selectedProjectId || task.projectId === selectedProjectId);
+  
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+  };
 
   return (
     <div
@@ -105,58 +102,70 @@ function KanbanColumn({ status, tasks, onEdit, selectedProjectId }: { status: Ka
       <div className="flex items-center gap-3 p-2 mb-4">
         <span className={`w-3 h-3 rounded-full ${statusToColor[status]}`}></span>
         <h3 className="font-semibold uppercase tracking-wider">{status}</h3>
-        <span className="text-sm font-bold text-muted-foreground bg-secondary/50 rounded-full px-2 py-0.5">{visibleTasks.length}</span>
+        <span className="text-sm font-bold text-muted-foreground bg-secondary/50 rounded-full px-2 py-0.5">{tasks.length}</span>
       </div>
-      <div className="space-y-4 min-h-[200px] p-1">
+      <div className="space-y-4 p-1 max-h-[500px] overflow-y-auto">
         {tasks.map((task) => (
-          <KanbanCard key={task.id} task={task} onEdit={onEdit} selectedProjectId={selectedProjectId} />
+          <KanbanCard key={task.id} task={task} onEdit={handleEditTask} />
         ))}
       </div>
+      {editingTask && (
+        <TaskEditDialog 
+            isOpen={!!editingTask}
+            onOpenChange={(open) => !open && setEditingTask(null)}
+            task={editingTask}
+        />
+      )}
     </div>
   );
 }
 
-export function KanbanBoard() {
-  const { tasks } = useTasks();
+export function KanbanBoard({ taskLimit }: { taskLimit?: number }) {
+  const { tasks, projects } = useTasks();
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  
+  const projectTasks = useMemo(() => {
+    const allProjectTasks = tasks.filter(task => task.projectId);
+    if (!selectedProjectId) {
+      return allProjectTasks;
+    }
+    return allProjectTasks.filter(task => task.projectId === selectedProjectId);
+  }, [tasks, selectedProjectId]);
+
 
   const groupedTasks = useMemo(() => {
     return columns.reduce((acc, status) => {
-      acc[status] = tasks.filter((task) => task.status === status);
+      let tasksForColumn = projectTasks.filter((task) => task.status === status);
+      if (taskLimit) {
+        tasksForColumn = tasksForColumn.slice(0, taskLimit);
+      }
+      acc[status] = tasksForColumn;
       return acc;
     }, {} as Record<KanbanStatus, Task[]>);
-  }, [tasks]);
+  }, [projectTasks, taskLimit]);
 
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-  };
-
-  const closeEditDialog = () => {
-    setEditingTask(null);
-  };
+  if (projects.length === 0) {
+    return (
+        <Card className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground bg-card/80">
+            <KanbanSquare className="w-12 h-12 mb-4" />
+            <h3 className="text-lg font-semibold">El tablero Kanban es para proyectos.</h3>
+            <p className="text-sm">Crea tu primer proyecto para empezar a usar el tablero.</p>
+        </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
         <ProjectLegend onProjectSelect={setSelectedProjectId} selectedProjectId={selectedProjectId} />
-        <div className="flex gap-6 pb-4 overflow-x-auto">
+        <div className="flex flex-col md:flex-row gap-6 pb-4 overflow-x-auto">
             {columns.map((status) => (
                 <KanbanColumn 
                     key={status} 
                     status={status} 
                     tasks={groupedTasks[status] || []} 
-                    onEdit={handleEditTask}
-                    selectedProjectId={selectedProjectId}
                 />
             ))}
         </div>
-        {editingTask && (
-            <TaskEditDialog
-                isOpen={!!editingTask}
-                onOpenChange={(open) => !open && closeEditDialog()}
-                task={editingTask}
-            />
-        )}
     </div>
   );
 }

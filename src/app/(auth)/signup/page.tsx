@@ -61,8 +61,8 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background to-blue-950/20">
-      <Card className="w-full max-w-md mx-4">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background to-blue-950/20 p-4">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center">
             <div className="flex justify-center items-center gap-2 mb-2">
                 <Bot className="w-8 h-8 text-accent" />

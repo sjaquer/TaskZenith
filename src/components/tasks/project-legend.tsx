@@ -51,7 +51,7 @@ function DeleteDataConfirmation() {
   return (
     <AlertDialog open={isDialogOpen} onOpenChange={handleOpenChange}>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="sm">
+        <Button variant="destructive" size="sm" className="w-full">
           <Trash2 className="h-4 w-4 mr-2" />
           Borrar datos de la cuenta
         </Button>
@@ -151,37 +151,39 @@ export function ProjectLegend({ onProjectSelect, selectedProjectId }: { onProjec
   const projectToEdit = projects.find(p => p.id === editingProject);
 
   return (
-    <div className="flex items-center gap-4 flex-wrap p-4 rounded-lg bg-card/80 backdrop-blur-sm">
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase">Proyectos:</h3>
-      {projects.length > 0 ? (
-        projects.map((project) => (
-          <Button
-            key={project.id}
-            variant={selectedProjectId === project.id ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => onProjectSelect(project.id)}
-            className="flex items-center gap-2 capitalize"
-          >
-            <span
-              className="h-4 w-4 rounded-full"
-              style={{ backgroundColor: project.color }}
-            />
-            {project.name}
-          </Button>
-        ))
-      ) : (
-        <p className="text-sm text-muted-foreground">No hay proyectos. Añade uno para empezar.</p>
-      )}
-      {selectedProjectId && (
-          <Button variant="ghost" size="sm" onClick={() => onProjectSelect(null)}>
-              <X className="h-4 w-4 mr-2" />
-              Mostrar Todos
-          </Button>
-      )}
-      <div className="flex gap-2 ml-auto">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap p-4 rounded-lg bg-card/80 backdrop-blur-sm">
+      <h3 className="text-sm font-semibold text-muted-foreground uppercase w-full sm:w-auto">Proyectos:</h3>
+      <div className="flex flex-wrap gap-2">
+        {projects.length > 0 ? (
+          projects.map((project) => (
+            <Button
+              key={project.id}
+              variant={selectedProjectId === project.id ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => onProjectSelect(project.id)}
+              className="flex items-center gap-2 capitalize"
+            >
+              <span
+                className="h-4 w-4 rounded-full"
+                style={{ backgroundColor: project.color }}
+              />
+              {project.name}
+            </Button>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">No hay proyectos. Añade uno para empezar.</p>
+        )}
+        {selectedProjectId && (
+            <Button variant="ghost" size="sm" onClick={() => onProjectSelect(null)}>
+                <X className="h-4 w-4 mr-2" />
+                Mostrar Todos
+            </Button>
+        )}
+      </div>
+      <div className="flex gap-2 sm:ml-auto w-full sm:w-auto">
         <Popover open={isAddPopoverOpen} onOpenChange={setIsAddPopoverOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="flex-grow">
               <Plus className="h-4 w-4 mr-2" />
               Nuevo Proyecto
             </Button>
@@ -230,12 +232,12 @@ export function ProjectLegend({ onProjectSelect, selectedProjectId }: { onProjec
 
         <Popover open={isManagePopoverOpen} onOpenChange={setIsManagePopoverOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" disabled={projects.length === 0}>
+            <Button variant="outline" size="sm" disabled={projects.length === 0} className="flex-grow">
               <Settings className="h-4 w-4 mr-2" />
               Gestionar
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-96">
+          <PopoverContent className="w-80 sm:w-96">
              <div className="grid gap-4">
                 <div className="space-y-2">
                   <h4 className="font-medium leading-none">GESTIONAR PROYECTOS</h4>
