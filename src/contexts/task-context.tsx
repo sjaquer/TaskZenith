@@ -57,6 +57,8 @@ const defaultDailyTasks: CustomDailyTask[] = [
     { id: 'daily-5', title: 'Planificar las 3 tareas más importantes' },
 ];
 
+const getLocalStorageKey = (userId: string, key: 'tasks' | 'projects') => `taskzenith_${userId}_${key}`;
+
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const { user, loading: authLoading } = useAuth();
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -78,14 +80,26 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             customDailyTasksDoc: doc(userDocRef, 'config', 'customDailyTasks'),
         };
     }, [userId]);
+    
+    // Effect to persist state to localStorage whenever it changes
+    useEffect(() => {
+      if (userId && isLoaded) {
+        localStorage.setItem(getLocalStorageKey(userId, 'tasks'), JSON.stringify(tasks));
+        localStorage.setItem(getLocalStorageKey(userId, 'projects'), JSON.stringify(projects));
+      }
+    }, [tasks, projects, userId, isLoaded]);
 
     const clearLocalData = useCallback(() => {
+        if (userId) {
+          localStorage.removeItem(getLocalStorageKey(userId, 'tasks'));
+          localStorage.removeItem(getLocalStorageKey(userId, 'projects'));
+        }
         setTasks([]);
         setProjects([]);
         setDailyTasks([]);
         setCustomDailyTasks([]);
         setIsLoaded(false);
-    }, []);
+    }, [userId]);
 
     const syncData = useCallback(async () => {
         if (!userId) return;
@@ -166,22 +180,48 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
 
     useEffect(() => {
-        const loadInitialData = async () => {
-            if (userId) { 
-                if (tasks.length === 0 && projects.length === 0) {
-                    await syncData();
+      const loadInitialData = async () => {
+        if (userId) {
+          let localTasks: Task[] = [];
+          let localProjects: Project[] = [];
+          
+          try {
+            const storedTasks = localStorage.getItem(getLocalStorageKey(userId, 'tasks'));
+            if (storedTasks) {
+              localTasks = JSON.parse(storedTasks, (key, value) => {
+                if (key.endsWith('At') || key === 'dueDate' || key === 'createdAt') {
+                  return value ? new Date(value) : null;
                 }
-                await fetchDailyTasks();
-                setIsLoaded(true);
-            } else if (!userId) {
-                clearLocalData();
+                return value;
+              });
             }
-        };
-      
-        if (!authLoading) {
-          loadInitialData();
+            
+            const storedProjects = localStorage.getItem(getLocalStorageKey(userId, 'projects'));
+            if (storedProjects) {
+              localProjects = JSON.parse(storedProjects);
+            }
+          } catch(e) {
+            console.error("Failed to parse data from localStorage", e);
+          }
+          
+          if (localTasks.length > 0 || localProjects.length > 0) {
+            setTasks(localTasks);
+            setProjects(localProjects);
+          } else {
+            await syncData();
+          }
+          
+          await fetchDailyTasks();
+          setIsLoaded(true);
+        } else {
+          clearLocalData();
         }
-    }, [userId, authLoading]);
+      };
+    
+      if (!authLoading) {
+        loadInitialData();
+      }
+    }, [userId, authLoading, syncData, fetchDailyTasks, clearLocalData]);
 
 
   const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'userId'>>) => {
@@ -478,8 +518,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     if (!userId) return;
     const { tasksCollection, projectsCollection, dailyTasksCollection, customDailyTasksDoc } = getCollections();
     
-    setTasks([]);
-    setProjects([]);
+    // Clear local state and localStorage
+    clearLocalData();
     
     try {
         const batch = writeBatch(db);
