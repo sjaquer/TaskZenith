@@ -19,11 +19,6 @@ import {
   History,
   LogOut,
   UserCircle,
-  Whale,
-  Crab,
-  Fish,
-  Bird,
-  Turtle,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useTasks } from '@/contexts/task-context';
@@ -31,8 +26,6 @@ import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import Image from 'next/image';
-import type { ProfileIcon } from '@/lib/types';
-
 
 const menuItems = [
     {href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard},
@@ -40,15 +33,6 @@ const menuItems = [
     {href: '/dashboard/kanban', label: 'Kanban', icon: KanbanSquare},
     {href: '/dashboard/history', label: 'Historial', icon: History},
 ];
-
-const iconMap: Record<ProfileIcon, React.ElementType> = {
-    user: UserCircle,
-    whale: Whale,
-    crab: Crab,
-    fish: Fish,
-    bird: Bird,
-    turtle: Turtle,
-};
 
 function BottomNavBar() {
     const pathname = usePathname();
@@ -65,7 +49,7 @@ function BottomNavBar() {
 }
 
 function MainHeader() {
-    const { user, userProfile, logout } = useAuth();
+    const { user, logout } = useAuth();
     const { clearLocalData } = useTasks();
     const router = useRouter();
     const { setOpen: setSidebarOpen } = useSidebar();
@@ -75,8 +59,6 @@ function MainHeader() {
         clearLocalData();
         router.push('/login');
     };
-
-    const UserAvatar = userProfile?.profileIcon ? iconMap[userProfile.profileIcon] : UserCircle;
 
     return (
         <header className="flex items-center justify-between p-4 border-b bg-card/80 backdrop-blur-sm sticky top-0 z-40">
@@ -88,18 +70,18 @@ function MainHeader() {
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                     <p className="hidden sm:block">Hola,</p>
-                    <p>{userProfile?.displayName || user?.displayName || 'Usuario'}</p>
+                    <p>{user?.displayName || 'Usuario'}</p>
                 </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                           <UserAvatar className="h-8 w-8" />
+                           <UserCircle className="h-8 w-8" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none">{userProfile?.displayName || user?.displayName}</p>
+                                <p className="text-sm font-medium leading-none">{user?.displayName}</p>
                                 <p className="text-xs leading-none text-muted-foreground">
                                     {user?.email}
                                 </p>

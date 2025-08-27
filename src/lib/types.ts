@@ -54,10 +54,3 @@ export interface OrganizedTasks {
   newTasks: OrganizedTaskNew[];
   deletedTaskIds: string[];
 }
-
-export type ProfileIcon = 'user' | 'whale' | 'crab' | 'fish' | 'bird' | 'turtle';
-
-export interface UserProfile {
-  displayName?: string;
-  profileIcon?: ProfileIcon;
-}
