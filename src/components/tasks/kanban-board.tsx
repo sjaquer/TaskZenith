@@ -5,7 +5,7 @@ import { useTasks } from '@/contexts/task-context';
 import type { KanbanStatus, Task } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProjectLegend } from './project-legend';
-import { MoreHorizontal, Edit } from 'lucide-react';
+import { MoreHorizontal, Edit, KanbanSquare } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { TaskEditDialog } from './task-edit-dialog';
+import Link from 'next/link';
 
 const columns: KanbanStatus[] = ['Pendiente', 'En Progreso', 'Hecho', 'Finalizado', 'Cancelado'];
 const statusToColor: Record<KanbanStatus, string> = {
@@ -143,6 +144,11 @@ export function KanbanBoard({ taskLimit }: { taskLimit?: number }) {
       return acc;
     }, {} as Record<KanbanStatus, Task[]>);
   }, [projectTasks, taskLimit]);
+  
+  const showButton = taskLimit && projectTasks.some(task => {
+    const column = groupedTasks[task.status];
+    return column && column.length >= taskLimit;
+  });
 
   if (projects.length === 0) {
     return (
@@ -166,6 +172,13 @@ export function KanbanBoard({ taskLimit }: { taskLimit?: number }) {
                 />
             ))}
         </div>
+        {showButton && (
+            <div className="text-center mt-4">
+                <Button asChild variant="secondary">
+                    <Link href="/dashboard/kanban">Ver tablero completo</Link>
+                </Button>
+            </div>
+        )}
     </div>
   );
 }
