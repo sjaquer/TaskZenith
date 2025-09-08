@@ -70,7 +70,7 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
   const category = form.watch('category');
 
   const handleDateTimeChange = (
-    newVal: Date | number | 'AM' | 'PM' | undefined,
+    newVal: string | Date | undefined,
     field: any,
     type: 'date' | 'hour' | 'minute' | 'ampm'
   ) => {
@@ -84,16 +84,16 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
         }
         break;
       case 'hour':
-        const currentHour24 = currentDate.getHours();
-        const isPM = currentHour24 >= 12;
-        let newHour24 = Number(newVal) % 12;
-        if (isPM) newHour24 += 12;
-        if (newHour24 === 12) newHour24 = 0; // Midnight case
-        if (newHour24 === 24) newHour24 = 12; // Noon case
-        currentDate.setHours(newHour24);
+        const newHour = parseInt(newVal as string, 10);
+        const currentHour12 = currentDate.getHours() % 12;
+        const isPM = currentDate.getHours() >= 12;
+        let finalHour = newHour;
+        if(isPM && newHour !== 12) finalHour += 12;
+        if(!isPM && newHour === 12) finalHour = 0;
+        currentDate.setHours(finalHour);
         break;
       case 'minute':
-        currentDate.setMinutes(Number(newVal) || 0);
+        currentDate.setMinutes(parseInt(newVal as string, 10));
         break;
       case 'ampm':
         const hour = currentDate.getHours();
@@ -238,31 +238,41 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                     />
                     <div className="p-4 border-t flex items-center gap-2">
                         <Label>Hora:</Label>
-                        <Input
-                            type="number"
-                            min="1"
-                            max="12"
-                            value={field.value ? new Date(field.value).getHours() % 12 || 12 : ''}
-                            onChange={(e) => handleDateTimeChange(parseInt(e.target.value), field, 'hour')}
-                            className="w-16"
-                        />
+                         <Select
+                            value={String(field.value ? new Date(field.value).getHours() % 12 || 12 : '12')}
+                            onValueChange={(value) => handleDateTimeChange(value, field, 'hour')}
+                         >
+                            <SelectTrigger className="w-20">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <SelectItem key={h} value={String(h)}>{String(h)}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
                         <Label>:</Label>
-                        <Input
-                            type="number"
-                            min="0"
-                            max="59"
-                            step="5"
-                            value={field.value ? String(new Date(field.value).getMinutes()).padStart(2, '0') : ''}
-                            onChange={(e) => handleDateTimeChange(parseInt(e.target.value), field, 'minute')}
-                            className="w-16"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDateTimeChange(field.value && new Date(field.value).getHours() >= 12 ? 'AM' : 'PM', field, 'ampm')}
+                        <Select
+                            value={String(field.value ? new Date(field.value).getMinutes() : '0').padStart(2, '0')}
+                            onValueChange={(value) => handleDateTimeChange(value, field, 'minute')}
                         >
-                          {field.value ? (new Date(field.value).getHours() >= 12 ? 'PM' : 'AM') : 'AM'}
-                        </Button>
+                            <SelectTrigger className="w-20">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Array.from({ length: 60 }, (_, i) => i).map(m => <SelectItem key={m} value={String(m)}>{String(m).padStart(2, '0')}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Select
+                            value={field.value && new Date(field.value).getHours() >= 12 ? 'PM' : 'AM'}
+                            onValueChange={(value) => handleDateTimeChange(value, field, 'ampm')}
+                        >
+                            <SelectTrigger className="w-24">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="AM">AM</SelectItem>
+                                <SelectItem value="PM">PM</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                   </PopoverContent>
                 </Popover>

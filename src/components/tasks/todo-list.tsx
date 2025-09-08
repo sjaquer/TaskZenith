@@ -44,63 +44,60 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
 
   return (
     <div
-      className={`group grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1 p-3 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all hover:bg-secondary/60 ${
+      className={`group flex flex-col p-3 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all hover:bg-secondary/60 ${
         priorityColors[task.priority]
       } ${isCompleted ? 'task-complete-animation' : ''}`}
     >
-      {/* Row 1: Checkbox and Title */}
-      <Checkbox
-        id={`task-todo-${task.id}`}
-        onCheckedChange={handleToggle}
-        aria-label={`Completar ${task.title}`}
-        className="row-span-2 sm:row-span-1"
-      />
-      <div className="col-start-2 overflow-hidden">
-        <label
-          htmlFor={`task-todo-${task.id}`}
-          className="font-medium leading-none cursor-pointer whitespace-normal"
-        >
-          {task.title}
-        </label>
-      </div>
-
-      {/* Row 1: Actions (visible on hover) */}
-      <div className="col-start-3 row-start-1 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={() => onEdit(task)}>
-            <Edit className="w-4 h-4" />
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground">
-              <Trash2 className="w-4 h-4" />
+      <div className="flex items-start gap-3 flex-grow">
+        <Checkbox
+          id={`task-todo-${task.id}`}
+          onCheckedChange={handleToggle}
+          aria-label={`Completar ${task.title}`}
+          className="mt-1"
+        />
+        <div className="flex-grow overflow-hidden">
+          <label
+            htmlFor={`task-todo-${task.id}`}
+            className="font-medium leading-none cursor-pointer whitespace-normal"
+          >
+            {task.title}
+          </label>
+        </div>
+        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
+            <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={() => onEdit(task)}>
+                <Edit className="w-4 h-4" />
             </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>¿Confirmas la eliminación?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta acción no se puede deshacer. La tarea será eliminada permanentemente de la base de datos.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={() => onDelete(task.id)} className="bg-destructive hover:bg-destructive/90">
-                Eliminar
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Confirmas la eliminación?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción no se puede deshacer. La tarea será eliminada permanentemente de la base de datos.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(task.id)} className="bg-destructive hover:bg-destructive/90">
+                    Eliminar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+        </div>
       </div>
-
-      {/* Row 2: Due Date and Badges */}
-      <div className="col-start-2 col-span-2 sm:col-span-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-        {task.dueDate && (
-            <div className={`flex items-center gap-1 text-xs mt-1 ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
-                <Clock className="w-3 h-3" />
-                <span>{format(new Date(task.dueDate), "d MMM, p", { locale: es })}</span>
-            </div>
-        )}
-        <Badge variant="outline" className="capitalize text-xs">{task.category}</Badge>
+      <div className="pl-9 pt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+          {task.dueDate && (
+              <div className={`flex items-center gap-1 text-xs ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  <Clock className="w-3 h-3" />
+                  <span>{format(new Date(task.dueDate), "d MMM, p", { locale: es })}</span>
+              </div>
+          )}
+          <Badge variant="outline" className="capitalize text-xs">{task.category}</Badge>
       </div>
     </div>
   );
@@ -146,7 +143,7 @@ export function TodoList() {
   }
 
   const handleDateTimeChange = (
-    newVal: Date | number | 'AM' | 'PM' | undefined,
+    newVal: string | Date | undefined,
     type: 'date' | 'hour' | 'minute' | 'ampm'
   ) => {
     let currentDate = dueDate || new Date();
@@ -159,20 +156,16 @@ export function TodoList() {
         }
         break;
       case 'hour':
-        const currentHour24 = currentDate.getHours();
-        const isPM = currentHour24 >= 12;
-        let newHour24 = Number(newVal) % 12;
-        if (newHour24 === 0) newHour24 = 12; // Treat 0 as 12
-        if(isPM && newHour24 < 12) {
-            newHour24 += 12;
-        }
-        if(!isPM && newHour24 === 12) { // 12 AM case
-            newHour24 = 0;
-        }
-        currentDate.setHours(newHour24);
+        const newHour = parseInt(newVal as string, 10);
+        const currentHour12 = currentDate.getHours() % 12;
+        const isPM = currentDate.getHours() >= 12;
+        let finalHour = newHour;
+        if(isPM && newHour !== 12) finalHour += 12;
+        if(!isPM && newHour === 12) finalHour = 0; // Handle 12 AM case
+        currentDate.setHours(finalHour);
         break;
       case 'minute':
-        currentDate.setMinutes(Number(newVal) || 0);
+        currentDate.setMinutes(parseInt(newVal as string, 10));
         break;
       case 'ampm':
         const hour = currentDate.getHours();
@@ -305,34 +298,41 @@ export function TodoList() {
                                 />
                                 <div className="p-4 border-t flex items-center gap-2">
                                     <Label>Hora:</Label>
-                                    <Input
-                                        type="number"
-                                        min="1"
-                                        max="12"
-                                        value={dueDate ? dueDate.getHours() % 12 || 12 : ''}
-                                        onChange={(e) => handleDateTimeChange(parseInt(e.target.value), 'hour')}
-                                        className="w-16"
-                                    />
-                                     <Label>:</Label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        max="59"
-                                        step="5"
-                                        value={dueDate ? String(dueDate.getMinutes()).padStart(2, '0') : ''}
-                                        onChange={(e) => handleDateTimeChange(parseInt(e.target.value), 'minute')}
-                                        className="w-16"
-                                    />
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            handleDateTimeChange(dueDate && dueDate.getHours() >= 12 ? 'AM' : 'PM', 'ampm')
-                                        }}
+                                    <Select
+                                        value={String(dueDate ? dueDate.getHours() % 12 || 12 : '12')}
+                                        onValueChange={(value) => handleDateTimeChange(value, 'hour')}
                                     >
-                                        {dueDate ? (dueDate.getHours() >= 12 ? 'PM' : 'AM') : 'AM'}
-                                    </Button>
+                                        <SelectTrigger className="w-20">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <SelectItem key={h} value={String(h)}>{String(h)}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <Label>:</Label>
+                                     <Select
+                                        value={String(dueDate ? dueDate.getMinutes() : '0').padStart(2, '0')}
+                                        onValueChange={(value) => handleDateTimeChange(value, 'minute')}
+                                    >
+                                        <SelectTrigger className="w-20">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Array.from({ length: 60 }, (_, i) => i).map(m => <SelectItem key={m} value={String(m)}>{String(m).padStart(2, '0')}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select
+                                        value={dueDate && dueDate.getHours() >= 12 ? 'PM' : 'AM'}
+                                        onValueChange={(value) => handleDateTimeChange(value, 'ampm')}
+                                    >
+                                        <SelectTrigger className="w-24">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="AM">AM</SelectItem>
+                                            <SelectItem value="PM">PM</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </PopoverContent>
                         </Popover>
