@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type MouseEvent, type TouchEvent } from 'react';
 import { useTasks } from '@/contexts/task-context';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +21,8 @@ import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
 import { useAuth } from '@/contexts/auth-context';
 import { Card } from '../ui/card';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 // This is the type that comes from the AI flow
 type ProcessedTask = Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'userId'> & { localId: number };
@@ -34,8 +36,76 @@ export function VoiceTaskGenerator() {
   const [processedTasks, setProcessedTasks] = useState<ProcessedTask[]>([]);
   const { projects, addVoiceTasks, getProjectById } = useTasks();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // --- Draggable Button Logic ---
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<HTMLButtonElement>(null);
+  const offsetRef = useRef({ x: 0, y: 0 });
+  const hasMovedRef = useRef(false); // To distinguish a click from a drag
+
+  useEffect(() => {
+    // Set initial position to be above the bottom nav bar on mobile
+    if(isMobile) {
+        setPosition({x: 0, y: -80}); 
+    }
+  }, [isMobile]);
+  
+  const handleDragStart = (e: MouseEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>) => {
+    if (dragRef.current) {
+        setIsDragging(true);
+        hasMovedRef.current = false;
+        
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        
+        const rect = dragRef.current.getBoundingClientRect();
+        offsetRef.current = {
+            x: clientX - rect.left,
+            y: clientY - rect.top,
+        };
+    }
+  };
+
+  const handleDragMove = (e: globalThis.MouseEvent | globalThis.TouchEvent) => {
+    if (isDragging && dragRef.current) {
+      e.preventDefault();
+      hasMovedRef.current = true;
+      
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      
+      setPosition({
+        x: clientX - offsetRef.current.x,
+        y: clientY - offsetRef.current.y,
+      });
+    }
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+  
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleDragMove);
+      window.addEventListener('touchmove', handleDragMove, { passive: false });
+      window.addEventListener('mouseup', handleDragEnd);
+      window.addEventListener('touchend', handleDragEnd);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleDragMove);
+      window.removeEventListener('touchmove', handleDragMove);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [isDragging]);
+
+  // --- End Draggable Logic ---
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -47,10 +117,6 @@ export function VoiceTaskGenerator() {
   }, []);
 
   const handleListen = () => {
-    if (!user) {
-        toast({ variant: 'destructive', title: 'Acción requerida', description: 'Debes iniciar sesión para usar esta función.' });
-        return;
-    }
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
@@ -180,6 +246,11 @@ export function VoiceTaskGenerator() {
   }
 
   const handleOpenChange = (open: boolean) => {
+    // This logic prevents the dialog from opening if the user is dragging
+    if (hasMovedRef.current) {
+        hasMovedRef.current = false;
+        return;
+    }
     if (!open) {
       handleCloseDialog();
     } else {
@@ -191,10 +262,17 @@ export function VoiceTaskGenerator() {
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
          <Button
+          ref={dragRef}
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
           variant="default"
           size="lg"
-          className="fixed bottom-6 right-4 sm:right-6 h-16 w-16 rounded-full shadow-lg z-20"
-        >
+          className={cn(
+            "fixed bottom-6 right-4 sm:right-6 h-16 w-16 rounded-full shadow-lg z-20 cursor-grab",
+            isDragging && "cursor-grabbing"
+          )}
+          style={isDragging ? { position: 'absolute', top: position.y, left: position.x } : { transform: `translate(${position.x}px, ${position.y}px)` }}
+          >
           <Mic className="h-8 w-8" />
           <span className="sr-only">Crear por Voz</span>
         </Button>
