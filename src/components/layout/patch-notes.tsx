@@ -19,17 +19,13 @@ const patchNotes = [
     version: '1.4.0',
     date: 'Septiembre 08, 2025',
     changes: [
-       {
+      {
         type: 'NUEVO',
         description: '¡Se añadieron más temas de colores! Ahora puedes probar "Rojo Escarlata", "Menta Fresca" y "Atardecer Neón".',
       },
-      {
-        type: 'NUEVO',
-        description: '¡Personalización de tipografía! Ahora puedes cambiar la fuente de toda la aplicación desde el panel de personalización.',
-      },
        {
         type: 'MEJORA',
-        description: 'Se ha mejorado la función de cambio de tipografía para que se aplique consistentemente en toda la aplicación y se han añadido más fuentes como "Inter" y "Source Code Pro".',
+        description: 'Se ha revertido la función de cambio de tipografía para mantener una mayor consistencia visual en toda la aplicación, pero se mantiene la capacidad de personalizar los widgets del dashboard.',
       },
     ],
   },
@@ -47,7 +43,7 @@ const patchNotes = [
       },
       {
         type: 'FIX',
-        description: 'Corregidos múltiples errores con la directiva "use server" que impedían el funcionamiento de la IA.',
+        description: 'Corregidos múltiples errores críticos con la directiva "use server" que impedían el funcionamiento de la IA para generar el plan diario.',
       },
     ],
   },
