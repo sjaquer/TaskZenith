@@ -12,6 +12,7 @@ type ColorTheme = {
 
 type LayoutConfig = {
     showStats: boolean;
+    showDailyFocus: boolean;
     showDailyTasks: boolean;
     showTodoList: boolean;
     showKanban: boolean;
@@ -45,6 +46,7 @@ const defaultTheme: ColorTheme = {
 
 const defaultLayout: LayoutConfig = {
     showStats: true,
+    showDailyFocus: true,
     showDailyTasks: true,
     showTodoList: true,
     showKanban: true,

@@ -14,6 +14,7 @@ import { KanbanBoard } from '@/components/tasks/kanban-board';
 import { TaskHistory } from '@/components/tasks/task-history';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
+import { DailyFocusWidget } from '@/components/tasks/daily-focus-widget';
 
 function SyncButton() {
   const { syncData, isSyncing } = useTasks();
@@ -87,6 +88,7 @@ function DashboardPage() {
                   </div>
                 </>
               )}
+              {layoutConfig.showDailyFocus && <DailyFocusWidget />}
               {layoutConfig.enableDueDates && <DueTasksWidget />}
               {layoutConfig.showPriorityTasks && <HighPriorityTasksWidget />}
           </div>

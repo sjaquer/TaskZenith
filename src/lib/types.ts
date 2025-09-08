@@ -54,3 +54,13 @@ export interface OrganizedTasks {
   newTasks: OrganizedTaskNew[];
   deletedTaskIds: string[];
 }
+
+// Types for AI Daily Plan
+export interface DailyPlan {
+    motivationalMessage: string;
+    suggestedTasks: {
+        id: string;
+        title: string;
+        reason: string;
+    }[];
+}
