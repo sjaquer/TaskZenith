@@ -41,7 +41,7 @@ export function VoiceTaskGenerator() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   // --- Draggable Button Logic ---
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState({ x: window.innerWidth - 88, y: window.innerHeight - 88 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<HTMLButtonElement>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
@@ -49,14 +49,13 @@ export function VoiceTaskGenerator() {
 
   useEffect(() => {
     // Set initial position to be above the bottom nav bar on mobile
-    if(isMobile) {
-        setPosition({x: 0, y: -80}); 
-    }
+    const initialX = window.innerWidth - 88; // 64px width + 24px padding
+    const initialY = window.innerHeight - (isMobile ? 160 : 88); // higher on mobile
+    setPosition({ x: initialX, y: initialY });
   }, [isMobile]);
   
   const handleDragStart = (e: MouseEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>) => {
     if (dragRef.current) {
-        setIsDragging(true);
         hasMovedRef.current = false;
         
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -67,13 +66,23 @@ export function VoiceTaskGenerator() {
             x: clientX - rect.left,
             y: clientY - rect.top,
         };
+        setIsDragging(true); // Set dragging to true after calculating offset
     }
   };
 
   const handleDragMove = (e: globalThis.MouseEvent | globalThis.TouchEvent) => {
     if (isDragging && dragRef.current) {
       e.preventDefault();
-      hasMovedRef.current = true;
+      if (!hasMovedRef.current) {
+          const moveThreshold = 5;
+          const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+          const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+          const startX = offsetRef.current.x + position.x;
+          const startY = offsetRef.current.y + position.y;
+          if (Math.abs(clientX - startX) > moveThreshold || Math.abs(clientY - startY) > moveThreshold) {
+              hasMovedRef.current = true;
+          }
+      }
       
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -86,25 +95,28 @@ export function VoiceTaskGenerator() {
   };
 
   const handleDragEnd = () => {
-    if (isDragging && dragRef.current) {
+    if (!isDragging) return;
+
+    if (dragRef.current) {
         const buttonWidth = dragRef.current.offsetWidth;
         const windowWidth = window.innerWidth;
-        // Use the position from the latest render, not a stale one.
+        
         setPosition(currentPosition => {
             let newX;
             if (currentPosition.x + buttonWidth / 2 < windowWidth / 2) {
-                newX = 0; // Snap to left
+                newX = 16; // Snap to left with some padding
             } else {
-                newX = windowWidth - buttonWidth; // Snap to right
+                newX = windowWidth - buttonWidth - 16; // Snap to right with some padding
             }
 
             const windowHeight = window.innerHeight;
             const buttonHeight = dragRef.current!.offsetHeight;
             let newY = currentPosition.y;
-            if (newY < 0) {
-                newY = 0;
-            } else if (newY + buttonHeight > windowHeight) {
-                newY = windowHeight - buttonHeight;
+            
+            if (newY < 16) {
+                newY = 16;
+            } else if (newY + buttonHeight > windowHeight - 16) {
+                newY = windowHeight - buttonHeight - 16;
             }
 
             return { x: newX, y: newY };
@@ -289,13 +301,23 @@ export function VoiceTaskGenerator() {
           ref={dragRef}
           onMouseDown={handleDragStart}
           onTouchStart={handleDragStart}
+          onClick={(e) => {
+            // Prevent dialog from opening if it was a drag
+            if (hasMovedRef.current) {
+              e.preventDefault();
+              hasMovedRef.current = false;
+            }
+          }}
           variant="default"
           size="lg"
           className={cn(
-            "fixed bottom-6 right-4 sm:right-6 h-16 w-16 rounded-full shadow-lg z-20 cursor-grab transition-all duration-300 ease-in-out",
+            "fixed h-16 w-16 rounded-full shadow-lg z-20 cursor-grab transition-all duration-150 ease-in-out",
             isDragging && "cursor-grabbing transition-none"
           )}
-          style={isDragging ? { position: 'absolute', top: position.y, left: position.x } : { transform: `translate(${position.x}px, ${position.y}px)` }}
+          style={{
+            top: `${position.y}px`,
+            left: `${position.x}px`,
+          }}
           >
           <Mic className="h-8 w-8" />
           <span className="sr-only">Crear por Voz</span>
