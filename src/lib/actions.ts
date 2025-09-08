@@ -3,7 +3,7 @@
 import { generateTasks, type GenerateTasksInput } from '@/ai/flows/generate-tasks';
 import { organizeTasks, type OrganizeTasksInput, type OrganizeTasksOutput } from '@/ai/flows/organize-tasks';
 import { processVoiceCommand, type ProcessVoiceCommandInput, type ProcessVoiceCommandOutput } from '@/ai/flows/process-voice-command';
-import { generateDailyPlan, type GenerateDailyPlanInput, type GenerateDailyPlanOutput } from '@/ai/flows/generate-daily-plan';
+import { generateDailyPlan } from '@/ai/flows/generate-daily-plan';
 import { z } from 'zod';
 
 const generateTasksSchema = z.object({
@@ -51,6 +51,33 @@ export async function processVoiceCommandAction(input: ProcessVoiceCommandInput)
       return { error: 'Error al procesar el comando de voz.' };
     }
 }
+
+const TaskInputSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  priority: z.enum(['baja', 'media', 'alta']),
+  category: z.enum(['estudio', 'trabajo', 'personal', 'proyectos']),
+  status: z.enum(['Pendiente', 'En Progreso', 'Hecho', 'Finalizado', 'Cancelado']),
+  createdAt: z.string().describe('The creation date of the task in ISO format.'),
+  projectId: z.string().optional(),
+});
+
+export const GenerateDailyPlanInputSchema = z.object({
+  tasks: z.array(TaskInputSchema).describe("The user's current list of pending tasks."),
+  userName: z.string().optional().describe("The user's name for a personalized message."),
+});
+export type GenerateDailyPlanInput = z.infer<typeof GenerateDailyPlanInputSchema>;
+
+export const GenerateDailyPlanOutputSchema = z.object({
+  motivationalMessage: z.string().describe('A short, inspiring message for the user to start their day.'),
+  suggestedTasks: z.array(z.object({
+    id: z.string().describe('The ID of the suggested task.'),
+    title: z.string().describe('The title of the suggested task.'),
+    reason: z.string().describe('A brief, compelling reason why this task was chosen for today.'),
+  })).describe('A curated list of 3 to 5 tasks to focus on for the day.'),
+});
+export type GenerateDailyPlanOutput = z.infer<typeof GenerateDailyPlanOutputSchema>;
+
 
 export async function generateDailyPlanAction(input: GenerateDailyPlanInput): Promise<GenerateDailyPlanOutput | { error: string }> {
     try {
