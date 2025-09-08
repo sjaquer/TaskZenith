@@ -16,6 +16,24 @@ import { ScrollArea } from '../ui/scroll-area';
 
 const patchNotes = [
   {
+    version: '1.4.0',
+    date: 'Septiembre 08, 2025',
+    changes: [
+       {
+        type: 'NUEVO',
+        description: '¡Se añadieron más temas de colores! Ahora puedes probar "Rojo Escarlata", "Menta Fresca" y "Atardecer Neón".',
+      },
+      {
+        type: 'NUEVO',
+        description: '¡Personalización de tipografía! Ahora puedes cambiar la fuente de toda la aplicación desde el panel de personalización.',
+      },
+       {
+        type: 'MEJORA',
+        description: 'Se ha mejorado la función de cambio de tipografía para que se aplique consistentemente en toda la aplicación y se han añadido más fuentes como "Inter" y "Source Code Pro".',
+      },
+    ],
+  },
+  {
     version: '1.3.0',
     date: 'Julio 26, 2024',
     changes: [
@@ -42,10 +60,6 @@ const patchNotes = [
         description: 'La selección de fecha y hora para las tareas ahora usa un formato de 12 horas (AM/PM) mucho más intuitivo.',
       },
       {
-        type: 'MEJORA',
-        description: 'El cambio de tipografía ahora se aplica globalmente a toda la aplicación de forma correcta.',
-      },
-       {
         type: 'FIX',
         description: 'Se eliminó el título duplicado en el dashboard y se arregló el solapamiento de componentes en vistas móviles.',
       },
@@ -55,13 +69,23 @@ const patchNotes = [
     version: '1.1.0',
     date: 'Julio 24, 2024',
     changes: [
-      {
+       {
         type: 'MEJORA',
         description: 'El historial de tareas ahora es completamente responsivo, mostrando tarjetas en móviles en lugar de una tabla.',
       },
       {
         type: 'NUEVO',
         description: 'Se añadió un temporizador que muestra cuánto falta para la próxima limpieza de tareas antiguas (+5 días).',
+      },
+    ],
+  },
+    {
+    version: '1.0.0',
+    date: 'Julio 23, 2024',
+    changes: [
+      {
+        type: 'NUEVO',
+        description: 'Lanzamiento inicial de TaskZenith con gestión de tareas y proyectos.',
       },
     ],
   },
