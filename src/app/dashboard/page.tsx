@@ -93,14 +93,9 @@ function DashboardPage() {
               {layoutConfig.showPriorityTasks && <HighPriorityTasksWidget />}
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
               {layoutConfig.showDailyTasks && (
-                  <>
-                  <h2 className="text-2xl font-bold tracking-tight mb-4 uppercase text-primary/80">
-                      Tareas Diarias
-                  </h2>
                   <DailyTodoList />
-                  </>
               )}
           </div>
 
