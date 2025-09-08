@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTasks } from '@/contexts/task-context';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,88 +18,124 @@ import { TaskEditDialog } from './task-edit-dialog';
 import { AiTaskOptimizer } from './ai-task-optimizer';
 import { useTheme } from '@/contexts/theme-context';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Calendar } from '../ui/calendar';
-import { format } from 'date-fns';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Label } from '../ui/label';
+import { Calendar } from '../ui/calendar';
 
-function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: (id: string) => void; onDelete: (id: string) => void; onEdit: (task: Task) => void; }) {
+function useRelativeTime(date: Date | null) {
+  const [relativeTime, setRelativeTime] = useState('');
+
+  useEffect(() => {
+    if (!date) {
+      setRelativeTime('');
+      return;
+    };
+
+    const updateRelativeTime = () => {
+      const now = new Date();
+      if (now > date) {
+          setRelativeTime(`Venció ${formatDistanceToNowStrict(date, { addSuffix: true, locale: es })}`);
+      } else {
+          setRelativeTime(`Vence ${formatDistanceToNowStrict(date, { addSuffix: true, locale: es })}`);
+      }
+    };
+
+    updateRelativeTime();
+    const intervalId = setInterval(updateRelativeTime, 60000); // Update every minute
+
+    return () => clearInterval(intervalId);
+  }, [date]);
+
+  return relativeTime;
+}
+
+
+function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: (id: string) => void; onDelete: (id:string) => void; onEdit: (task: Task) => void; }) {
   const [isCompleted, setIsCompleted] = useState(false);
+  const { getProjectById } = useTasks();
+
+  const relativeTime = useRelativeTime(task.dueDate ? new Date(task.dueDate) : null);
+  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
+  
+  const project = task.projectId ? getProjectById(task.projectId) : undefined;
 
   const handleToggle = () => {
     setIsCompleted(true);
     setTimeout(() => {
-        onToggle(task.id);
-    }, 500); // Duration of animation
+      onToggle(task.id);
+    }, 500); // Corresponds to animation duration
   };
-
+  
   const priorityColors = {
     baja: 'border-l-4 border-green-500/70',
     media: 'border-l-4 border-yellow-500/70',
     alta: 'border-l-4 border-red-500/70',
   };
 
-  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
-
   return (
-    <div
-      className={`group flex flex-col p-4 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all hover:bg-secondary/60 ${
-        priorityColors[task.priority]
-      } ${isCompleted ? 'task-complete-animation' : ''}`}
-    >
-      <div className="flex items-start gap-4 flex-grow">
-        <Checkbox
-          id={`task-todo-${task.id}`}
-          onCheckedChange={handleToggle}
-          aria-label={`Completar ${task.title}`}
-          className="mt-1 flex-shrink-0"
-        />
-        <div className="flex-grow min-w-0">
-          <label
-            htmlFor={`task-todo-${task.id}`}
-            className="font-medium leading-tight cursor-pointer break-words"
-          >
-            {task.title}
-          </label>
-        </div>
-        <div className="flex items-center ml-auto flex-shrink-0">
-            <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={() => onEdit(task)}>
-                <Edit className="w-4 h-4" />
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground">
-                  <Trash2 className="w-4 h-4" />
+    <div className={cn(
+        "group flex flex-col p-4 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all",
+        priorityColors[task.priority],
+        isCompleted ? 'task-complete-animation' : ''
+    )}>
+        <div className="flex items-start gap-4 w-full">
+            <Checkbox
+              id={`task-${task.id}`}
+              onCheckedChange={handleToggle}
+              aria-label={`Completar ${task.title}`}
+              className="mt-1"
+            />
+            <div className="flex-grow flex flex-col gap-2 min-w-0">
+                <label htmlFor={`task-${task.id}`} className="font-medium leading-tight cursor-pointer break-words">
+                  {task.title}
+                </label>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                    {relativeTime && (
+                       <div className={cn("flex items-center gap-1", isOverdue ? 'text-destructive' : 'text-muted-foreground')}>
+                          <Clock className="w-3 h-3" />
+                          <span>{relativeTime}</span>
+                       </div>
+                    )}
+                    {project ? (
+                        <div className="flex items-center gap-2 capitalize">
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: project.color }}></span>
+                            <span>{project.name}</span>
+                        </div>
+                    ) : (
+                        <Badge variant="outline" className="capitalize">{task.category}</Badge>
+                    )}
+                </div>
+            </div>
+            <div className="flex items-center ml-auto">
+                <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={() => onEdit(task)}>
+                    <Edit className="w-4 h-4" />
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>¿Confirmas la eliminación?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta acción no se puede deshacer. La tarea será eliminada permanentemente de la base de datos.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onDelete(task.id)} className="bg-destructive hover:bg-destructive/90">
-                    Eliminar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                 <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Confirmas la eliminación?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción no se puede deshacer. La tarea será eliminada permanentemente de la base de datos.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onDelete(task.id)} className="bg-destructive hover:bg-destructive/90">
+                        Eliminar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+            </div>
         </div>
-      </div>
-      <div className="pl-10 pt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-          {task.dueDate && (
-              <div className={`flex items-center gap-1 text-xs ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
-                  <Clock className="w-3 h-3" />
-                  <span>{format(new Date(task.dueDate), "d MMM, p", { locale: es })}</span>
-              </div>
-          )}
-          <Badge variant="outline" className="capitalize text-xs">{task.category}</Badge>
-      </div>
     </div>
   );
 }
@@ -300,7 +336,7 @@ export function TodoList() {
                                 <div className="p-4 border-t flex items-center gap-2">
                                     <Label>Hora:</Label>
                                     <Select
-                                        value={String(dueDate ? dueDate.getHours() % 12 || 12 : '12')}
+                                        value={String(dueDate ? new Date(dueDate).getHours() % 12 || 12 : '12')}
                                         onValueChange={(value) => handleDateTimeChange(value, 'hour')}
                                     >
                                         <SelectTrigger className="w-20">
@@ -312,7 +348,7 @@ export function TodoList() {
                                     </Select>
                                     <Label>:</Label>
                                      <Select
-                                        value={String(dueDate ? dueDate.getMinutes() : '0').padStart(2, '0')}
+                                        value={String(dueDate ? new Date(dueDate).getMinutes() : '0').padStart(2, '0')}
                                         onValueChange={(value) => handleDateTimeChange(value, 'minute')}
                                     >
                                         <SelectTrigger className="w-20">
@@ -323,7 +359,7 @@ export function TodoList() {
                                         </SelectContent>
                                     </Select>
                                     <Select
-                                        value={dueDate && dueDate.getHours() >= 12 ? 'PM' : 'AM'}
+                                        value={dueDate && new Date(dueDate).getHours() >= 12 ? 'PM' : 'AM'}
                                         onValueChange={(value) => handleDateTimeChange(value, 'ampm')}
                                     >
                                         <SelectTrigger className="w-24">
