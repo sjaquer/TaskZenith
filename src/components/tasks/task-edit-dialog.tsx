@@ -69,16 +69,28 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
 
   const category = form.watch('category');
 
-  const handleDateSelect = (date: Date | undefined, field: any) => {
-    if (!date) {
-      field.onChange(null);
-      return;
+  const handleDateTimeChange = (
+    newVal: Date | number | undefined,
+    field: any,
+    type: 'date' | 'hour' | 'minute'
+  ) => {
+    let currentDate = field.value ? new Date(field.value) : new Date();
+  
+    switch (type) {
+      case 'date':
+        if (newVal instanceof Date) {
+          const newDate = new Date(newVal);
+          currentDate.setFullYear(newDate.getFullYear(), newDate.getMonth(), newDate.getDate());
+        }
+        break;
+      case 'hour':
+        currentDate.setHours(Number(newVal) || 0);
+        break;
+      case 'minute':
+        currentDate.setMinutes(Number(newVal) || 0);
+        break;
     }
-    const now = new Date();
-    date.setHours(now.getHours());
-    date.setMinutes(now.getMinutes());
-    date.setSeconds(now.getSeconds());
-    field.onChange(date);
+    field.onChange(new Date(currentDate));
   };
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
@@ -206,9 +218,30 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                     <Calendar
                       mode="single"
                       selected={field.value ?? undefined}
-                      onSelect={(date) => handleDateSelect(date, field)}
+                      onSelect={(date) => handleDateTimeChange(date, field, 'date')}
                       initialFocus
                     />
+                    <div className="p-4 border-t flex items-center gap-2">
+                        <Label>Hora:</Label>
+                        <Input
+                            type="number"
+                            min="0"
+                            max="23"
+                            value={field.value ? new Date(field.value).getHours() : ''}
+                            onChange={(e) => handleDateTimeChange(parseInt(e.target.value), field, 'hour')}
+                            className="w-20"
+                        />
+                        <Label>Min:</Label>
+                        <Input
+                            type="number"
+                            min="0"
+                            max="59"
+                            step="5"
+                            value={field.value ? new Date(field.value).getMinutes() : ''}
+                            onChange={(e) => handleDateTimeChange(parseInt(e.target.value), field, 'minute')}
+                            className="w-20"
+                        />
+                    </div>
                   </PopoverContent>
                 </Popover>
               )}

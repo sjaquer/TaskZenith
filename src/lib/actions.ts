@@ -4,16 +4,6 @@ import { generateTasks, type GenerateTasksInput } from '@/ai/flows/generate-task
 import { organizeTasks, type OrganizeTasksInput, type OrganizeTasksOutput } from '@/ai/flows/organize-tasks';
 import { processVoiceCommand, type ProcessVoiceCommandInput, type ProcessVoiceCommandOutput } from '@/ai/flows/process-voice-command';
 import { z } from 'zod';
-import { auth } from './firebase';
-
-// Helper to get the current user's ID
-async function getUserId() {
-    // This is a placeholder. In a real app, you would get the user from the session.
-    // For server actions, this is complex. We will assume for now flows get the userId they need.
-    // In a full implementation, you'd use a library like next-auth or manage sessions.
-    return auth.currentUser?.uid;
-}
-
 
 const generateTasksSchema = z.object({
   activityDescription: z.string(),
@@ -26,9 +16,6 @@ const generateTasksSchema = z.object({
 });
 
 export async function generateAiTasksAction(input: GenerateTasksInput) {
-  const userId = await getUserId();
-  if (!userId) return { error: 'Debes iniciar sesión para usar esta función.' };
-
   const parsedInput = generateTasksSchema.safeParse(input);
   if (!parsedInput.success) {
     console.error(parsedInput.error.flatten());
@@ -45,9 +32,6 @@ export async function generateAiTasksAction(input: GenerateTasksInput) {
 }
 
 export async function organizeTasksAction(input: OrganizeTasksInput): Promise<OrganizeTasksOutput | { error: string }> {
-  const userId = await getUserId();
-  if (!userId) return { error: 'Debes iniciar sesión para usar esta función.' };
-  
   try {
     const result = await organizeTasks(input);
     return result;
@@ -58,9 +42,6 @@ export async function organizeTasksAction(input: OrganizeTasksInput): Promise<Or
 }
 
 export async function processVoiceCommandAction(input: ProcessVoiceCommandInput): Promise<ProcessVoiceCommandOutput | { error: string }> {
-    const userId = await getUserId();
-    if (!userId) return { error: 'Debes iniciar sesión para usar esta función.' };
-    
     try {
       const result = await processVoiceCommand(input);
       return result;

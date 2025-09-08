@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Calendar as CalendarIcon } from 'lucide-react';
+import { Label } from '../ui/label';
 
 function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: (id: string) => void; onDelete: (id: string) => void; onEdit: (task: Task) => void; }) {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -144,16 +145,27 @@ export function TodoList() {
     }
   }
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (!date) {
-      setDueDate(undefined);
-      return;
+  const handleDateTimeChange = (
+    newVal: Date | number | undefined,
+    type: 'date' | 'hour' | 'minute'
+  ) => {
+    let currentDate = dueDate || new Date();
+  
+    switch (type) {
+      case 'date':
+        if (newVal instanceof Date) {
+          const newDate = new Date(newVal);
+          currentDate.setFullYear(newDate.getFullYear(), newDate.getMonth(), newDate.getDate());
+        }
+        break;
+      case 'hour':
+        currentDate.setHours(Number(newVal) || 0);
+        break;
+      case 'minute':
+        currentDate.setMinutes(Number(newVal) || 0);
+        break;
     }
-    const now = new Date();
-    date.setHours(now.getHours());
-    date.setMinutes(now.getMinutes());
-    date.setSeconds(now.getSeconds());
-    setDueDate(date);
+    setDueDate(new Date(currentDate));
   };
 
   const pendingTasks = useMemo(() => tasks.filter(task => !task.completed), [tasks]);
@@ -266,12 +278,33 @@ export function TodoList() {
                             </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={dueDate}
-                                onSelect={handleDateSelect}
-                                initialFocus
-                            />
+                                <Calendar
+                                    mode="single"
+                                    selected={dueDate}
+                                    onSelect={(d) => handleDateTimeChange(d, 'date')}
+                                    initialFocus
+                                />
+                                <div className="p-4 border-t flex items-center gap-2">
+                                    <Label>Hora:</Label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max="23"
+                                        value={dueDate ? new Date(dueDate).getHours() : ''}
+                                        onChange={(e) => handleDateTimeChange(parseInt(e.target.value), 'hour')}
+                                        className="w-20"
+                                    />
+                                    <Label>Min:</Label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max="59"
+                                        step="5"
+                                        value={dueDate ? new Date(dueDate).getMinutes() : ''}
+                                        onChange={(e) => handleDateTimeChange(parseInt(e.target.value), 'minute')}
+                                        className="w-20"
+                                    />
+                                </div>
                             </PopoverContent>
                         </Popover>
                     )}
