@@ -86,6 +86,30 @@ export function VoiceTaskGenerator() {
   };
 
   const handleDragEnd = () => {
+    if (isDragging && dragRef.current) {
+        const buttonWidth = dragRef.current.offsetWidth;
+        const windowWidth = window.innerWidth;
+        // Use the position from the latest render, not a stale one.
+        setPosition(currentPosition => {
+            let newX;
+            if (currentPosition.x + buttonWidth / 2 < windowWidth / 2) {
+                newX = 0; // Snap to left
+            } else {
+                newX = windowWidth - buttonWidth; // Snap to right
+            }
+
+            const windowHeight = window.innerHeight;
+            const buttonHeight = dragRef.current!.offsetHeight;
+            let newY = currentPosition.y;
+            if (newY < 0) {
+                newY = 0;
+            } else if (newY + buttonHeight > windowHeight) {
+                newY = windowHeight - buttonHeight;
+            }
+
+            return { x: newX, y: newY };
+        });
+    }
     setIsDragging(false);
   };
   
@@ -268,8 +292,8 @@ export function VoiceTaskGenerator() {
           variant="default"
           size="lg"
           className={cn(
-            "fixed bottom-6 right-4 sm:right-6 h-16 w-16 rounded-full shadow-lg z-20 cursor-grab",
-            isDragging && "cursor-grabbing"
+            "fixed bottom-6 right-4 sm:right-6 h-16 w-16 rounded-full shadow-lg z-20 cursor-grab transition-all duration-300 ease-in-out",
+            isDragging && "cursor-grabbing transition-none"
           )}
           style={isDragging ? { position: 'absolute', top: position.y, left: position.x } : { transform: `translate(${position.x}px, ${position.y}px)` }}
           >
