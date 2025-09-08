@@ -60,7 +60,10 @@ export const predefinedThemes: PredefinedTheme[] = [
   { name: 'Lavanda Suave', colors: { background: '250 30% 15%', foreground: '250 10% 90%', card: '250 30% 20%', primary: '250 60% 70%', accent: '280 80% 80%' }},
   { name: 'Bosque Neón', colors: { background: '180 30% 8%', foreground: '150 20% 95%', card: '180 30% 12%', primary: '130 90% 55%', accent: '300 90% 60%' }},
   { name: 'Océano Profundo', colors: { background: '220 50% 12%', foreground: '210 30% 95%', card: '220 50% 18%', primary: '200 100% 60%', accent: '180 90% 50%' }},
-  { name: 'Café Caliente', colors: { background: '30 25% 15%', foreground: '30 10% 92%', card: '30 25% 20%', primary: '35 80% 60%', accent: '15 70% 55%' }}
+  { name: 'Café Caliente', colors: { background: '30 25% 15%', foreground: '30 10% 92%', card: '30 25% 20%', primary: '35 80% 60%', accent: '15 70% 55%' }},
+  { name: 'Rojo Escarlata', colors: { background: '10 5% 8%', foreground: '10 5% 95%', card: '10 5% 12%', primary: '0 80% 55%', accent: '20 90% 60%' }},
+  { name: 'Menta Fresca', colors: { background: '170 30% 10%', foreground: '170 15% 90%', card: '170 30% 15%', primary: '160 80% 60%', accent: '180 70% 55%' }},
+  { name: 'Atardecer Neón', colors: { background: '270 25% 8%', foreground: '270 15% 90%', card: '270 25% 13%', primary: '310 90% 65%', accent: '50 100% 60%' }},
 ];
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
