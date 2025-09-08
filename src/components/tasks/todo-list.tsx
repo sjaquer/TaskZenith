@@ -57,7 +57,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
       <div className="col-start-2 overflow-hidden">
         <label
           htmlFor={`task-todo-${task.id}`}
-          className="font-medium leading-none cursor-pointer truncate"
+          className="font-medium leading-none cursor-pointer whitespace-normal"
         >
           {task.title}
         </label>
