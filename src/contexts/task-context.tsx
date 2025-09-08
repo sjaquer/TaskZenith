@@ -273,15 +273,18 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const deleteCompletedTasks = async () => {
     if (!userId) return;
     const { tasksCollection } = getCollections();
-    const completedTasks = tasks.filter(t => t.completed);
-    if (completedTasks.length === 0) return;
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    
+    const tasksToDelete = tasks.filter(t => t.completed && t.completedAt && new Date(t.completedAt) < fiveDaysAgo);
+    if (tasksToDelete.length === 0) return;
 
-    const tasksToKeep = tasks.filter(t => !t.completed);
+    const tasksToKeep = tasks.filter(t => !tasksToDelete.some(deleted => deleted.id === t.id));
     setTasks(tasksToKeep);
 
     try {
         const batch = writeBatch(db);
-        completedTasks.forEach(task => {
+        tasksToDelete.forEach(task => {
             batch.delete(doc(tasksCollection, task.id));
         });
         await batch.commit();

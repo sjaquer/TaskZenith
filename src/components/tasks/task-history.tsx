@@ -20,30 +20,33 @@ import { es } from 'date-fns/locale';
 
 function ClearCompletedTasksButton() {
     const { tasks, deleteCompletedTasks } = useTasks();
-    const completedCount = useMemo(() => {
-      return tasks.filter(t => t.completed).length
+    
+    const tasksToDeleteCount = useMemo(() => {
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+        return tasks.filter(t => t.completed && t.completedAt && new Date(t.completedAt) < fiveDaysAgo).length;
     }, [tasks]);
   
-    if (completedCount === 0) return null;
+    if (tasksToDeleteCount === 0) return null;
   
     return (
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="destructive" size="sm">
-            <Trash2 className="mr-2 h-4 w-4" /> Limpiar {completedCount} Tarea(s) Completada(s)
+            <Trash2 className="mr-2 h-4 w-4" /> Limpiar {tasksToDeleteCount} Tarea(s) Antigua(s)
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Confirmas la limpieza?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminarán permanentemente todas tus tareas completadas.
+              Esta acción no se puede deshacer. Se eliminarán permanentemente las tareas completadas hace más de 5 días.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={deleteCompletedTasks} className="bg-destructive hover:bg-destructive/90">
-              Sí, eliminar completadas
+              Sí, eliminar antiguas
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -55,22 +58,52 @@ export function TaskHistory() {
   const { tasks, restoreTask } = useTasks();
 
   const completedTasks = useMemo(() => {
-    const fifteenDaysAgo = new Date();
-    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
 
     return tasks
-      .filter(task => task.completed && task.completedAt && new Date(task.completedAt) > fifteenDaysAgo)
+      .filter(task => task.completed && task.completedAt && new Date(task.completedAt) > fiveDaysAgo)
       .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
   }, [tasks]);
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg h-full">
       <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <CardTitle className="text-lg font-semibold uppercase tracking-wider">Tareas Completadas (Últimos 15 días)</CardTitle>
+        <CardTitle className="text-lg font-semibold uppercase tracking-wider">Tareas Completadas (Últimos 5 días)</CardTitle>
         <ClearCompletedTasksButton />
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        {/* Responsive container: On small screens, this renders as a list of cards. On medium and up, it's a table. */}
+        <div className="md:hidden">
+            {completedTasks.length > 0 ? (
+                <div className="space-y-4">
+                    {completedTasks.map(task => (
+                        <div key={task.id} className="p-4 rounded-lg bg-secondary/60 flex justify-between items-start">
+                            <div className="space-y-2">
+                                <p className="font-medium whitespace-normal">{task.title}</p>
+                                <div className='flex flex-col sm:flex-row sm:items-center gap-2 text-xs'>
+                                    <Badge variant="secondary" className="capitalize w-fit">{task.category}</Badge>
+                                    <Badge variant={task.priority === 'alta' ? 'destructive' : task.priority === 'media' ? 'secondary' : 'outline'} className="uppercase w-fit">
+                                        {task.priority}
+                                    </Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {task.completedAt && format(new Date(task.completedAt), "'Completada el' PPP", { locale: es })}
+                                </p>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => restoreTask(task.id)} title="Restaurar Tarea">
+                                <RotateCcw className="h-4 w-4 text-primary" />
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+             ) : (
+                <div className="h-24 text-center flex items-center justify-center text-muted-foreground">
+                    No hay tareas completadas en los últimos 5 días.
+                </div>
+            )}
+        </div>
+        <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -107,7 +140,7 @@ export function TaskHistory() {
               ) : (
                   <TableRow>
                       <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                          No hay tareas completadas en los últimos 15 días.
+                          No hay tareas completadas en los últimos 5 días.
                       </TableCell>
                   </TableRow>
               )}
