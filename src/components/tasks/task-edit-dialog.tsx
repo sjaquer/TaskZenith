@@ -70,9 +70,9 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
   const category = form.watch('category');
 
   const handleDateTimeChange = (
-    newVal: Date | number | undefined,
+    newVal: Date | number | 'AM' | 'PM' | undefined,
     field: any,
-    type: 'date' | 'hour' | 'minute'
+    type: 'date' | 'hour' | 'minute' | 'ampm'
   ) => {
     let currentDate = field.value ? new Date(field.value) : new Date();
   
@@ -84,14 +84,29 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
         }
         break;
       case 'hour':
-        currentDate.setHours(Number(newVal) || 0);
+        const currentHour24 = currentDate.getHours();
+        const isPM = currentHour24 >= 12;
+        let newHour24 = Number(newVal) % 12;
+        if (isPM) newHour24 += 12;
+        if (newHour24 === 12) newHour24 = 0; // Midnight case
+        if (newHour24 === 24) newHour24 = 12; // Noon case
+        currentDate.setHours(newHour24);
         break;
       case 'minute':
         currentDate.setMinutes(Number(newVal) || 0);
         break;
+      case 'ampm':
+        const hour = currentDate.getHours();
+        if (newVal === 'PM' && hour < 12) {
+          currentDate.setHours(hour + 12);
+        } else if (newVal === 'AM' && hour >= 12) {
+          currentDate.setHours(hour - 12);
+        }
+        break;
     }
     field.onChange(new Date(currentDate));
   };
+
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const dataToUpdate: Partial<Task> = {
@@ -211,7 +226,7 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {field.value ? format(field.value, "PPP HH:mm", { locale: es }) : <span>Fecha de vencimiento</span>}
+                      {field.value ? format(field.value, "PPPp", { locale: es }) : <span>Fecha de vencimiento</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -225,22 +240,29 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                         <Label>Hora:</Label>
                         <Input
                             type="number"
-                            min="0"
-                            max="23"
-                            value={field.value ? new Date(field.value).getHours() : ''}
+                            min="1"
+                            max="12"
+                            value={field.value ? new Date(field.value).getHours() % 12 || 12 : ''}
                             onChange={(e) => handleDateTimeChange(parseInt(e.target.value), field, 'hour')}
-                            className="w-20"
+                            className="w-16"
                         />
-                        <Label>Min:</Label>
+                        <Label>:</Label>
                         <Input
                             type="number"
                             min="0"
                             max="59"
                             step="5"
-                            value={field.value ? new Date(field.value).getMinutes() : ''}
+                            value={field.value ? String(new Date(field.value).getMinutes()).padStart(2, '0') : ''}
                             onChange={(e) => handleDateTimeChange(parseInt(e.target.value), field, 'minute')}
-                            className="w-20"
+                            className="w-16"
                         />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDateTimeChange(field.value && new Date(field.value).getHours() >= 12 ? 'AM' : 'PM', field, 'ampm')}
+                        >
+                          {field.value ? (new Date(field.value).getHours() >= 12 ? 'PM' : 'AM') : 'AM'}
+                        </Button>
                     </div>
                   </PopoverContent>
                 </Popover>

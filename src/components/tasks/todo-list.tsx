@@ -97,7 +97,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
         {task.dueDate && (
             <div className={`flex items-center gap-1 text-xs mt-1 ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
                 <Clock className="w-3 h-3" />
-                <span>{format(new Date(task.dueDate), "d MMM, HH:mm'h'", { locale: es })}</span>
+                <span>{format(new Date(task.dueDate), "d MMM, p", { locale: es })}</span>
             </div>
         )}
         <Badge variant="outline" className="capitalize text-xs">{task.category}</Badge>
@@ -146,8 +146,8 @@ export function TodoList() {
   }
 
   const handleDateTimeChange = (
-    newVal: Date | number | undefined,
-    type: 'date' | 'hour' | 'minute'
+    newVal: Date | number | 'AM' | 'PM' | undefined,
+    type: 'date' | 'hour' | 'minute' | 'ampm'
   ) => {
     let currentDate = dueDate || new Date();
   
@@ -159,14 +159,33 @@ export function TodoList() {
         }
         break;
       case 'hour':
-        currentDate.setHours(Number(newVal) || 0);
+        const currentHour24 = currentDate.getHours();
+        const isPM = currentHour24 >= 12;
+        let newHour24 = Number(newVal) % 12;
+        if (newHour24 === 0) newHour24 = 12; // Treat 0 as 12
+        if(isPM && newHour24 < 12) {
+            newHour24 += 12;
+        }
+        if(!isPM && newHour24 === 12) { // 12 AM case
+            newHour24 = 0;
+        }
+        currentDate.setHours(newHour24);
         break;
       case 'minute':
         currentDate.setMinutes(Number(newVal) || 0);
         break;
+      case 'ampm':
+        const hour = currentDate.getHours();
+        if (newVal === 'PM' && hour < 12) {
+          currentDate.setHours(hour + 12);
+        } else if (newVal === 'AM' && hour >= 12) {
+          currentDate.setHours(hour - 12);
+        }
+        break;
     }
     setDueDate(new Date(currentDate));
   };
+  
 
   const pendingTasks = useMemo(() => tasks.filter(task => !task.completed), [tasks]);
 
@@ -274,7 +293,7 @@ export function TodoList() {
                                 )}
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {dueDate ? format(dueDate, "PPP HH:mm", { locale: es }) : <span>Fecha de vencimiento (Opcional)</span>}
+                                {dueDate ? format(dueDate, "PPPp", { locale: es }) : <span>Fecha de vencimiento (Opcional)</span>}
                             </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
@@ -288,22 +307,32 @@ export function TodoList() {
                                     <Label>Hora:</Label>
                                     <Input
                                         type="number"
-                                        min="0"
-                                        max="23"
-                                        value={dueDate ? new Date(dueDate).getHours() : ''}
+                                        min="1"
+                                        max="12"
+                                        value={dueDate ? dueDate.getHours() % 12 || 12 : ''}
                                         onChange={(e) => handleDateTimeChange(parseInt(e.target.value), 'hour')}
-                                        className="w-20"
+                                        className="w-16"
                                     />
-                                    <Label>Min:</Label>
+                                     <Label>:</Label>
                                     <Input
                                         type="number"
                                         min="0"
                                         max="59"
                                         step="5"
-                                        value={dueDate ? new Date(dueDate).getMinutes() : ''}
+                                        value={dueDate ? String(dueDate.getMinutes()).padStart(2, '0') : ''}
                                         onChange={(e) => handleDateTimeChange(parseInt(e.target.value), 'minute')}
-                                        className="w-20"
+                                        className="w-16"
                                     />
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleDateTimeChange(dueDate && dueDate.getHours() >= 12 ? 'AM' : 'PM', 'ampm')
+                                        }}
+                                    >
+                                        {dueDate ? (dueDate.getHours() >= 12 ? 'PM' : 'AM') : 'AM'}
+                                    </Button>
                                 </div>
                             </PopoverContent>
                         </Popover>
