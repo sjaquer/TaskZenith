@@ -20,9 +20,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
 import { useAuth } from '@/contexts/auth-context';
+import { Card } from '../ui/card';
 
 // This is the type that comes from the AI flow
-type ProcessedTask = Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'userId'> & { localId: number };
+type ProcessedTask = Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'userId'> & { localId: number };
 
 export function VoiceTaskGenerator() {
   const { user } = useAuth();

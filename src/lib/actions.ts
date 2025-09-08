@@ -2,6 +2,7 @@
 
 import { generateTasks, type GenerateTasksInput } from '@/ai/flows/generate-tasks';
 import { organizeTasks, type OrganizeTasksInput, type OrganizeTasksOutput } from '@/ai/flows/organize-tasks';
+import { processVoiceCommand, type ProcessVoiceCommandInput, type ProcessVoiceCommandOutput } from '@/ai/flows/process-voice-command';
 import { z } from 'zod';
 import { auth } from './firebase';
 
@@ -54,4 +55,17 @@ export async function organizeTasksAction(input: OrganizeTasksInput): Promise<Or
     console.error(error);
     return { error: 'Error al organizar las tareas.' };
   }
+}
+
+export async function processVoiceCommandAction(input: ProcessVoiceCommandInput): Promise<ProcessVoiceCommandOutput | { error: string }> {
+    const userId = await getUserId();
+    if (!userId) return { error: 'Debes iniciar sesión para usar esta función.' };
+    
+    try {
+      const result = await processVoiceCommand(input);
+      return result;
+    } catch (error) {
+      console.error(error);
+      return { error: 'Error al procesar el comando de voz.' };
+    }
 }
