@@ -81,7 +81,7 @@ const patchNotes = [
   },
     {
     version: '1.0.0',
-    date: 'Julio 23, 2024',
+    date: 'Agosto 27, 2025',
     changes: [
       {
         type: 'NUEVO',
