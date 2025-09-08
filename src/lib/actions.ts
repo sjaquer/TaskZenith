@@ -3,7 +3,6 @@
 import { generateTasks, type GenerateTasksInput } from '@/ai/flows/generate-tasks';
 import { organizeTasks, type OrganizeTasksInput, type OrganizeTasksOutput } from '@/ai/flows/organize-tasks';
 import { processVoiceCommand, type ProcessVoiceCommandInput, type ProcessVoiceCommandOutput } from '@/ai/flows/process-voice-command';
-import { generateDailyPlan } from '@/ai/flows/generate-daily-plan';
 import { z } from 'zod';
 
 const generateTasksSchema = z.object({
@@ -81,6 +80,8 @@ export type GenerateDailyPlanOutput = z.infer<typeof GenerateDailyPlanOutputSche
 
 export async function generateDailyPlanAction(input: GenerateDailyPlanInput): Promise<GenerateDailyPlanOutput | { error: string }> {
     try {
+      // Import the flow dynamically inside the action to avoid circular dependencies
+      const { generateDailyPlan } = await import('@/ai/flows/generate-daily-plan');
       const result = await generateDailyPlan(input);
       return result;
     } catch (error) {
