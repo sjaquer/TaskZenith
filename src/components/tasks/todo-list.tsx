@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -44,26 +45,26 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
 
   return (
     <div
-      className={`group flex flex-col p-3 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all hover:bg-secondary/60 ${
+      className={`group flex flex-col p-4 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all hover:bg-secondary/60 ${
         priorityColors[task.priority]
       } ${isCompleted ? 'task-complete-animation' : ''}`}
     >
-      <div className="flex items-start gap-3 flex-grow">
+      <div className="flex items-start gap-4 flex-grow">
         <Checkbox
           id={`task-todo-${task.id}`}
           onCheckedChange={handleToggle}
           aria-label={`Completar ${task.title}`}
-          className="mt-1"
+          className="mt-1 flex-shrink-0"
         />
-        <div className="flex-grow overflow-hidden">
+        <div className="flex-grow min-w-0">
           <label
             htmlFor={`task-todo-${task.id}`}
-            className="font-medium leading-none cursor-pointer whitespace-normal"
+            className="font-medium leading-tight cursor-pointer break-words"
           >
             {task.title}
           </label>
         </div>
-        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
+        <div className="flex items-center ml-auto flex-shrink-0">
             <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={() => onEdit(task)}>
                 <Edit className="w-4 h-4" />
             </Button>
@@ -90,7 +91,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
             </AlertDialog>
         </div>
       </div>
-      <div className="pl-9 pt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+      <div className="pl-10 pt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
           {task.dueDate && (
               <div className={`flex items-center gap-1 text-xs ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
                   <Clock className="w-3 h-3" />
@@ -293,7 +294,7 @@ export function TodoList() {
                                 <Calendar
                                     mode="single"
                                     selected={dueDate}
-                                    onSelect={(d) => handleDateTimeChange(d, 'date')}
+                                    onSelect={(d) => handleDateTimeChange(d ?? undefined, 'date')}
                                     initialFocus
                                 />
                                 <div className="p-4 border-t flex items-center gap-2">
