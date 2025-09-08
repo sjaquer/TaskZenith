@@ -12,7 +12,7 @@ import {
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
-import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, Sparkles } from 'lucide-react';
+import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, Sparkles, Mic } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 
@@ -61,6 +61,7 @@ const layoutOptions: { key: keyof ReturnType<typeof useTheme>['layoutConfig']; l
     { key: 'showHistory', label: 'Historial de Tareas', icon: LayoutTemplate },
     { key: 'enableDueDates', label: 'Habilitar Fechas de Vencimiento', icon: CalendarClock },
     { key: 'showPriorityTasks', label: 'Mostrar Tareas Prioritarias', icon: AlertOctagon },
+    { key: 'showVoiceButton', label: 'Mostrar Botón de Voz', icon: Mic },
 ];
 
 export function UICustomizer() {

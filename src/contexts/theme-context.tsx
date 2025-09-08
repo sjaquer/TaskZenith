@@ -20,6 +20,7 @@ type LayoutConfig = {
     showHistory: boolean;
     enableDueDates: boolean;
     showPriorityTasks: boolean;
+    showVoiceButton: boolean;
 }
 
 type PredefinedTheme = {
@@ -54,6 +55,7 @@ const defaultLayout: LayoutConfig = {
     showHistory: true,
     enableDueDates: true,
     showPriorityTasks: true,
+    showVoiceButton: true,
 };
 
 export const predefinedThemes: PredefinedTheme[] = [
