@@ -43,31 +43,28 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
 
   return (
     <div
-      className={`group flex items-center space-x-2 sm:space-x-4 p-4 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all hover:bg-secondary/60 ${
+      className={`group grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1 p-3 bg-card/80 backdrop-blur-sm rounded-lg shadow-md transition-all hover:bg-secondary/60 ${
         priorityColors[task.priority]
       } ${isCompleted ? 'task-complete-animation' : ''}`}
     >
+      {/* Row 1: Checkbox and Title */}
       <Checkbox
         id={`task-todo-${task.id}`}
         onCheckedChange={handleToggle}
         aria-label={`Completar ${task.title}`}
+        className="row-span-2 sm:row-span-1"
       />
-      <div className="flex-1 overflow-hidden">
+      <div className="col-start-2 overflow-hidden">
         <label
           htmlFor={`task-todo-${task.id}`}
           className="font-medium leading-none cursor-pointer truncate"
         >
           {task.title}
         </label>
-        {task.dueDate && (
-          <div className={`flex items-center gap-1 text-xs mt-1 ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
-            <Clock className="w-3 h-3" />
-            <span>{format(new Date(task.dueDate), "d MMM, HH:mm'h'", { locale: es })}</span>
-          </div>
-        )}
       </div>
-      <Badge variant="outline" className="capitalize hidden sm:inline-flex">{task.category}</Badge>
-      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+
+      {/* Row 1: Actions (visible on hover) */}
+      <div className="col-start-3 row-start-1 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
         <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={() => onEdit(task)}>
             <Edit className="w-4 h-4" />
         </Button>
@@ -92,6 +89,17 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      </div>
+
+      {/* Row 2: Due Date and Badges */}
+      <div className="col-start-2 col-span-2 sm:col-span-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+        {task.dueDate && (
+            <div className={`flex items-center gap-1 text-xs mt-1 ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
+                <Clock className="w-3 h-3" />
+                <span>{format(new Date(task.dueDate), "d MMM, HH:mm'h'", { locale: es })}</span>
+            </div>
+        )}
+        <Badge variant="outline" className="capitalize text-xs">{task.category}</Badge>
       </div>
     </div>
   );
@@ -267,9 +275,9 @@ export function TodoList() {
                             </PopoverContent>
                         </Popover>
                     )}
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <Button type="submit" className="flex-1">Añadir Tarea</Button>
-                        <div className="flex-1"><AiTaskGenerator /></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <Button type="submit" className="w-full">Añadir Tarea</Button>
+                        <AiTaskGenerator />
                     </div>
                 </form>
             </CardContent>
