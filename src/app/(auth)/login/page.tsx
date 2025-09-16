@@ -11,8 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import Image from 'next/image';
 
 const formSchema = z.object({
   email: z.string().email('Por favor, introduce un correo electrónico válido.'),
@@ -67,7 +68,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
             <div className="flex justify-center items-center gap-2 mb-2">
-                <Bot className="w-8 h-8 text-accent" />
+                <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
                 <CardTitle className="text-3xl">TaskZenith</CardTitle>
             </div>
           <CardDescription>Inicia sesión para continuar con tus tareas</CardDescription>

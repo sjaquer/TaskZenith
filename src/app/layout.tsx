@@ -13,14 +13,15 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'TaskZenith',
-  description: 'Gestiona tus tareas con calma y concentración.',
+  title: 'TaskZenith: Tu Asistente de Tareas Inteligente',
+  description: 'Gestiona tus tareas con calma y concentración. TaskZenith es un gestor de tareas inteligente que utiliza IA para ayudarte a organizar tu vida, planificar proyectos y alcanzar tus metas de productividad.',
+  keywords: ['gestor de tareas', 'productividad', 'organización', 'to-do list', 'inteligencia artificial', 'manejo de proyectos'],
   robots: {
-    index: false,
-    follow: false,
+    index: true,
+    follow: true,
     googleBot: {
-      index: false,
-      follow: false,
+      index: true,
+      follow: true,
     },
   },
 };

@@ -2,14 +2,14 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { PageWrapper } from "@/components/layout/page-wrapper";
-import { Bot } from "lucide-react";
+import Image from "next/image";
 
 export default function WelcomePage() {
     return (
         <PageWrapper>
             <div className="flex flex-col items-center justify-center min-h-screen text-center p-4 bg-gradient-to-b from-background to-blue-950/20">
                 <div className="mb-8 flex items-center gap-4">
-                    <Bot className="w-20 h-20 text-accent animate-pulse" />
+                    <Image src="/logo.png" alt="TaskZenith Logo" width={80} height={80} className="animate-pulse" />
                     <h1 className="text-5xl md:text-7xl font-bold text-primary">TaskZenith</h1>
                 </div>
                 <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-2xl">

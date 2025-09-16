@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Bot } from 'lucide-react';
+import Image from 'next/image';
 
 const formSchema = z.object({
   displayName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres.'),
@@ -65,7 +65,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
             <div className="flex justify-center items-center gap-2 mb-2">
-                <Bot className="w-8 h-8 text-accent" />
+                <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
                 <CardTitle className="text-3xl">TaskZenith</CardTitle>
             </div>
             <CardDescription>Crea tu cuenta para empezar a organizarte</CardDescription>
