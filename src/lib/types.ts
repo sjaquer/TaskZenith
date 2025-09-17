@@ -28,6 +28,7 @@ export interface Task {
 export interface CustomDailyTask {
   id: string;
   title: string;
+  time?: string; // e.g., "09:00"
 }
 
 export interface DailyTask extends CustomDailyTask {

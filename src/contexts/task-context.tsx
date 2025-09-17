@@ -50,9 +50,9 @@ interface TaskContextType {
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 const defaultDailyTasks: CustomDailyTask[] = [
-    { id: 'daily-1', title: 'Hacer la cama' },
-    { id: 'daily-2', title: 'Meditar 10 minutos' },
-    { id: 'daily-3', title: 'Revisar la agenda del día' },
+    { id: 'daily-1', title: 'Hacer la cama', time: '08:00' },
+    { id: 'daily-2', title: 'Meditar 10 minutos', time: '08:15' },
+    { id: 'daily-3', title: 'Revisar la agenda del día', time: '08:30' },
     { id: 'daily-4', title: 'Beber un vaso de agua al despertar' },
     { id: 'daily-5', title: 'Planificar las 3 tareas más importantes' },
 ];
@@ -160,7 +160,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 // Sync with latest custom tasks
                 const syncedDailyTasks = finalCustomTasks.map((ct: CustomDailyTask) => {
                     const existing = existingDailyTasks.find(dt => dt.id === ct.id);
-                    return existing ? existing : { ...ct, completed: false };
+                    return existing ? { ...ct, ...existing } : { ...ct, completed: false };
                 });
                 setDailyTasks(syncedDailyTasks);
                 if (JSON.stringify(syncedDailyTasks) !== JSON.stringify(existingDailyTasks)) {

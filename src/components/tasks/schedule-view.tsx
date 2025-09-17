@@ -14,20 +14,7 @@ import { TaskEditDialog } from './task-edit-dialog';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { X, Calendar as CalendarIcon, Tag } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-
-const priorityFilters: { id: Priority; label: string }[] = [
-  { id: 'alta', label: 'Alta' },
-  { id: 'media', label: 'Media' },
-  { id: 'baja', label: 'Baja' },
-];
-
-const priorityDotColor: Record<Priority, string> = {
-  alta: 'bg-red-500',
-  media: 'bg-yellow-500',
-  baja: 'bg-green-500',
-};
 
 function DayWithTasks({
   date,
@@ -40,13 +27,16 @@ function DayWithTasks({
 }) {
   const tasksForDay = tasks
     .filter((task) => task.dueDate && isSameDay(task.dueDate, date))
-    .sort((a, b) => (a.priority === 'alta' ? -1 : 1)); // Sort to show high priority first
+    .sort((a, b) => {
+        const priorityOrder = { alta: 1, media: 2, baja: 3 };
+        return priorityOrder[a.priority] - priorityOrder[b.priority];
+    });
 
   return (
-    <div className="relative flex flex-col h-full p-1.5">
-      <span className="font-medium">{format(date, 'd')}</span>
-      <div className="flex-1 overflow-y-auto mt-1 space-y-1 tiny-scrollbar">
-        {tasksForDay.slice(0, 2).map((task) => (
+    <div className="relative flex flex-col h-full">
+      <span className="font-medium text-sm p-1.5">{format(date, 'd')}</span>
+      <div className="flex-1 overflow-y-auto mt-1 space-y-1 px-1 tiny-scrollbar">
+        {tasksForDay.map((task) => (
           <button
             key={task.id}
             onClick={(e) => {
@@ -65,9 +55,6 @@ function DayWithTasks({
             {task.title}
           </button>
         ))}
-        {tasksForDay.length > 2 && (
-          <div className="text-xs text-muted-foreground text-center">+ {tasksForDay.length - 2} más</div>
-        )}
       </div>
     </div>
   );
@@ -203,6 +190,12 @@ export function ScheduleView() {
     setEditingTask(task);
   };
 
+  const priorityFilters: { id: Priority; label: string }[] = [
+    { id: 'alta', label: 'Alta' },
+    { id: 'media', label: 'Media' },
+    { id: 'baja', label: 'Baja' },
+  ];
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
       <div className="lg:col-span-2">
@@ -213,7 +206,7 @@ export function ScheduleView() {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm">
-                    Filtros ({activePriorities.length + activeProjectIds.length})
+                    Filtros ({activePriorities.length + (activeProjectIds.length > 0 ? 1: 0)})
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80">
@@ -240,28 +233,30 @@ export function ScheduleView() {
                     </div>
                      <div>
                       <h4 className="font-medium text-sm mb-2">Proyectos</h4>
-                      <div className="flex flex-col gap-2">
-                        {projects.map(project => (
-                           <div key={project.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`filter-project-${project.id}`}
-                              checked={activeProjectIds.includes(project.id)}
-                              onCheckedChange={() => handleProjectToggle(project.id)}
-                            />
-                            <Label
-                              htmlFor={`filter-project-${project.id}`}
-                              className="text-sm font-medium capitalize flex items-center gap-2"
-                            >
-                              <span className="w-3 h-3 rounded-full" style={{backgroundColor: project.color}}/>
-                              {project.name}
-                            </Label>
-                          </div>
-                        ))}
+                      <ScrollArea className="h-40">
+                        <div className="flex flex-col gap-2">
+                          {projects.map(project => (
+                            <div key={project.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`filter-project-${project.id}`}
+                                checked={activeProjectIds.includes(project.id)}
+                                onCheckedChange={() => handleProjectToggle(project.id)}
+                              />
+                              <Label
+                                htmlFor={`filter-project-${project.id}`}
+                                className="text-sm font-medium capitalize flex items-center gap-2"
+                              >
+                                <span className="w-3 h-3 rounded-full" style={{backgroundColor: project.color}}/>
+                                {project.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
                         {activeProjectIds.length > 0 && (
-                          <Button variant="link" size="sm" onClick={() => setActiveProjectIds([])} className="p-0 h-auto">Limpiar filtros de proyecto</Button>
+                          <Button variant="link" size="sm" onClick={() => setActiveProjectIds([])} className="p-0 h-auto mt-2">Limpiar filtros de proyecto</Button>
                         )}
                       </div>
-                    </div>
                   </div>
                 </PopoverContent>
               </Popover>
@@ -283,8 +278,8 @@ export function ScheduleView() {
                 head_cell:
                   'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
                 row: 'flex w-full mt-2',
-                cell: 'h-24 text-sm p-0 relative [&:has([aria-selected])]:bg-accent/50 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
-                day: 'h-24 w-full p-1 font-normal aria-selected:opacity-100 flex flex-col items-start',
+                cell: 'h-24 text-sm text-left p-0 relative [&:has([aria-selected])]:bg-accent/50 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+                day: 'h-24 w-full p-0 font-normal aria-selected:opacity-100 flex flex-col items-start',
               }}
               components={{
                 Day: ({ date }) => (

@@ -9,9 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Timer, Settings, Plus, Trash2 } from 'lucide-react';
 import { useTasks } from '@/contexts/task-context';
+import type { CustomDailyTask } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 type DailyTaskItemProps = {
-    task: { id: string; title: string; completed: boolean };
+    task: { id: string; title: string; completed: boolean; time?: string };
     onToggle: (id: string) => void;
 };
   
@@ -42,23 +44,31 @@ function DailyTaskItem({ task, onToggle }: DailyTaskItemProps) {
             onCheckedChange={handleToggle}
             aria-label={`Marcar ${task.title} como completa`}
         />
-        <label
-            htmlFor={`daily-${task.id}`}
-            className={`flex-1 font-medium leading-none cursor-pointer ${
-            task.completed ? 'line-through text-muted-foreground' : ''
-            }`}
-        >
-            {task.title}
-        </label>
+        <div className="flex-1 flex justify-between items-center">
+          <label
+              htmlFor={`daily-${task.id}`}
+              className={`font-medium leading-none cursor-pointer ${
+              task.completed ? 'line-through text-muted-foreground' : ''
+              }`}
+          >
+              {task.title}
+          </label>
+          {task.time && (
+            <span className="text-xs text-muted-foreground bg-secondary/70 px-2 py-1 rounded-md">{task.time}</span>
+          )}
+        </div>
         </div>
     );
 }
+
+const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const minutes = ['00', '15', '30', '45'];
 
 export function DailyTodoList() {
   const { dailyTasks, toggleDailyTask, updateCustomDailyTasks, customDailyTasks, isLoaded } = useTasks();
   const [timeRemaining, setTimeRemaining] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editableCustomTasks, setEditableCustomTasks] = useState(customDailyTasks);
+  const [editableCustomTasks, setEditableCustomTasks] = useState<CustomDailyTask[]>([]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -87,6 +97,10 @@ export function DailyTodoList() {
 
   const handleCustomTaskChange = (id: string, newTitle: string) => {
     setEditableCustomTasks(editableCustomTasks.map(task => task.id === id ? { ...task, title: newTitle } : task));
+  };
+  
+  const handleTimeChange = (id: string, newTime: string) => {
+    setEditableCustomTasks(editableCustomTasks.map(task => task.id === id ? { ...task, time: newTime === "none" ? undefined : newTime } : task));
   };
 
   const addNewCustomTask = () => {
@@ -141,6 +155,17 @@ export function DailyTodoList() {
                             className="flex-grow"
                             placeholder="Nueva tarea diaria..."
                         />
+                         <Select value={task.time || "none"} onValueChange={(value) => handleTimeChange(task.id, value)}>
+                            <SelectTrigger className="w-32">
+                                <SelectValue placeholder="Hora" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">Sin hora</SelectItem>
+                                {hours.map(h => minutes.map(m => (
+                                    <SelectItem key={`${h}:${m}`} value={`${h}:${m}`}>{`${h}:${m}`}</SelectItem>
+                                )))}
+                            </SelectContent>
+                        </Select>
                         <Button variant="ghost" size="icon" onClick={() => removeCustomTask(task.id)}>
                             <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
@@ -159,7 +184,7 @@ export function DailyTodoList() {
       </CardHeader>
       <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
         <div className="space-y-2">
-          {dailyTasks.map(task => (
+          {dailyTasks.sort((a,b) => (a.time || "25").localeCompare(b.time || "25")).map(task => (
             <DailyTaskItem key={task.id} task={task} onToggle={toggleDailyTask} />
           ))}
         </div>
