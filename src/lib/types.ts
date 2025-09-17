@@ -10,6 +10,8 @@ export interface Project {
   userId: string;
 }
 
+export type TaskFormValues = Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'userId'>> & { initialDate?: Date };
+
 export interface Task {
   id: string;
   title: string;

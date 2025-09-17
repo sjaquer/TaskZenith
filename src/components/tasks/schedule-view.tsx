@@ -15,145 +15,155 @@ import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
+import { TodoList } from './todo-list'; 
+import { PlusCircle } from 'lucide-react';
+
+
+const priorityColors: Record<Priority, string> = {
+  alta: 'bg-red-500',
+  media: 'bg-yellow-500',
+  baja: 'bg-green-500',
+};
 
 function DayWithTasks({
   date,
   tasks,
-  onTaskClick,
+  onDayClick,
 }: {
   date: Date;
   tasks: Task[];
-  onTaskClick: (task: Task) => void;
+  onDayClick: (date: Date) => void;
 }) {
-  const tasksForDay = tasks
-    .filter((task) => task.dueDate && isSameDay(task.dueDate, date))
-    .sort((a, b) => {
-      const priorityOrder = { alta: 1, media: 2, baja: 3 };
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
-    });
+  const tasksForDay = tasks.filter((task) => task.dueDate && isSameDay(task.dueDate, date));
 
   return (
-    <div className="relative flex flex-col h-full">
-      <span className="font-medium text-sm p-1.5">{format(date, 'd')}</span>
-      <div className="flex-1 overflow-y-auto mt-1 space-y-1 px-1 tiny-scrollbar">
-        {tasksForDay.map((task) => (
-          <div key={task.id} className="relative w-full overflow-hidden">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onTaskClick(task);
-              }}
-              className={cn(
-                'w-full text-left text-xs px-1.5 py-0.5 rounded-sm transition-colors truncate',
-                task.priority === 'alta'
-                  ? 'bg-red-500/20 hover:bg-red-500/30 text-red-100'
-                  : task.priority === 'media'
-                  ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-100'
-                  : 'bg-green-500/20 hover:bg-green-500/30 text-green-100'
-              )}
-            >
-              {task.title}
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
+    <button
+      className="relative flex flex-col h-full w-full p-1.5 focus:z-10 focus:ring-2 focus:ring-ring focus:rounded-sm focus:outline-none"
+      onClick={() => onDayClick(date)}
+    >
+      <span className="font-medium text-sm self-start">{format(date, 'd')}</span>
+      {tasksForDay.length > 0 && (
+        <div className="flex-1 flex flex-wrap items-end gap-1 mt-1">
+          {tasksForDay.slice(0, 3).map((task) => (
+            <div
+              key={task.id}
+              className={cn('h-2 w-2 rounded-full', priorityColors[task.priority])}
+              title={task.title}
+            />
+          ))}
+          {tasksForDay.length > 3 && (
+            <span className="text-xs text-muted-foreground font-bold">+{tasksForDay.length - 3}</span>
+          )}
+        </div>
+      )}
+    </button>
   );
 }
 
-function SelectedDayTasks({
+function DayTasksModal({
   date,
   tasks,
+  isOpen,
+  onOpenChange,
   onTaskClick,
+  onAddTaskClick
 }: {
-  date: Date;
+  date: Date | null;
   tasks: Task[];
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
   onTaskClick: (task: Task) => void;
+  onAddTaskClick: (date: Date) => void;
 }) {
-  const { getProjectById, toggleTaskCompletion } = useTasks();
+    if (!date) return null;
+    const { getProjectById, toggleTaskCompletion } = useTasks();
 
-  return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle>{format(date, "eeee, d 'de' MMMM", { locale: es })}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[60vh]">
-          {tasks.length > 0 ? (
-            <div className="space-y-4">
-              {tasks.map((task) => (
-                <div
-                  key={task.id}
-                  className={cn(
-                    'p-3 rounded-lg border-l-4',
-                    task.completed ? 'bg-secondary/30' : 'bg-secondary/70'
-                  )}
-                  style={{
-                    borderColor:
-                      getProjectById(task.projectId || '')?.color ||
-                      `hsl(var(--primary))`,
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      id={`schedule-task-${task.id}`}
-                      checked={task.completed}
-                      onCheckedChange={() => toggleTaskCompletion(task.id)}
-                      className="mt-1"
-                    />
-                    <div
-                      className="flex-1 cursor-pointer"
-                      onClick={() => onTaskClick(task)}
-                    >
-                      <p
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>{format(date, "eeee, d 'de' MMMM", { locale: es })}</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[60vh] -mx-6 px-6">
+                {tasks.length > 0 ? (
+                    <div className="space-y-4 py-4">
+                    {tasks.map((task) => (
+                        <div
+                        key={task.id}
                         className={cn(
-                          'font-medium',
-                          task.completed && 'line-through text-muted-foreground'
+                            'p-3 rounded-lg border-l-4 transition-colors',
+                            task.completed ? 'bg-secondary/30' : 'bg-secondary/70'
                         )}
-                      >
-                        {task.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {getProjectById(task.projectId || '')?.name || task.category}
-                      </p>
+                        style={{
+                            borderColor:
+                            getProjectById(task.projectId || '')?.color ||
+                            `hsl(var(--primary))`,
+                        }}
+                        >
+                        <div className="flex items-start gap-3">
+                            <Checkbox
+                            id={`schedule-task-${task.id}`}
+                            checked={task.completed}
+                            onCheckedChange={() => toggleTaskCompletion(task.id)}
+                            className="mt-1"
+                            />
+                            <div
+                            className="flex-1 cursor-pointer"
+                            onClick={() => onTaskClick(task)}
+                            >
+                            <p
+                                className={cn(
+                                'font-medium',
+                                task.completed && 'line-through text-muted-foreground'
+                                )}
+                            >
+                                {task.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground capitalize">
+                                {getProjectById(task.projectId || '')?.name || task.category}
+                            </p>
+                            </div>
+                            <Badge
+                            variant={
+                                task.priority === 'alta'
+                                ? 'destructive'
+                                : task.priority === 'media'
+                                ? 'secondary'
+                                : 'outline'
+                            }
+                            className="capitalize"
+                            >
+                            {task.priority}
+                            </Badge>
+                        </div>
+                        </div>
+                    ))}
                     </div>
-                    <Badge
-                      variant={
-                        task.priority === 'alta'
-                          ? 'destructive'
-                          : task.priority === 'media'
-                          ? 'secondary'
-                          : 'outline'
-                      }
-                      className="capitalize"
-                    >
-                      {task.priority}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center pt-10">
-              No hay tareas programadas para este día.
-            </p>
-          )}
-        </ScrollArea>
-      </CardContent>
-    </Card>
-  );
+                ) : (
+                    <div className="text-muted-foreground text-center py-10 space-y-4">
+                        <p>No hay tareas programadas para este día.</p>
+                         <Button variant="outline" onClick={() => onAddTaskClick(date)}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Añadir Tarea
+                        </Button>
+                    </div>
+                )}
+                </ScrollArea>
+            </DialogContent>
+        </Dialog>
+    );
 }
 
 export function ScheduleView() {
   const { tasks, projects } = useTasks();
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
+  const [modalDate, setModalDate] = useState<Date | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [activePriorities, setActivePriorities] = useState<Priority[]>([
-    'alta',
-    'media',
-    'baja',
-  ]);
+  const [isAddTaskOpen, setAddTaskOpen] = useState(false);
+  const [initialTaskDate, setInitialTaskDate] = useState<Date | undefined>(undefined);
+
+  const [activePriorities, setActivePriorities] = useState<Priority[]>(['alta', 'media', 'baja']);
   const [activeProjectIds, setActiveProjectIds] = useState<string[]>([]);
 
   const tasksWithDueDate = useMemo(() => tasks.filter((task) => !!task.dueDate), [tasks]);
@@ -168,12 +178,12 @@ export function ScheduleView() {
     });
   }, [tasksWithDueDate, activePriorities, activeProjectIds]);
 
-  const tasksForSelectedDay = useMemo(() => {
-    if (!selectedDay) return [];
+  const tasksForModal = useMemo(() => {
+    if (!modalDate) return [];
     return filteredTasks.filter(
-      (task) => task.dueDate && isSameDay(task.dueDate, selectedDay)
+      (task) => task.dueDate && isSameDay(task.dueDate, modalDate)
     );
-  }, [filteredTasks, selectedDay]);
+  }, [filteredTasks, modalDate]);
 
   const handlePriorityToggle = (priority: Priority) => {
     setActivePriorities((prev) =>
@@ -188,8 +198,19 @@ export function ScheduleView() {
   }
 
   const handleEditTask = (task: Task) => {
+    setModalDate(null); // Close day modal
     setEditingTask(task);
   };
+
+  const handleDayClick = (date: Date) => {
+    setModalDate(date);
+  }
+  
+  const handleAddTaskClick = (date: Date) => {
+      setInitialTaskDate(date);
+      setModalDate(null); // Close the day detail modal
+      setAddTaskOpen(true); // Open the main task list / add task form
+  }
 
   const priorityFilters: { id: Priority; label: string }[] = [
     { id: 'alta', label: 'Alta' },
@@ -197,126 +218,127 @@ export function ScheduleView() {
     { id: 'baja', label: 'Baja' },
   ];
 
+  if (isAddTaskOpen) {
+      return <TodoList initialDate={initialTaskDate} onBack={() => setAddTaskOpen(false)} />
+  }
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-      <div className="lg:col-span-2">
+    <>
         <Card>
-          <CardHeader>
-            <CardTitle className="flex justify-between items-center">
-              <span className="text-lg font-semibold uppercase tracking-wider">Cronograma</span>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Filtros ({activePriorities.length + (activeProjectIds.length > 0 ? 1: 0)})
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium text-sm mb-2">Prioridad</h4>
-                      <div className="flex items-center gap-4">
-                        {priorityFilters.map((p) => (
-                          <div key={p.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`filter-${p.id}`}
-                              checked={activePriorities.includes(p.id)}
-                              onCheckedChange={() => handlePriorityToggle(p.id)}
-                            />
-                            <Label
-                              htmlFor={`filter-${p.id}`}
-                              className="text-sm font-medium capitalize"
-                            >
-                              {p.label}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                     <div>
-                      <h4 className="font-medium text-sm mb-2">Proyectos</h4>
-                      <ScrollArea className="h-40">
-                        <div className="flex flex-col gap-2">
-                          {projects.map(project => (
-                            <div key={project.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`filter-project-${project.id}`}
-                                checked={activeProjectIds.includes(project.id)}
-                                onCheckedChange={() => handleProjectToggle(project.id)}
-                              />
-                              <Label
-                                htmlFor={`filter-project-${project.id}`}
-                                className="text-sm font-medium capitalize flex items-center gap-2"
-                              >
-                                <span className="w-3 h-3 rounded-full" style={{backgroundColor: project.color}}/>
-                                {project.name}
-                              </Label>
+            <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                <span className="text-lg font-semibold uppercase tracking-wider">Cronograma</span>
+                <Popover>
+                    <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm">
+                        Filtros ({activePriorities.length + (activeProjectIds.length > 0 ? 1 : 0)})
+                    </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                    <div className="space-y-4">
+                        <div>
+                        <h4 className="font-medium text-sm mb-2">Prioridad</h4>
+                        <div className="flex items-center gap-4">
+                            {priorityFilters.map((p) => (
+                            <div key={p.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                id={`filter-${p.id}`}
+                                checked={activePriorities.includes(p.id)}
+                                onCheckedChange={() => handlePriorityToggle(p.id)}
+                                />
+                                <Label
+                                htmlFor={`filter-${p.id}`}
+                                className="text-sm font-medium capitalize"
+                                >
+                                {p.label}
+                                </Label>
                             </div>
-                          ))}
+                            ))}
                         </div>
-                      </ScrollArea>
-                        {activeProjectIds.length > 0 && (
-                          <Button variant="link" size="sm" onClick={() => setActiveProjectIds([])} className="p-0 h-auto mt-2">Limpiar filtros de proyecto</Button>
-                        )}
-                      </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={selectedDay}
-              onSelect={setSelectedDay}
-              month={currentMonth}
-              onMonthChange={setCurrentMonth}
-              className="p-0"
-              classNames={{
-                months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
-                month: 'space-y-4 w-full',
-                table: 'w-full border-collapse space-y-1',
-                head_row: 'flex',
-                head_cell:
-                  'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
-                row: 'flex w-full mt-2',
-                cell: 'h-24 text-sm text-left p-0 relative focus-within:relative focus-within:z-20',
-                day: 'h-24 w-full p-0 font-normal aria-selected:opacity-100 flex flex-col items-start',
-              }}
-              components={{
-                Day: ({ date }) => (
-                  <DayWithTasks
-                    date={date}
-                    tasks={filteredTasks}
-                    onTaskClick={handleEditTask}
-                  />
-                ),
-              }}
-            />
-          </CardContent>
+                        </div>
+                        <div>
+                        <h4 className="font-medium text-sm mb-2">Proyectos</h4>
+                        <ScrollArea className="h-40">
+                            <div className="flex flex-col gap-2">
+                            {projects.map(project => (
+                                <div key={project.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                    id={`filter-project-${project.id}`}
+                                    checked={activeProjectIds.includes(project.id)}
+                                    onCheckedChange={() => handleProjectToggle(project.id)}
+                                />
+                                <Label
+                                    htmlFor={`filter-project-${project.id}`}
+                                    className="text-sm font-medium capitalize flex items-center gap-2"
+                                >
+                                    <span className="w-3 h-3 rounded-full" style={{backgroundColor: project.color}}/>
+                                    {project.name}
+                                </Label>
+                                </div>
+                            ))}
+                            </div>
+                        </ScrollArea>
+                            {activeProjectIds.length > 0 && (
+                            <Button variant="link" size="sm" onClick={() => setActiveProjectIds([])} className="p-0 h-auto mt-2">Limpiar filtros de proyecto</Button>
+                            )}
+                        </div>
+                    </div>
+                    </PopoverContent>
+                </Popover>
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Calendar
+                mode="single"
+                month={currentMonth}
+                onMonthChange={setCurrentMonth}
+                className="p-0"
+                classNames={{
+                    months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
+                    month: 'space-y-4 w-full',
+                    table: 'w-full border-collapse space-y-1',
+                    head_row: 'flex',
+                    head_cell: 'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
+                    row: 'flex w-full mt-2',
+                    cell: 'h-24 w-full text-left p-0 relative',
+                    day: cn(
+                        buttonVariants({ variant: "ghost" }),
+                        "h-full w-full p-0 font-normal aria-selected:opacity-100 flex flex-col items-start"
+                      ),
+                    day_selected:
+                      "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                    day_today: "bg-accent text-accent-foreground",
+                    day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground",
+                }}
+                components={{
+                    Day: ({ date }) => (
+                    <DayWithTasks
+                        date={date}
+                        tasks={filteredTasks}
+                        onDayClick={handleDayClick}
+                    />
+                    ),
+                }}
+                />
+            </CardContent>
         </Card>
-      </div>
-      <div className="lg:col-span-1">
-        {selectedDay ? (
-          <SelectedDayTasks
-            date={selectedDay}
-            tasks={tasksForSelectedDay}
+      
+        <DayTasksModal
+            date={modalDate}
+            tasks={tasksForModal}
+            isOpen={!!modalDate}
+            onOpenChange={(open) => !open && setModalDate(null)}
             onTaskClick={handleEditTask}
-          />
-        ) : (
-          <Card className="h-full flex items-center justify-center">
-            <p className="text-muted-foreground">
-              Selecciona un día para ver las tareas
-            </p>
-          </Card>
-        )}
-      </div>
-      {editingTask && (
-        <TaskEditDialog
-          isOpen={!!editingTask}
-          onOpenChange={(open) => !open && setEditingTask(null)}
-          task={editingTask}
+            onAddTaskClick={handleAddTaskClick}
         />
-      )}
-    </div>
+
+        {editingTask && (
+            <TaskEditDialog
+            isOpen={!!editingTask}
+            onOpenChange={(open) => !open && setEditingTask(null)}
+            task={editingTask}
+            />
+        )}
+    </>
   );
 }

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -11,8 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AiTaskGenerator } from './ai-task-generator';
-import type { Category, Priority, Task } from '@/lib/types';
-import { Trash2, Edit, Clock } from 'lucide-react';
+import type { Category, Priority, Task, TaskFormValues } from '@/lib/types';
+import { Trash2, Edit, Clock, ArrowLeft } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { TaskEditDialog } from './task-edit-dialog';
 import { AiTaskOptimizer } from './ai-task-optimizer';
@@ -140,20 +141,24 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
   );
 }
 
-export function TodoList() {
+export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?: () => void }) {
   const { tasks, projects, addTask, toggleTaskCompletion, deleteTask } = useTasks();
   const { layoutConfig } = useTheme();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskCategory, setNewTaskCategory] = useState<Category>('personal');
   const [newTaskPriority, setNewTaskPriority] = useState<Priority>('media');
   const [newTaskProjectId, setNewTaskProjectId] = useState<string | undefined>(undefined);
-  const [dueDate, setDueDate] = useState<Date | undefined>();
+  const [dueDate, setDueDate] = useState<Date | undefined>(initialDate);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  useEffect(() => {
+    setDueDate(initialDate);
+  }, [initialDate]);
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTaskTitle.trim()) {
-      const taskPayload: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'userId'>> = {
+      const taskPayload: TaskFormValues = {
         title: newTaskTitle,
         category: newTaskCategory,
         priority: newTaskPriority,
@@ -168,6 +173,7 @@ export function TodoList() {
       setNewTaskTitle('');
       setNewTaskProjectId(undefined);
       setDueDate(undefined);
+      if (onBack) onBack();
     }
   };
   
@@ -262,6 +268,12 @@ export function TodoList() {
 
   return (
     <div className="space-y-6">
+       {onBack && (
+        <Button variant="ghost" onClick={onBack}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Volver al Cronograma
+        </Button>
+      )}
       <div className="z-10 relative">
         <h2 className="mb-4 text-2xl font-bold tracking-tight uppercase text-primary/80">
           Añadir Nueva Tarea
@@ -383,32 +395,34 @@ export function TodoList() {
         </Card>
       </div>
       
-      <div className="relative">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center flex-wrap gap-4 mb-4">
-          <h2 className="text-2xl font-bold tracking-tight uppercase text-primary/80">
-            Mi Lista de Tareas
-          </h2>
-          <div className="flex items-center gap-2">
-            <AiTaskOptimizer />
-          </div>
-        </div>
-        <Tabs defaultValue="all" className="w-full">
-            <div className="overflow-x-auto pb-2">
-                <TabsList className="w-full sm:w-auto">
-                    {TABS_WITH_CONTENT.map(tab => (
-                        <TabsTrigger key={tab.value} value={tab.value} className="capitalize flex-shrink-0">
-                        {tab.label}
-                        </TabsTrigger>
-                    ))}
-                </TabsList>
+      {!onBack && (
+        <div className="relative">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center flex-wrap gap-4 mb-4">
+            <h2 className="text-2xl font-bold tracking-tight uppercase text-primary/80">
+                Mi Lista de Tareas
+            </h2>
+            <div className="flex items-center gap-2">
+                <AiTaskOptimizer />
             </div>
-            <TabsContent value="all" className="mt-6">{renderTaskList(groupedTasks.all)}</TabsContent>
-            <TabsContent value="estudio" className="mt-6">{renderTaskList(groupedTasks.estudio)}</TabsContent>
-            <TabsContent value="trabajo" className="mt-6">{renderTaskList(groupedTasks.trabajo)}</TabsContent>
-            <TabsContent value="personal" className="mt-6">{renderTaskList(groupedTasks.personal)}</TabsContent>
-            <TabsContent value="proyectos" className="mt-6">{renderTaskList(groupedTasks.proyectos)}</TabsContent>
-        </Tabs>
-      </div>
+            </div>
+            <Tabs defaultValue="all" className="w-full">
+                <div className="overflow-x-auto pb-2">
+                    <TabsList className="w-full sm:w-auto">
+                        {TABS_WITH_CONTENT.map(tab => (
+                            <TabsTrigger key={tab.value} value={tab.value} className="capitalize flex-shrink-0">
+                            {tab.label}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                </div>
+                <TabsContent value="all" className="mt-6">{renderTaskList(groupedTasks.all)}</TabsContent>
+                <TabsContent value="estudio" className="mt-6">{renderTaskList(groupedTasks.estudio)}</TabsContent>
+                <TabsContent value="trabajo" className="mt-6">{renderTaskList(groupedTasks.trabajo)}</TabsContent>
+                <TabsContent value="personal" className="mt-6">{renderTaskList(groupedTasks.personal)}</TabsContent>
+                <TabsContent value="proyectos" className="mt-6">{renderTaskList(groupedTasks.proyectos)}</TabsContent>
+            </Tabs>
+        </div>
+      )}
       {editingTask && (
         <TaskEditDialog
             isOpen={!!editingTask}
