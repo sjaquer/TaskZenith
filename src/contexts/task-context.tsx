@@ -224,7 +224,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }, [userId, authLoading, syncData, fetchDailyTasks, clearLocalData]);
 
 
-  const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'userId'>>) => {
+  const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'userId'>>) => {
     if (!userId) return;
     const { tasksCollection } = getCollections();
     const newDocRef = doc(tasksCollection);
