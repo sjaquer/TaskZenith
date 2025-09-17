@@ -8,6 +8,7 @@ import {
   KanbanSquare,
   LayoutDashboard,
   ListTodo,
+  CalendarDays,
 } from 'lucide-react';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
@@ -74,6 +75,7 @@ const menuItems = [
   {href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard},
   {href: '/dashboard/todo', label: 'To-Do List', icon: ListTodo},
   {href: '/dashboard/kanban', label: 'Kanban Board', icon: KanbanSquare},
+  {href: '/dashboard/schedule', label: 'Cronograma', icon: CalendarDays },
   {href: '/dashboard/history', label: 'History', icon: History},
 ];
 

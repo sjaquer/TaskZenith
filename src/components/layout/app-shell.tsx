@@ -20,6 +20,7 @@ import {
   LogOut,
   UserCircle,
   Newspaper,
+  CalendarDays,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useTasks } from '@/contexts/task-context';
@@ -33,6 +34,7 @@ const menuItems = [
     {href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard},
     {href: '/dashboard/todo', label: 'To-Do', icon: ListTodo},
     {href: '/dashboard/kanban', label: 'Kanban', icon: KanbanSquare},
+    {href: '/dashboard/schedule', label: 'Cronograma', icon: CalendarDays },
     {href: '/dashboard/history', label: 'Historial', icon: History},
 ];
 
