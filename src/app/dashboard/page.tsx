@@ -15,6 +15,7 @@ import { TaskHistory } from '@/components/tasks/task-history';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import { DailyFocusWidget } from '@/components/tasks/daily-focus-widget';
+import { ScheduleView } from '@/components/tasks/schedule-view';
 
 function SyncButton() {
   const { syncData, isSyncing } = useTasks();
@@ -98,6 +99,12 @@ function DashboardPage() {
                   <DailyTodoList />
               )}
           </div>
+
+          {layoutConfig.showSchedule && (
+              <div className="lg:col-span-3">
+                  <ScheduleView />
+              </div>
+          )}
 
           {layoutConfig.showTodoList && (
               <div className="lg:col-span-3">

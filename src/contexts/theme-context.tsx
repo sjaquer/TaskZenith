@@ -18,6 +18,7 @@ type LayoutConfig = {
     showTodoList: boolean;
     showKanban: boolean;
     showHistory: boolean;
+    showSchedule: boolean;
     enableDueDates: boolean;
     showPriorityTasks: boolean;
     showVoiceButton: boolean;
@@ -53,6 +54,7 @@ const defaultLayout: LayoutConfig = {
     showTodoList: true,
     showKanban: true,
     showHistory: true,
+    showSchedule: true,
     enableDueDates: true,
     showPriorityTasks: true,
     showVoiceButton: true,
