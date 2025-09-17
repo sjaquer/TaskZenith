@@ -13,7 +13,7 @@ import { Label } from '../ui/label';
 import { TaskEditDialog } from './task-edit-dialog';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
-import { Button } from '../ui/button';
+import { Button, buttonVariants } from '../ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { TodoList } from './todo-list'; 
