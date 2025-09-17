@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Label } from '../ui/label';
 import { Calendar } from '../ui/calendar';
+import { ProjectLegend } from './project-legend';
 
 function useRelativeTime(date: Date | null) {
   const [relativeTime, setRelativeTime] = useState('');
@@ -150,6 +151,8 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
   const [newTaskProjectId, setNewTaskProjectId] = useState<string | undefined>(undefined);
   const [dueDate, setDueDate] = useState<Date | undefined>(initialDate);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
 
   useEffect(() => {
     setDueDate(initialDate);
@@ -227,14 +230,20 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
 
 
   const groupedTasks = useMemo(() => {
+    let projectTasks = pendingTasks.filter(t => t.category === 'proyectos');
+    if (selectedProjectId) {
+      projectTasks = projectTasks.filter(t => t.projectId === selectedProjectId);
+    }
+
     return {
       all: pendingTasks,
       estudio: pendingTasks.filter(t => t.category === 'estudio'),
       trabajo: pendingTasks.filter(t => t.category === 'trabajo'),
       personal: pendingTasks.filter(t => t.category === 'personal'),
-      proyectos: pendingTasks.filter(t => t.category === 'proyectos'),
+      proyectos: projectTasks,
     };
-  }, [pendingTasks]);
+  }, [pendingTasks, selectedProjectId]);
+
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
@@ -419,7 +428,11 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
                 <TabsContent value="estudio" className="mt-6">{renderTaskList(groupedTasks.estudio)}</TabsContent>
                 <TabsContent value="trabajo" className="mt-6">{renderTaskList(groupedTasks.trabajo)}</TabsContent>
                 <TabsContent value="personal" className="mt-6">{renderTaskList(groupedTasks.personal)}</TabsContent>
-                <TabsContent value="proyectos" className="mt-6">{renderTaskList(groupedTasks.proyectos)}</TabsContent>
+                <TabsContent value="proyectos" className="mt-6 space-y-4">
+                    <ProjectLegend onProjectSelect={setSelectedProjectId} selectedProjectId={selectedProjectId} />
+                    {renderTaskList(groupedTasks.proyectos)}
+                </TabsContent>
+
             </Tabs>
         </div>
       )}
@@ -433,3 +446,5 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
     </div>
   );
 }
+
+    

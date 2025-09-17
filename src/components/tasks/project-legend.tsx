@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -298,3 +299,5 @@ export function ProjectLegend({ onProjectSelect, selectedProjectId }: { onProjec
     </div>
   );
 }
+
+    
