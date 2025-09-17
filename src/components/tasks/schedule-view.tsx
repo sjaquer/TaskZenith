@@ -28,8 +28,8 @@ function DayWithTasks({
   const tasksForDay = tasks
     .filter((task) => task.dueDate && isSameDay(task.dueDate, date))
     .sort((a, b) => {
-        const priorityOrder = { alta: 1, media: 2, baja: 3 };
-        return priorityOrder[a.priority] - priorityOrder[b.priority];
+      const priorityOrder = { alta: 1, media: 2, baja: 3 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
     });
 
   return (
@@ -37,23 +37,24 @@ function DayWithTasks({
       <span className="font-medium text-sm p-1.5">{format(date, 'd')}</span>
       <div className="flex-1 overflow-y-auto mt-1 space-y-1 px-1 tiny-scrollbar">
         {tasksForDay.map((task) => (
-          <button
-            key={task.id}
-            onClick={(e) => {
-              e.stopPropagation();
-              onTaskClick(task);
-            }}
-            className={cn(
-              'w-full text-left text-xs px-1.5 py-0.5 rounded-sm truncate transition-colors',
-              task.priority === 'alta'
-                ? 'bg-red-500/20 hover:bg-red-500/30 text-red-100'
-                : task.priority === 'media'
-                ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-100'
-                : 'bg-green-500/20 hover:bg-green-500/30 text-green-100'
-            )}
-          >
-            {task.title}
-          </button>
+          <div key={task.id} className="relative w-full overflow-hidden">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onTaskClick(task);
+              }}
+              className={cn(
+                'w-full text-left text-xs px-1.5 py-0.5 rounded-sm transition-colors truncate',
+                task.priority === 'alta'
+                  ? 'bg-red-500/20 hover:bg-red-500/30 text-red-100'
+                  : task.priority === 'media'
+                  ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-100'
+                  : 'bg-green-500/20 hover:bg-green-500/30 text-green-100'
+              )}
+            >
+              {task.title}
+            </button>
+          </div>
         ))}
       </div>
     </div>
@@ -278,7 +279,7 @@ export function ScheduleView() {
                 head_cell:
                   'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
                 row: 'flex w-full mt-2',
-                cell: 'h-24 text-sm text-left p-0 relative [&:has([aria-selected])]:bg-accent/50 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+                cell: 'h-24 text-sm text-left p-0 relative focus-within:relative focus-within:z-20',
                 day: 'h-24 w-full p-0 font-normal aria-selected:opacity-100 flex flex-col items-start',
               }}
               components={{

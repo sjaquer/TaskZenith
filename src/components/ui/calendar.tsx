@@ -39,7 +39,7 @@ function Calendar({
         cell: "h-24 w-full text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent/50 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-full w-full p-0 font-normal aria-selected:opacity-100 flex flex-col"
+          "h-full w-full p-0 font-normal aria-selected:opacity-100 flex flex-col items-start"
         ),
         day_range_end: "day-range-end",
         day_selected:
