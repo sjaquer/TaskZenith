@@ -63,7 +63,7 @@ const defaultDailyTasks: CustomDailyTask[] = [
 const getLocalStorageKey = (userId: string, key: 'tasks' | 'projects') => `taskzenith_${userId}_${key}`;
 
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
-    const { user, loading: authLoading } = useAuth();
+    const { user, loading: authLoading, updateStreak } = useAuth();
     const [tasks, setTasks] = useState<Task[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([]);
@@ -393,6 +393,10 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       ) || [];
       
       const allSubTasksCompleted = updatedSubTasks.every(st => st.completed);
+
+      if (allSubTasksCompleted) {
+        updateStreak();
+      }
       
       updateTask(taskId, { subTasks: updatedSubTasks, completed: allSubTasksCompleted, completedAt: allSubTasksCompleted ? new Date() : null });
   
@@ -400,6 +404,10 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       // Toggle the main task
       const newCompletedState = !taskToUpdate.completed;
       const updatedSubTasks = taskToUpdate.subTasks?.map(st => ({ ...st, completed: newCompletedState }));
+
+      if (newCompletedState) {
+        updateStreak();
+      }
 
       updateTask(taskId, {
           completed: newCompletedState,
@@ -437,6 +445,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     if (isCompleted) {
       if (!taskToUpdate.completedAt) {
         updatedTaskData.completedAt = new Date();
+        updateStreak();
       }
     } else {
       updatedTaskData.completedAt = null;
@@ -600,6 +609,12 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         task.id === taskId ? { ...task, completed: !task.completed } : task
     );
     setDailyTasks(updatedDailyTasks);
+
+    const wasCompleted = !dailyTasks.find(t => t.id === taskId)?.completed;
+    if (wasCompleted) {
+        updateStreak();
+    }
+
     try {
         await setDoc(dailyStatusDocRef, { tasks: updatedDailyTasks }, { merge: true });
     } catch (error) {

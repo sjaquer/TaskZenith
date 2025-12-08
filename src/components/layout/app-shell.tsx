@@ -21,6 +21,7 @@ import {
   UserCircle,
   Newspaper,
   CalendarDays,
+  Flame,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useTasks } from '@/contexts/task-context';
@@ -52,7 +53,7 @@ function BottomNavBar() {
 }
 
 function MainHeader() {
-    const { user, logout } = useAuth();
+    const { user, logout, streak } = useAuth();
     const { clearLocalData } = useTasks();
     const router = useRouter();
     const { setOpen: setSidebarOpen } = useSidebar();
@@ -62,6 +63,25 @@ function MainHeader() {
         clearLocalData();
         router.push('/login');
     };
+
+    const streakMessages: {[key: number]: string} = {
+        0: "¡Completa una tarea hoy para empezar!",
+        1: "¡Racha de 1 día! ¡Sigue así!",
+        3: "¡3 días seguidos! Esto se pone serio.",
+        7: "¡Una semana completa! Eres imparable.",
+        14: "¡Dos semanas! La constancia es tu superpoder.",
+        30: "¡Un mes de racha! Eres una leyenda."
+    }
+
+    const getStreakMessage = () => {
+        const sortedBreaks = Object.keys(streakMessages).map(Number).sort((a,b) => b-a);
+        for (const breakPoint of sortedBreaks) {
+            if (streak >= breakPoint) {
+                return streakMessages[breakPoint];
+            }
+        }
+        return `Racha de ${streak} días.`;
+    }
 
     return (
         <header className="flex items-center justify-between p-4 border-b bg-card/80 backdrop-blur-sm sticky top-0 z-40">
@@ -81,7 +101,7 @@ function MainHeader() {
                            <UserCircle className="h-8 w-8" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuContent className="w-64" align="end" forceMount>
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex flex-col space-y-1">
                                 <p className="text-sm font-medium leading-none">{user?.displayName}</p>
@@ -90,6 +110,16 @@ function MainHeader() {
                                 </p>
                             </div>
                         </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <div className="p-2">
+                            <div className="flex items-center justify-center gap-2 p-3 rounded-md bg-secondary/50 text-center">
+                                <Flame className={cn("w-7 h-7", streak > 0 ? 'text-amber-500' : 'text-muted-foreground')} />
+                                <div>
+                                    <p className="font-bold text-lg">{streak} Día(s)</p>
+                                    <p className="text-xs text-muted-foreground">{getStreakMessage()}</p>
+                                </div>
+                            </div>
+                        </div>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout}>
                             <LogOut className="mr-2 h-4 w-4" />
