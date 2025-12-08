@@ -22,8 +22,7 @@ function PriorityTaskItem({ task }: { task: Task }) {
         <div className="flex-1">
           <p className="font-medium text-sm">{task.title}</p>
           <p className="text-xs text-muted-foreground capitalize">
-            {task.category}
-            {project && ` / ${project.name}`}
+            {project?.name || task.category}
           </p>
         </div>
         <div className="text-xs text-right text-muted-foreground">

@@ -28,15 +28,16 @@ function useRelativeTime(date: Date | null) {
 }
 
 function DueTaskItem({ task }: { task: Task }) {
+    const { getProjectById } = useTasks();
     const relativeTime = useRelativeTime(task.dueDate ? new Date(task.dueDate) : null);
+    const project = task.projectId ? getProjectById(task.projectId) : null;
   
     return (
       <div className="flex items-start justify-between p-3 rounded-lg hover:bg-secondary/60 transition-colors">
         <div className="flex-1">
           <p className="font-medium text-sm">{task.title}</p>
           <p className="text-xs text-muted-foreground capitalize">
-            {task.category}
-            {task.projectId && ` / ${task.projectId}`}
+            {project ? project.name : task.category}
           </p>
         </div>
         <div className="text-xs text-right text-muted-foreground">
