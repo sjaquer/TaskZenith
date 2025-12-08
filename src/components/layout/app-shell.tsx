@@ -28,7 +28,6 @@ import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import Image from 'next/image';
-import { PatchNotesDialog } from './patch-notes';
 
 const menuItems = [
     {href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard},
@@ -91,8 +90,6 @@ function MainHeader() {
                                 </p>
                             </div>
                         </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <PatchNotesDialog />
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout}>
                             <LogOut className="mr-2 h-4 w-4" />
