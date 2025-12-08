@@ -152,7 +152,7 @@ export function ProjectLegend({ onProjectSelect, selectedProjectId }: { onProjec
   const projectToEdit = projects.find(p => p.id === editingProject);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap p-4 rounded-lg bg-card/80 backdrop-blur-sm">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap">
       <h3 className="text-sm font-semibold text-muted-foreground uppercase w-full sm:w-auto">Proyectos:</h3>
       <div className="flex flex-wrap gap-2">
         {projects.length > 0 ? (

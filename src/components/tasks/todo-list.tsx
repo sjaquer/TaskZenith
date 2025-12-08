@@ -174,7 +174,8 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
       
       addTask(taskPayload);
       setNewTaskTitle('');
-      setNewTaskProjectId(undefined);
+      // No reseteamos el project ID para permitir añadir varias tareas seguidas al mismo proyecto.
+      // setNewTaskProjectId(undefined);
       setDueDate(undefined);
       if (onBack) onBack();
     }
@@ -429,7 +430,9 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
                 <TabsContent value="trabajo" className="mt-6">{renderTaskList(groupedTasks.trabajo)}</TabsContent>
                 <TabsContent value="personal" className="mt-6">{renderTaskList(groupedTasks.personal)}</TabsContent>
                 <TabsContent value="proyectos" className="mt-6 space-y-4">
-                    <ProjectLegend onProjectSelect={setSelectedProjectId} selectedProjectId={selectedProjectId} />
+                    <div className="p-4 rounded-lg bg-card/80 backdrop-blur-sm">
+                        <ProjectLegend onProjectSelect={setSelectedProjectId} selectedProjectId={selectedProjectId} />
+                    </div>
                     {renderTaskList(groupedTasks.proyectos)}
                 </TabsContent>
 
