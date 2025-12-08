@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AiTaskGenerator } from './ai-task-generator';
 import type { Category, Priority, Task, TaskFormValues } from '@/lib/types';
-import { Trash2, Edit, Clock, ArrowLeft } from 'lucide-react';
+import { Trash2, Edit, Clock, ArrowLeft, ChevronsRight } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { TaskEditDialog } from './task-edit-dialog';
 import { AiTaskOptimizer } from './ai-task-optimizer';
@@ -26,6 +26,7 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { Label } from '../ui/label';
 import { Calendar } from '../ui/calendar';
 import { ProjectLegend } from './project-legend';
+import { Progress } from '../ui/progress';
 
 function useRelativeTime(date: Date | null) {
   const [relativeTime, setRelativeTime] = useState('');
@@ -55,7 +56,7 @@ function useRelativeTime(date: Date | null) {
 }
 
 
-function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: (id: string) => void; onDelete: (id:string) => void; onEdit: (task: Task) => void; }) {
+function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: (id: string, subTaskId?: string) => void; onDelete: (id:string) => void; onEdit: (task: Task) => void; }) {
   const [isCompleted, setIsCompleted] = useState(false);
   const { getProjectById } = useTasks();
 
@@ -76,6 +77,10 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
     media: 'border-l-4 border-yellow-500/70',
     alta: 'border-l-4 border-red-500/70',
   };
+
+  const completedSubtasks = task.subTasks?.filter(st => st.completed).length || 0;
+  const totalSubtasks = task.subTasks?.length || 0;
+  const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
 
   return (
     <div className={cn(
@@ -138,6 +143,31 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
                 </AlertDialog>
             </div>
         </div>
+        {task.subTasks && task.subTasks.length > 0 && (
+          <div className="pl-8 mt-3 space-y-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <ChevronsRight className="h-3 w-3" />
+                  <span>Progreso: {completedSubtasks} de {totalSubtasks}</span>
+              </div>
+              <Progress value={progress} className="h-1"/>
+              {task.subTasks.map(subtask => (
+                  <div key={subtask.id} className="flex items-center gap-2 text-sm">
+                      <Checkbox 
+                          id={`subtask-${subtask.id}`} 
+                          checked={subtask.completed} 
+                          onCheckedChange={() => onToggle(task.id, subtask.id)}
+                          aria-label={`Completar sub-tarea ${subtask.title}`}
+                      />
+                      <label 
+                        htmlFor={`subtask-${subtask.id}`}
+                        className={cn("flex-1 cursor-pointer", subtask.completed && 'line-through text-muted-foreground')}
+                      >
+                          {subtask.title}
+                      </label>
+                  </div>
+              ))}
+          </div>
+        )}
     </div>
   );
 }
@@ -174,8 +204,9 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
       
       addTask(taskPayload);
       setNewTaskTitle('');
-      // No reseteamos el project ID para permitir añadir varias tareas seguidas al mismo proyecto.
-      // setNewTaskProjectId(undefined);
+      if(newTaskCategory !== 'proyectos') {
+        setNewTaskProjectId(undefined);
+      }
       setDueDate(undefined);
       if (onBack) onBack();
     }
@@ -355,7 +386,7 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
                                     onSelect={(d) => handleDateTimeChange(d ?? undefined, 'date')}
                                     initialFocus
                                 />
-                                <div className="p-4 border-t flex items-center gap-2">
+                                <div className="p-2 border-t flex items-center justify-center gap-2">
                                     <Label>Hora:</Label>
                                     <Select
                                         value={String(dueDate ? new Date(dueDate).getHours() % 12 || 12 : '12')}

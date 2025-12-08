@@ -12,6 +12,12 @@ export interface Project {
 
 export type TaskFormValues = Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'userId'>> & { initialDate?: Date };
 
+export interface SubTask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -24,6 +30,7 @@ export interface Task {
   dueDate?: Date | null;
   projectId?: string;
   status: KanbanStatus;
+  subTasks?: SubTask[];
   userId: string;
 }
 

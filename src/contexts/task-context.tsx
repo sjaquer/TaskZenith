@@ -1,6 +1,6 @@
 'use client';
 
-import { type Task, type Project, type KanbanStatus, type Category, type Priority, type DailyTask, type CustomDailyTask, type OrganizedTasks } from '@/lib/types';
+import { type Task, type Project, type KanbanStatus, type Category, type Priority, type DailyTask, type CustomDailyTask, type OrganizedTasks, type SubTask } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { 
   collection, 
@@ -28,8 +28,8 @@ interface TaskContextType {
   isSyncing: boolean;
   addTask: (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'userId'>>) => void;
   deleteTask: (taskId: string) => void;
-  updateTask: (taskId: string, data: Partial<Omit<Task, 'id' | 'completed' | 'userId'>>) => void;
-  toggleTaskCompletion: (taskId: string) => void;
+  updateTask: (taskId: string, data: Partial<Omit<Task, 'id' | 'userId'>>) => void;
+  toggleTaskCompletion: (taskId: string, subTaskId?: string) => void;
   restoreTask: (taskId: string) => void;
   updateTaskStatus: (taskId: string, status: KanbanStatus) => void;
   getProjectById: (projectId: string) => Project | undefined;
@@ -45,6 +45,9 @@ interface TaskContextType {
   deleteCompletedTasks: () => void;
   syncData: () => Promise<void>;
   clearLocalData: () => void;
+  addSubTask: (taskId: string, subTaskTitle: string) => void;
+  updateSubTask: (taskId: string, subTaskId: string, data: Partial<Omit<SubTask, 'id'>>) => void;
+  deleteSubTask: (taskId: string, subTaskId: string) => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -239,6 +242,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         completed: false,
         status: 'Pendiente',
         completedAt: null,
+        subTasks: [],
     };
 
     if (task.category === 'proyectos' && task.projectId) {
@@ -378,30 +382,31 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const toggleTaskCompletion = async (taskId: string) => {
+  const toggleTaskCompletion = (taskId: string, subTaskId?: string) => {
     const taskToUpdate = tasks.find(t => t.id === taskId);
-    if (!taskToUpdate || !userId) return;
-    const { tasksCollection } = getCollections();
-    
-    const newCompletedState = !taskToUpdate.completed;
-    const updatedTask = {
-        ...taskToUpdate,
-        completed: newCompletedState,
-        completedAt: newCompletedState ? new Date() : null,
-        status: newCompletedState ? 'Finalizado' : 'Pendiente'
-    } as Task;
+    if (!taskToUpdate) return;
+  
+    if (subTaskId) {
+      // Toggle a subtask
+      const updatedSubTasks = taskToUpdate.subTasks?.map(st =>
+        st.id === subTaskId ? { ...st, completed: !st.completed } : st
+      ) || [];
+      
+      const allSubTasksCompleted = updatedSubTasks.every(st => st.completed);
+      
+      updateTask(taskId, { subTasks: updatedSubTasks, completed: allSubTasksCompleted, completedAt: allSubTasksCompleted ? new Date() : null });
+  
+    } else {
+      // Toggle the main task
+      const newCompletedState = !taskToUpdate.completed;
+      const updatedSubTasks = taskToUpdate.subTasks?.map(st => ({ ...st, completed: newCompletedState }));
 
-    setTasks((prev) => prev.map((task) => task.id === taskId ? updatedTask : task));
-
-    try {
-        await updateDoc(doc(tasksCollection, taskId), {
-            completed: updatedTask.completed,
-            completedAt: updatedTask.completedAt,
-            status: updatedTask.status
-        });
-    } catch(error) {
-        console.error("Error toggling task completion: ", error);
-        setTasks(tasks.map(t => t.id === taskId ? taskToUpdate : t));
+      updateTask(taskId, {
+          completed: newCompletedState,
+          completedAt: newCompletedState ? new Date() : null,
+          status: newCompletedState ? 'Finalizado' : 'Pendiente',
+          subTasks: updatedSubTasks
+      });
     }
   };
 
@@ -452,6 +457,40 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       setTasks(tasks); // Revert
     }
   };
+
+  const addSubTask = (taskId: string, subTaskTitle: string) => {
+    const taskToUpdate = tasks.find(t => t.id === taskId);
+    if (!taskToUpdate) return;
+  
+    const newSubTask: SubTask = {
+      id: `sub-${Date.now()}-${Math.random()}`,
+      title: subTaskTitle,
+      completed: false,
+    };
+  
+    const newSubTasks = [...(taskToUpdate.subTasks || []), newSubTask];
+    updateTask(taskId, { subTasks: newSubTasks });
+  };
+  
+  const updateSubTask = (taskId: string, subTaskId: string, data: Partial<Omit<SubTask, 'id'>>) => {
+    const taskToUpdate = tasks.find(t => t.id === taskId);
+    if (!taskToUpdate) return;
+  
+    const newSubTasks = taskToUpdate.subTasks?.map(st =>
+      st.id === subTaskId ? { ...st, ...data } : st
+    ) || [];
+  
+    updateTask(taskId, { subTasks: newSubTasks });
+  };
+
+  const deleteSubTask = (taskId: string, subTaskId: string) => {
+    const taskToUpdate = tasks.find(t => t.id === taskId);
+    if (!taskToUpdate) return;
+  
+    const newSubTasks = taskToUpdate.subTasks?.filter(st => st.id !== subTaskId) || [];
+    updateTask(taskId, { subTasks: newSubTasks });
+  };
+
 
   const getProjectById = (projectId: string) => {
     return projects.find(p => p.id === projectId);
@@ -635,7 +674,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, isSyncing, addTask, deleteTask, updateTask, toggleTaskCompletion, restoreTask, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, addVoiceTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks, applyOrganizedTasks, deleteCompletedTasks, syncData, clearLocalData }}>
+    <TaskContext.Provider value={{ tasks, projects, dailyTasks, customDailyTasks, isLoaded, isSyncing, addTask, deleteTask, updateTask, toggleTaskCompletion, restoreTask, updateTaskStatus, getProjectById, addProject, deleteProject, updateProject, addAiTasks, addVoiceTasks, clearAllData, toggleDailyTask, updateCustomDailyTasks, applyOrganizedTasks, deleteCompletedTasks, syncData, clearLocalData, addSubTask, updateSubTask, deleteSubTask }}>
       {children}
     </TaskContext.Provider>
   );

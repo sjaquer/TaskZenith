@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useTasks } from '@/contexts/task-context';
-import type { Task, Category, Priority } from '@/lib/types';
+import type { Task, Category, Priority, SubTask } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -24,8 +24,15 @@ import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2 } from 'lucide-react';
 import { Calendar } from '../ui/calendar';
+import { Checkbox } from '../ui/checkbox';
+
+const subTaskSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1, 'El título no puede estar vacío.'),
+  completed: z.boolean(),
+});
 
 const formSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
@@ -33,6 +40,7 @@ const formSchema = z.object({
   priority: z.enum(['baja', 'media', 'alta']),
   projectId: z.string().optional(),
   dueDate: z.date().optional().nullable(),
+  subTasks: z.array(subTaskSchema).optional(),
 });
 
 type TaskEditDialogProps = {
@@ -42,7 +50,7 @@ type TaskEditDialogProps = {
 };
 
 export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogProps) {
-  const { projects, updateTask } = useTasks();
+  const { projects, updateTask, updateSubTask, addSubTask, deleteSubTask } = useTasks();
   const { layoutConfig } = useTheme();
   const { toast } = useToast();
 
@@ -54,7 +62,13 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
       priority: task.priority,
       projectId: task.projectId || undefined,
       dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+      subTasks: task.subTasks || [],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "subTasks",
   });
   
   useEffect(() => {
@@ -64,6 +78,7 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
       priority: task.priority,
       projectId: task.projectId || undefined,
       dueDate: task.dueDate ? new Date(task.dueDate) : null,
+      subTasks: task.subTasks || [],
     });
   }, [task, form]);
 
@@ -126,6 +141,19 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
     });
     onOpenChange(false);
   };
+
+  const handleAddNewSubtask = () => {
+    const newSubtask: SubTask = {
+      id: `sub-${Date.now()}`,
+      title: 'Nueva sub-tarea',
+      completed: false
+    };
+    // Append to form state
+    append(newSubtask);
+    // Persist in context
+    addSubTask(task.id, newSubtask.title);
+  }
+  
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -236,7 +264,7 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                       onSelect={(date) => handleDateTimeChange(date, field, 'date')}
                       initialFocus
                     />
-                    <div className="p-4 border-t flex items-center gap-2">
+                    <div className="p-2 border-t flex items-center justify-center gap-2">
                         <Label>Hora:</Label>
                          <Select
                             value={String(field.value ? new Date(field.value).getHours() % 12 || 12 : '12')}
@@ -279,6 +307,58 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
               )}
             />
           )}
+
+            <div>
+              <Label>Sub-tareas</Label>
+              <div className="mt-2 space-y-2">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="flex items-center gap-2">
+                    <Controller
+                      name={`subTasks.${index}.completed`}
+                      control={form.control}
+                      render={({ field: checkField }) => (
+                        <Checkbox
+                          checked={checkField.value}
+                          onCheckedChange={(checked) => {
+                            checkField.onChange(checked);
+                            updateSubTask(task.id, field.id, { completed: !!checked });
+                          }}
+                        />
+                      )}
+                    />
+                     <Controller
+                      name={`subTasks.${index}.title`}
+                      control={form.control}
+                      render={({ field: inputField }) => (
+                        <Input
+                          {...inputField}
+                          onBlur={(e) => {
+                            inputField.onBlur();
+                            updateSubTask(task.id, field.id, { title: e.target.value });
+                          }}
+                          className={cn(form.getValues(`subTasks.${index}.completed`) && "line-through text-muted-foreground")}
+                        />
+                      )}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive"
+                      onClick={() => {
+                        remove(index);
+                        deleteSubTask(task.id, field.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" className="w-full" onClick={handleAddNewSubtask}>
+                  <Plus className="mr-2 h-4 w-4" /> Añadir Sub-tarea
+                </Button>
+              </div>
+            </div>
           
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
