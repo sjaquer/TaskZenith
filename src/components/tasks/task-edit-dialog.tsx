@@ -242,7 +242,7 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                             value={String(field.value ? new Date(field.value).getHours() % 12 || 12 : '12')}
                             onValueChange={(value) => handleDateTimeChange(value, field, 'hour')}
                          >
-                            <SelectTrigger className="w-20">
+                            <SelectTrigger className="w-auto flex-1">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -254,7 +254,7 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                             value={String(field.value ? new Date(field.value).getMinutes() : '0').padStart(2, '0')}
                             onValueChange={(value) => handleDateTimeChange(value, field, 'minute')}
                         >
-                            <SelectTrigger className="w-20">
+                            <SelectTrigger className="w-auto flex-1">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -265,7 +265,7 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                             value={field.value && new Date(field.value).getHours() >= 12 ? 'PM' : 'AM'}
                             onValueChange={(value) => handleDateTimeChange(value, field, 'ampm')}
                         >
-                            <SelectTrigger className="w-24">
+                            <SelectTrigger className="w-auto flex-1">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
