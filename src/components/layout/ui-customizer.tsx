@@ -12,7 +12,7 @@ import {
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
-import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, Sparkles, Mic, Calendar } from 'lucide-react';
+import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, Sparkles, Mic, Calendar, Flame } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 
@@ -54,6 +54,7 @@ function hexToHSL(hex: string): { h: number, s: number, l: number } | null {
 
 const layoutOptions: { key: keyof ReturnType<typeof useTheme>['layoutConfig']; label: string, icon: React.ElementType }[] = [
     { key: 'showStats', label: 'Tarjetas de Estadísticas', icon: LayoutTemplate },
+    { key: 'showStreakCard', label: 'Mostrar Tarjeta de Racha', icon: Flame },
     { key: 'showDailyFocus', label: 'Foco del Día (IA)', icon: Sparkles },
     { key: 'showDailyTasks', label: 'Tareas Diarias', icon: LayoutTemplate },
     { key: 'showTodoList', label: 'Lista de Tareas Principal', icon: LayoutTemplate },

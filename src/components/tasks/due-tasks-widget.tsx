@@ -5,21 +5,26 @@ import { useTasks } from '@/contexts/task-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Clock, CalendarCheck2, Info } from 'lucide-react';
 import type { Task } from '@/lib/types';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNowStrict } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 function useRelativeTime(date: Date | null) {
     const [relativeTime, setRelativeTime] = useState('');
   
     useEffect(() => {
-      if (!date) return;
+      if (!date) {
+        setRelativeTime('');
+        return;
+      };
   
       const updateRelativeTime = () => {
-        setRelativeTime(formatDistanceToNow(date, { addSuffix: true, locale: es }));
+        const now = new Date();
+        const prefix = now > date ? 'Venció' : 'Vence';
+        setRelativeTime(`${prefix} ${formatDistanceToNowStrict(date, { addSuffix: true, locale: es })}`);
       };
   
       updateRelativeTime();
-      const intervalId = setInterval(updateRelativeTime, 60000); // Actualiza cada minuto
+      const intervalId = setInterval(updateRelativeTime, 1000); // Actualiza cada segundo
   
       return () => clearInterval(intervalId);
     }, [date]);

@@ -22,6 +22,7 @@ type LayoutConfig = {
     enableDueDates: boolean;
     showPriorityTasks: boolean;
     showVoiceButton: boolean;
+    showStreakCard: boolean;
 }
 
 type PredefinedTheme = {
@@ -58,6 +59,7 @@ const defaultLayout: LayoutConfig = {
     enableDueDates: true,
     showPriorityTasks: true,
     showVoiceButton: true,
+    showStreakCard: true,
 };
 
 export const predefinedThemes: PredefinedTheme[] = [

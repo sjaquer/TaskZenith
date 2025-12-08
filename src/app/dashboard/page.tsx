@@ -8,7 +8,6 @@ import { RefreshCw, Palette } from 'lucide-react';
 import { TaskStatsCards } from '@/components/tasks/task-stats-cards';
 import { useTheme } from '@/contexts/theme-context';
 import { DueTasksWidget } from '@/components/tasks/due-tasks-widget';
-import { HighPriorityTasksWidget } from '@/components/tasks/high-priority-tasks-widget';
 import { TodoList } from '@/components/tasks/todo-list';
 import { KanbanBoard } from '@/components/tasks/kanban-board';
 import { TaskHistory } from '@/components/tasks/task-history';
@@ -16,6 +15,7 @@ import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import { DailyFocusWidget } from '@/components/tasks/daily-focus-widget';
 import { ScheduleView } from '@/components/tasks/schedule-view';
+import { StreakCard } from '@/components/tasks/streak-card';
 
 function SyncButton() {
   const { syncData, isSyncing } = useTasks();
@@ -84,14 +84,15 @@ function DashboardPage() {
                   <h2 className="text-2xl font-bold tracking-tight uppercase text-primary/80">
                       Panel Principal
                   </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <TaskStatsCards />
+                      {layoutConfig.showStreakCard && <StreakCard />}
                   </div>
                 </>
               )}
               {layoutConfig.showDailyFocus && <DailyFocusWidget />}
               {layoutConfig.enableDueDates && <DueTasksWidget />}
-              {layoutConfig.showPriorityTasks && <HighPriorityTasksWidget />}
+              {layoutConfig.showPriorityTasks && <DueTasksWidget />}
           </div>
 
           <div className="lg:col-span-1 space-y-6">
