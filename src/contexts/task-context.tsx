@@ -45,7 +45,7 @@ interface TaskContextType {
   deleteCompletedTasks: () => void;
   syncData: () => Promise<void>;
   clearLocalData: () => void;
-  addSubTask: (taskId: string, subTaskTitle: string) => void;
+  addSubTask: (taskId: string, subTaskTitle: string) => SubTask | undefined;
   updateSubTask: (taskId: string, subTaskId: string, data: Partial<Omit<SubTask, 'id'>>) => void;
   deleteSubTask: (taskId: string, subTaskId: string) => void;
 }
@@ -298,17 +298,25 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const sanitizeTaskUpdate = (data: Partial<Omit<Task, 'id' | 'userId'>>) => {
+    return Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== undefined)
+    ) as Partial<Omit<Task, 'id' | 'userId'>>;
+  };
+
   const updateTask = async (taskId: string, data: Partial<Omit<Task, 'id' | 'userId'>>) => {
     if (!userId) return;
     const { tasksCollection } = getCollections();
     const originalTasks = [...tasks];
+    const sanitizedData = sanitizeTaskUpdate(data);
+
     setTasks((prev) =>
-      prev.map((task) => (task.id === taskId ? { ...task, ...data } as Task : task))
+      prev.map((task) => (task.id === taskId ? { ...task, ...sanitizedData } as Task : task))
     );
   
     try {
       const taskRef = doc(tasksCollection, taskId);
-      await updateDoc(taskRef, data as any);
+      await updateDoc(taskRef, sanitizedData as any);
     } catch (error) {
       console.error('Error updating task: ', error);
       setTasks(originalTasks);
@@ -393,12 +401,23 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       ) || [];
       
       const allSubTasksCompleted = updatedSubTasks.every(st => st.completed);
+      const anySubTaskCompleted = updatedSubTasks.some(st => st.completed);
+      const nextStatus: KanbanStatus = allSubTasksCompleted
+        ? 'Finalizado'
+        : anySubTaskCompleted
+          ? 'En Progreso'
+          : 'Pendiente';
 
       if (allSubTasksCompleted) {
         updateStreak();
       }
       
-      updateTask(taskId, { subTasks: updatedSubTasks, completed: allSubTasksCompleted, completedAt: allSubTasksCompleted ? new Date() : null });
+      updateTask(taskId, { 
+        subTasks: updatedSubTasks, 
+        completed: allSubTasksCompleted, 
+        completedAt: allSubTasksCompleted ? new Date() : null,
+        status: nextStatus,
+      });
   
     } else {
       // Toggle the main task
@@ -467,7 +486,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addSubTask = (taskId: string, subTaskTitle: string) => {
+  const addSubTask = (taskId: string, subTaskTitle: string): SubTask | undefined => {
     const taskToUpdate = tasks.find(t => t.id === taskId);
     if (!taskToUpdate) return;
   
@@ -479,6 +498,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   
     const newSubTasks = [...(taskToUpdate.subTasks || []), newSubTask];
     updateTask(taskId, { subTasks: newSubTasks });
+    return newSubTask;
   };
   
   const updateSubTask = (taskId: string, subTaskId: string, data: Partial<Omit<SubTask, 'id'>>) => {

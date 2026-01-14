@@ -5,7 +5,7 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useTasks } from '@/contexts/task-context';
-import type { Task, Category, Priority, SubTask } from '@/lib/types';
+import type { Task, Category, Priority } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -143,15 +143,10 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
   };
 
   const handleAddNewSubtask = () => {
-    const newSubtask: SubTask = {
-      id: `sub-${Date.now()}`,
-      title: 'Nueva sub-tarea',
-      completed: false
-    };
-    // Append to form state
-    append(newSubtask);
-    // Persist in context
-    addSubTask(task.id, newSubtask.title);
+    const created = addSubTask(task.id, 'Nueva sub-tarea');
+    if (created) {
+      append(created);
+    }
   }
   
 

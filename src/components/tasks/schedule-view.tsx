@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { TodoList } from './todo-list'; 
 import { PlusCircle } from 'lucide-react';
+import type { DayContentProps } from 'react-day-picker';
 
 
 const priorityColors: Record<Priority, string> = {
@@ -26,25 +27,14 @@ const priorityColors: Record<Priority, string> = {
   baja: 'bg-green-500',
 };
 
-function DayWithTasks({
-  date,
-  tasks,
-  onDayClick,
-}: {
-  date: Date;
-  tasks: Task[];
-  onDayClick: (date: Date) => void;
-}) {
+function TaskDayContent({ date, tasks }: { date: Date; tasks: Task[] }) {
   const tasksForDay = tasks.filter((task) => task.dueDate && isSameDay(task.dueDate, date));
 
   return (
-    <button
-      className="relative flex flex-col h-full w-full p-1.5 focus:z-10 focus:ring-2 focus:ring-ring focus:rounded-sm focus:outline-none"
-      onClick={() => onDayClick(date)}
-    >
+    <div className="flex h-full w-full flex-col items-start p-1.5">
       <span className="font-medium text-sm self-start">{format(date, 'd')}</span>
       {tasksForDay.length > 0 && (
-        <div className="flex-1 flex flex-wrap items-end gap-1 mt-1">
+        <div className="mt-1 flex flex-1 flex-wrap items-end gap-1">
           {tasksForDay.slice(0, 3).map((task) => (
             <div
               key={task.id}
@@ -53,11 +43,11 @@ function DayWithTasks({
             />
           ))}
           {tasksForDay.length > 3 && (
-            <span className="text-xs text-muted-foreground font-bold">+{tasksForDay.length - 3}</span>
+            <span className="text-xs font-bold text-muted-foreground">+{tasksForDay.length - 3}</span>
           )}
         </div>
       )}
-    </button>
+    </div>
   );
 }
 
@@ -289,36 +279,34 @@ export function ScheduleView() {
             </CardHeader>
             <CardContent>
                 <Calendar
-                mode="single"
-                month={currentMonth}
-                onMonthChange={setCurrentMonth}
-                className="p-0"
-                classNames={{
-                    months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
-                    month: 'space-y-4 w-full',
-                    table: 'w-full border-collapse space-y-1',
-                    head_row: 'flex',
-                    head_cell: 'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
-                    row: 'flex w-full mt-2',
-                    cell: 'h-24 w-full text-left p-0 relative',
-                    day: cn(
-                        buttonVariants({ variant: "ghost" }),
-                        "h-full w-full p-0 font-normal aria-selected:opacity-100 flex flex-col items-start"
-                      ),
-                    day_selected:
-                      "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                    day_today: "bg-accent text-accent-foreground",
-                    day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground",
-                }}
-                components={{
-                    Day: ({ date }) => (
-                    <DayWithTasks
-                        date={date}
-                        tasks={filteredTasks}
-                        onDayClick={handleDayClick}
-                    />
+                  mode="single"
+                  month={currentMonth}
+                  selected={modalDate ?? undefined}
+                  onSelect={(day) => day && handleDayClick(day)}
+                  onMonthChange={setCurrentMonth}
+                  className="p-0"
+                  classNames={{
+                      months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
+                      month: 'space-y-4 w-full',
+                      table: 'w-full border-collapse space-y-1',
+                      head_row: 'flex',
+                      head_cell: 'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
+                      row: 'flex w-full mt-2',
+                      cell: 'h-24 w-full text-left p-0 relative',
+                      day: cn(
+                          buttonVariants({ variant: "ghost" }),
+                          "h-full w-full p-0 font-normal aria-selected:opacity-100 flex flex-col items-start"
+                        ),
+                      day_selected:
+                        "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                      day_today: "bg-accent text-accent-foreground",
+                      day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground",
+                  }}
+                  components={{
+                    DayContent: (dayProps: DayContentProps) => (
+                      <TaskDayContent date={dayProps.date} tasks={filteredTasks} />
                     ),
-                }}
+                  }}
                 />
             </CardContent>
         </Card>
