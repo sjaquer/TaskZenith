@@ -18,17 +18,57 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'TaskZenith: Tu Asistente de Tareas Inteligente',
-  description: 'Gestiona tus tareas con calma y concentración. TaskZenith es un gestor de tareas inteligente que utiliza IA para ayudarte a organizar tu vida, planificar proyectos y alcanzar tus metas de productividad.',
-  keywords: ['gestor de tareas', 'productividad', 'organización', 'to-do list', 'inteligencia artificial', 'manejo de proyectos'],
+  title: 'TaskZenith - Gestión Corporativa de Tareas',
+  description: 'Plataforma avanzada de gestión de tareas corporativas con dashboard personalizable, sincronización en la nube, múltiples vistas (Kanban, Todo, Calendario) y temas personalizables. Optimizada para equipos que necesitan colaboración en tiempo real.',
+  keywords: [
+    'gestión de tareas corporativas',
+    'dashboard personalizable',
+    'kanban board',
+    'sincronización en la nube',
+    'productividad empresarial',
+    'gestión de proyectos',
+    'firebase real-time',
+    'workspace colaborativo',
+    'task management',
+    'pomodoro timer',
+    'team productivity'
+  ],
+  authors: [{ name: 'Sebastián Jaque', url: 'https://github.com/sjaquer' }],
+  creator: 'Sebastián Jaque',
+  publisher: 'TaskZenith',
   robots: {
     index: true,
     follow: true,
     googleBot: {
       index: true,
       follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
     },
   },
+  openGraph: {
+    type: 'website',
+    locale: 'es_ES',
+    url: 'https://taskzenith.app',
+    title: 'TaskZenith - Gestión Corporativa de Tareas',
+    description: 'Dashboard personalizable con sincronización en la nube para gestión de tareas empresariales',
+    siteName: 'TaskZenith',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'TaskZenith - Gestión Corporativa de Tareas',
+    description: 'Dashboard personalizable con sincronización en la nube',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+  },
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' }
+  ],
 };
 
 export default function RootLayout({
@@ -43,8 +83,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className={`${poppins.className} antialiased overflow-x-hidden`}>
-        <ThemeProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <ThemeProvider>
             <NotificationProvider>
               <ChatProvider>
                 <TaskProvider>
@@ -54,8 +94,8 @@ export default function RootLayout({
                 </TaskProvider>
               </ChatProvider>
             </NotificationProvider>
-          </AuthProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

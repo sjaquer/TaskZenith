@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://taskzenith.app/sitemap.xml
+
+# Disallow admin/internal routes
+Disallow: /api/
+Disallow: /_next/
+Disallow: /dashboard/history
+
+# Crawl-delay
+Crawl-delay: 1

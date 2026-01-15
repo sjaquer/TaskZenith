@@ -2,18 +2,17 @@
   <img src="public/logo.png" alt="TaskZenith Logo" width="140" style="border-radius: 50%;" />
 </p>
 
-# TaskZenith
+# TaskZenith - Gestión Corporativa de Tareas
 
-> **“Alcanza la calma y la productividad, una tarea a la vez.”**
+> **"Gestión colaborativa y sincronización en la nube para equipos productivos."**
 
 ---
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-15.3-black?logo=nextdotjs&logoColor=white" />
-  <img src="https://img.shields.io/badge/React-18.3-blue?logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/Next.js-15.5.9-black?logo=nextdotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-19-blue?logo=react&logoColor=white" />
   <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript&logoColor=white" />
   <img src="https://img.shields.io/badge/TailwindCSS-3.4-teal?logo=tailwindcss&logoColor=white" />
-  <img src="https://img.shields.io/badge/Genkit-1.14-orange?logo=google&logoColor=white" />
   <img src="https://img.shields.io/badge/Firebase-11.10-yellow?logo=firebase&logoColor=white" />
 </p>
 
@@ -21,34 +20,54 @@
 
 ## 🧠 Descripción General
 
-**TaskZenith** es una aplicación web de gestión de tareas y productividad, diseñada para ofrecer una experiencia de usuario tranquila y enfocada. Construida con un stack tecnológico moderno que incluye Next.js, React y Firebase, la aplicación integra inteligencia artificial a través de **Genkit (Gemini)** para ofrecer funcionalidades avanzadas como la generación de tareas a partir de descripciones y la creación de tareas mediante comandos de voz.
+**TaskZenith** es una plataforma avanzada de gestión de tareas corporativas diseñada para equipos que necesitan colaboración en tiempo real, sincronización multiplataforma y personalización completa de su espacio de trabajo.
 
-El objetivo es fusionar un diseño minimalista y elegante con herramientas potentes de organización, como listas de tareas categorizadas, un tablero Kanban y un historial de actividad.
+### Características Principales
+
+- ✅ **Dashboard Adaptativo**: Sistema de grid libre (48 columnas) con widgets redimensionables y reorganizables
+- 🔐 **Autenticación Robusta**: Códigos de acceso con roles diferenciados (Admin/Operador)
+- ☁️ **Sincronización en la Nube**: Configuración personal guardada en Firestore para acceso desde cualquier dispositivo
+- 🎨 **Temas Personalizables**: 8 paletas de colores predefinidas con guardado automático
+- 📊 **Múltiples Vistas**: Todo List, Kanban, Calendario, Historial y Estadísticas
+- ⏱️ **Pomodoro Timer**: Temporizador integrado para gestión de tiempo
+- 🔔 **Alertas Inteligentes**: Notificaciones de tareas vencidas y próximas
+- 📱 **Responsive Design**: Optimizado para escritorio, tablet y móvil
 
 ---
 
-## 🛠️ Historia del Desarrollo
+## 🛠️ Arquitectura Técnica
 
-### 🔹 Objetivo Inicial
+### Stack Tecnológico
 
-*   Crear un gestor de tareas robusto que vaya más allá de las funcionalidades básicas.
-*   Implementar una interfaz de usuario limpia, inspirada en colores lavanda y acentos suaves para promover la concentración.
-*   Integrar IA para asistir al usuario, haciendo la creación y gestión de tareas más rápida e intuitiva.
-*   Asegurar la persistencia de datos en tiempo real utilizando Firestore.
+- **Frontend**: Next.js 15.5.9 (App Router) + React 19 + TypeScript 5
+- **UI Framework**: TailwindCSS + shadcn/ui components
+- **Base de Datos**: Firebase Firestore (sincronización en tiempo real)
+- **Autenticación**: Firebase Authentication con roles personalizados
+- **Estado Global**: React Context API con persistencia en Firestore
+- **Interactividad**: Sistema drag-and-drop personalizado con detección de colisiones
 
-### 🔹 Desafíos Principales
+### Sistema de Grid Personalizable
 
-*   **Integración de IA Contextual:** Lograr que la IA (Genkit) no solo genere tareas genéricas, sino que entienda el contexto de los proyectos del usuario (descripciones, tareas existentes) para ofrecer sugerencias verdaderamente relevantes.
-*   **Gestión de Estado Compleja:** Manejar un estado global reactivo para tareas, proyectos y configuraciones de usuario a través de toda la aplicación, sincronizándolo de manera eficiente con Firestore.
-*   **Comandos de Voz:** Implementar la funcionalidad de voz a texto de manera fiable, procesando el lenguaje natural para extraer entidades (títulos, prioridades, categorías) y convertirlas en datos estructurados.
+El dashboard utiliza un sistema de grid adaptativo de **48 columnas virtuales**:
 
-### 🔹 Soluciones Adoptadas
+- **Posicionamiento fluido**: Basado en porcentajes para responsividad total
+- **Altura libre**: Definida en píxeles para máxima flexibilidad
+- **Drag & Drop**: Movimiento libre con colisiones opcionales
+- **Snap magnético**: Alineación automática cada 10px
+- **Persistencia**: Guardado automático en Firestore por usuario
 
-*   **Stack Next.js + TypeScript:** Para un rendimiento optimizado (renderizado en servidor), tipado estricto y una base de código escalable.
-*   **Tailwind CSS + ShadCN UI:** Para un desarrollo rápido de componentes UI modernos, personalizables y accesibles, manteniendo la consistencia visual.
-*   **Firebase (Firestore):** Como base de datos NoSQL en tiempo real para garantizar que los datos estén siempre sincronizados entre dispositivos.
-*   **Genkit (Google AI):** Para orquestar los flujos de inteligencia artificial, conectando la lógica de la aplicación con los modelos de Gemini de forma estructurada y mantenible.
-*   **React Context API:** Para una gestión de estado centralizada (`TaskContext`), proveyendo los datos y las funciones de manipulación a todos los componentes que los necesiten sin "prop-drilling".
+```typescript
+// Ejemplo de configuración de widget
+{
+  id: "stats",
+  x: 0,        // columna inicial (0-47)
+  y: 0,        // posición Y en píxeles
+  width: 48,   // ancho en columnas
+  height: 180, // altura en píxeles
+  minW: 16,    // ancho mínimo
+  minH: 140    // altura mínima
+}
+```
 
 ---
 
@@ -60,47 +79,56 @@ TaskZenith/
 │   └── logo.png
 ├── src/
 │   ├── app/
-│   │   ├── (rutas)/
-│   │   │   └── page.tsx
+│   │   ├── (auth)/
+│   │   │   ├── login/page.tsx
+│   │   │   └── signup/page.tsx
+│   │   ├── dashboard/
+│   │   │   ├── page.tsx          # Dashboard principal con grid
+│   │   │   ├── todo/page.tsx
+│   │   │   ├── kanban/page.tsx
+│   │   │   ├── schedule/page.tsx
+│   │   │   └── history/page.tsx
 │   │   ├── globals.css
+│   │   ├── grid-layout.css       # Estilos del grid adaptativo
 │   │   └── layout.tsx
 │   ├── components/
 │   │   ├── layout/
+│   │   │   ├── app-shell.tsx     # Sidebar + navegación
+│   │   │   └── page-wrapper.tsx
 │   │   ├── tasks/
-│   │   └── ui/ (ShadCN)
+│   │   │   ├── task-stats-cards.tsx    # Widgets responsive
+│   │   │   ├── todo-list.tsx
+│   │   │   ├── kanban-board.tsx
+│   │   │   ├── calendar-widget.tsx
+│   │   │   ├── due-tasks-widget.tsx
+│   │   │   └── pomodoro-timer.tsx
+│   │   └── ui/                   # Componentes shadcn/ui
 │   ├── contexts/
-│   │   └── task-context.tsx
+│   │   ├── auth-context.tsx      # Autenticación + roles
+│   │   ├── task-context.tsx      # Estado de tareas
+│   │   └── theme-context.tsx     # Temas + sincronización
 │   ├── hooks/
 │   │   └── use-toast.ts
 │   ├── lib/
-│   │   ├── actions.ts (Server Actions)
-│   │   ├── firebase.ts
-│   │   ├── types.ts
+│   │   ├── firebase.ts           # Configuración Firebase
+│   │   ├── types.ts              # Definiciones TypeScript
 │   │   └── utils.ts
-│   └── ai/
-│       ├── flows/
-│       │   ├── generate-tasks.ts
-│       │   └── process-voice-command.ts
-│       └── genkit.ts
+│   └── ai/                        # (Funcionalidad futura)
 ├── package.json
 ├── tailwind.config.ts
+├── next.config.ts
 └── tsconfig.json
 ```
 
 ---
 
-## 🚶‍♂️ Flujo de la Aplicación
+## 💾 Instalación y Configuración
 
-1.  **Autenticación y Carga:** Al iniciar, la aplicación carga los datos del usuario (tareas y proyectos) desde Firestore.
-2.  **Gestión de Tareas:** El usuario puede añadir, completar, eliminar y editar tareas. Todos los cambios se reflejan inmediatamente en la UI a través del `TaskContext` y se envían a Firestore para su persistencia.
-3.  **Generación con IA:**
-    *   **Basada en Texto:** El usuario describe una actividad. La descripción, junto con el contexto del proyecto seleccionado (si aplica), se envía a un `flow` de Genkit. La IA analiza el contexto y devuelve una lista de subtareas sugeridas.
-    *   **Basada en Voz:** El usuario activa el micrófono. La `Web Speech API` del navegador transcribe la voz a texto. Este texto se envía a un `flow` de Genkit especializado que interpreta el lenguaje natural, extrae las tareas con sus atributos (prioridad, categoría) y las devuelve como datos estructurados.
-4.  **Organización Kanban:** Las tareas asignadas a proyectos pueden ser visualizadas y gestionadas en un tablero Kanban con estados personalizables (Pendiente, En Progreso, etc.).
+### Requisitos Previos
 
----
-
-## 💾 Instalación y Uso
+- Node.js 18.17+ 
+- npm o yarn
+- Proyecto Firebase configurado
 
 ### 1. Clona el Repositorio
 
@@ -115,39 +143,168 @@ cd TaskZenith
 npm install
 ```
 
-### 3. Configura Firebase
+### 3. Configura Variables de Entorno
 
-Asegúrate de que las credenciales de tu proyecto de Firebase en `src/lib/firebase.ts` sean correctas.
+Crea un archivo `.env.local` en la raíz del proyecto:
 
-### 4. Ejecuta en Modo Desarrollo
+```env
+# Firebase Configuration
+NEXT_PUBLIC_FIREBASE_API_KEY=tu_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=tu_proyecto.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=tu_proyecto_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=tu_proyecto.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abcdef
+```
+
+### 4. Configura Firebase
+
+1. Ve a [Firebase Console](https://console.firebase.google.com/)
+2. Crea un nuevo proyecto o usa uno existente
+3. Habilita **Authentication** (Email/Password)
+4. Habilita **Firestore Database**
+5. Configura las reglas de seguridad de Firestore:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /tasks/{taskId} {
+      allow read, write: if request.auth != null;
+    }
+    match /projects/{projectId} {
+      allow read, write: if request.auth != null;
+    }
+    match /userPreferences/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+### 5. Ejecuta en Modo Desarrollo
 
 ```bash
 npm run dev
 ```
 
-Abre tu navegador en `http://localhost:9002` o el puerto que tengas configurado.
+Abre tu navegador en `http://localhost:3000`
 
-### 5. Genera el Build de Producción
+### 6. Build de Producción
 
 ```bash
 npm run build
+npm start
 ```
 
 ---
 
-## ✅ Uso y Personalización
+## 🎯 Códigos de Acceso
 
-*   **Estilos:** Modifica la paleta de colores y las fuentes en `src/app/globals.css` y `tailwind.config.ts`.
-*   **Lógica de IA:** Ajusta los `prompts` en los archivos dentro de `src/ai/flows/` para cambiar el comportamiento del asistente de IA.
-*   **Datos:** La gestión de datos se centraliza en `src/contexts/task-context.tsx`, que interactúa directamente con Firestore.
+La aplicación usa códigos de acceso para diferenciar roles:
+
+- **TASKZENITH-ADMIN**: Acceso de administrador (todas las funcionalidades)
+- **TASKZENITH-CORP**: Acceso de operador (funciones estándar)
+
+Estos códigos se validan en el registro (signup). Puedes modificarlos en `src/app/(auth)/signup/page.tsx`.
 
 ---
 
-## 📌 Consideraciones Técnicas
+## 🎨 Personalización
 
-*   **Optimistic UI Updates:** Para una experiencia de usuario fluida, las acciones como añadir o completar una tarea actualizan la UI instantáneamente, mientras la petición a la base de datos se resuelve en segundo plano.
-*   **Server Actions de Next.js:** Se utilizan para comunicar el cliente con los flujos de Genkit de forma segura y eficiente.
-*   **Componentes Reutilizables:** La arquitectura se basa en componentes modulares (principalmente de ShadCN) para facilitar el mantenimiento y la escalabilidad.
+### Temas
+
+El sistema incluye 8 temas predefinidos:
+
+1. **Default Dark** - Tema oscuro base
+2. **Lavanda Suave** - Tonos violetas relajantes
+3. **Bosque Neón** - Verdes brillantes
+4. **Océano Profundo** - Azules intensos
+5. **Café Caliente** - Marrones cálidos
+6. **Rojo Escarlata** - Rojos dramáticos
+7. **Menta Fresca** - Verdes agua
+8. **Atardecer Neón** - Rosas y amarillos
+
+Los temas se configuran en `src/contexts/theme-context.tsx` y se guardan automáticamente en Firestore por usuario.
+
+### Widgets del Dashboard
+
+Puedes activar/desactivar widgets desde el botón "Configuración":
+
+- **Estadísticas**: Resumen de tareas
+- **Lista de Tareas**: Gestión principal
+- **Vencimientos**: Tareas próximas
+- **Pomodoro**: Temporizador
+- **Calendario**: Vista mensual
+
+Cada widget es:
+- ✅ **Redimensionable**: Ajusta ancho y alto libremente
+- ✅ **Movible**: Arrastra a cualquier posición
+- ✅ **Responsive**: Se adapta automáticamente al tamaño de pantalla
+- ✅ **Persistente**: Tu configuración se guarda en la nube
+
+---
+
+## 🚀 Funcionalidades Avanzadas
+
+### Dashboard Adaptativo
+
+El sistema de grid permite una personalización total:
+
+```typescript
+// Modo Edición
+- Click en "Editar" para activar modo de edición
+- Arrastra widgets desde la barra de título (azul)
+- Redimensiona desde la esquina inferior derecha
+- Los cambios se guardan automáticamente en Firestore
+
+// Configuración
+- Botón "Configuración" para acceder a:
+  - Selector de temas (8 paletas)
+  - Activar/desactivar widgets
+  - Auto-ordenar (compactación vertical)
+  - Reset a configuración por defecto
+```
+
+### Sincronización Multi-Dispositivo
+
+Todas las preferencias se sincronizan automáticamente:
+
+- **Layouts del dashboard**: Posición y tamaño de cada widget
+- **Temas**: Paleta de colores seleccionada
+- **Tareas y Proyectos**: Datos completos en tiempo real
+- **Configuración de widgets**: Cuáles están activos
+
+Inicia sesión desde cualquier dispositivo y encontrarás tu espacio exactamente como lo dejaste.
+
+---
+
+## 📱 Responsive Design
+
+La aplicación se adapta completamente a diferentes tamaños de pantalla:
+
+- **Desktop (>1024px)**: Sidebar lateral fijo + grid completo
+- **Tablet (768-1024px)**: Navegación adaptada + grid optimizado
+- **Mobile (<768px)**: Bottom navigation + grid en columna única
+
+Los widgets internos también son responsive:
+- Grid adaptativo en estadísticas (2x2 en móvil, 4x1 en desktop)
+- Pomodoro con texto fluido (`clamp()`)
+- Listas con scroll vertical automático
+- Calendario con layout flexible
+
+---
+
+## 🔒 Seguridad
+
+- **Autenticación Firebase**: Sistema robusto con gestión de sesiones
+- **Roles personalizados**: Control de acceso basado en códigos
+- **Reglas Firestore**: Validación de permisos en servidor
+- **Validación de formularios**: Zod + React Hook Form
+- **Variables de entorno**: Configuración sensible protegida
 
 ---
 
@@ -160,3 +317,30 @@ Distribuido bajo la Licencia MIT. Consulta `LICENSE` para más información.
 ## 👨‍💻 Autor
 
 Desarrollado por **Sebastián Jaque**
+
+- GitHub: [@sjaquer](https://github.com/sjaquer)
+- Proyecto: [TaskZenith](https://github.com/sjaquer/TaskZenith)
+
+---
+
+## 🤝 Contribuciones
+
+Las contribuciones son bienvenidas. Para cambios importantes:
+
+1. Fork el proyecto
+2. Crea una rama (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+---
+
+## 📮 Soporte
+
+Si encuentras algún problema o tienes sugerencias, abre un [issue](https://github.com/sjaquer/TaskZenith/issues).
+
+---
+
+<p align="center">
+  Hecho con ❤️ usando Next.js, React y Firebase
+</p>

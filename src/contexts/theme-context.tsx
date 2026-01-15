@@ -2,6 +2,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useAuth } from './auth-context';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 type ColorTheme = {
   background: string;
@@ -79,44 +82,67 @@ const applyTheme = (theme: ColorTheme) => {
 };
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
   const [theme, setThemeState] = useState<ColorTheme>(defaultTheme);
   const [layoutConfig, setLayoutConfigState] = useState<LayoutConfig>(defaultLayout);
   const [isCustomizerOpen, setCustomizerOpen] = useState(false);
 
+  // Load theme from Firestore
   useEffect(() => {
-    const savedTheme = localStorage.getItem('taskzenith-theme');
-    const savedLayout = localStorage.getItem('taskzenith-layout');
-    
-    let initialTheme = defaultTheme;
-    if (savedTheme) {
-      try {
-        initialTheme = JSON.parse(savedTheme);
-      } catch (e) {
-        console.error("Failed to parse theme from localStorage", e);
+    const loadTheme = async () => {
+      if (!user?.uid) {
+        // Si no hay usuario, cargar desde localStorage como fallback
+        const savedTheme = localStorage.getItem('taskzenith-theme');
+        if (savedTheme) {
+          try {
+            const parsedTheme = JSON.parse(savedTheme);
+            setThemeState(parsedTheme);
+            applyTheme(parsedTheme);
+          } catch (e) {
+            console.error("Failed to parse theme from localStorage", e);
+          }
+        } else {
+          applyTheme(defaultTheme);
+        }
+        return;
       }
-    }
-    setThemeState(initialTheme);
-    applyTheme(initialTheme);
 
-    if (savedLayout) {
       try {
-        const parsedLayout = JSON.parse(savedLayout);
-        // Ensure all keys are present, falling back to default if not
-        const mergedLayout = { ...defaultLayout, ...parsedLayout };
-        setLayoutConfigState(mergedLayout);
-      } catch(e) {
-        console.error("Failed to parse layout from localStorage", e);
-        setLayoutConfigState(defaultLayout);
+        const docRef = doc(db, 'userPreferences', user.uid);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists() && docSnap.data().theme) {
+          const loadedTheme = docSnap.data().theme;
+          setThemeState(loadedTheme);
+          applyTheme(loadedTheme);
+        } else {
+          applyTheme(defaultTheme);
+        }
+      } catch (error) {
+        console.error('Error loading theme:', error);
+        applyTheme(defaultTheme);
+      }
+    };
+
+    loadTheme();
+  }, [user?.uid]);
+
+  const setTheme = async (newTheme: ColorTheme) => {
+    setThemeState(newTheme);
+    applyTheme(newTheme);
+    
+    // Guardar en Firestore si hay usuario
+    if (user?.uid) {
+      try {
+        const docRef = doc(db, 'userPreferences', user.uid);
+        await setDoc(docRef, { theme: newTheme }, { merge: true });
+      } catch (error) {
+        console.error('Error saving theme:', error);
       }
     } else {
-      setLayoutConfigState(defaultLayout);
+      // Fallback a localStorage si no hay usuario
+      localStorage.setItem('taskzenith-theme', JSON.stringify(newTheme));
     }
-  }, []);
-
-  const setTheme = (newTheme: ColorTheme) => {
-    setThemeState(newTheme);
-    localStorage.setItem('taskzenith-theme', JSON.stringify(newTheme));
-    applyTheme(newTheme);
   };
   
   const setLayoutConfig = (newConfig: LayoutConfig) => {

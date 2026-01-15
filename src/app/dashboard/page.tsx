@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { useTasks } from '@/contexts/task-context';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { TaskStatsCards } from '@/components/tasks/task-stats-cards';
 import { DueTasksWidget } from '@/components/tasks/due-tasks-widget';
 import { TodoList } from '@/components/tasks/todo-list';
@@ -30,6 +32,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { useTheme, predefinedThemes } from '@/contexts/theme-context';
+import { Palette, Monitor } from 'lucide-react';
 
 // Configuración del Grid Adaptativo
 const GRID_COLS = 48; // Grid mucho más fino para mayor libertad de movimiento
@@ -155,9 +159,10 @@ function compactLayoutsVertically(layouts: WidgetLayout[], containerWidth: numbe
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth(); // Used in header or for future use
+  const { user } = useAuth();
   const { syncData, isSyncing } = useTasks();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleSync = async () => {
@@ -199,27 +204,50 @@ export default function DashboardPage() {
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Init
+  // Init - Load from Firestore or fallback to default
   useEffect(() => {
     setMounted(true);
-    const savedLayouts = localStorage.getItem(STORAGE_KEY);
-    if (savedLayouts) {
+    const loadLayouts = async () => {
+      if (!user?.uid) {
+        resetLayout();
+        return;
+      }
+      
       try {
-        setLayouts(JSON.parse(savedLayouts));
-      } catch {
+        const docRef = doc(db, 'userPreferences', user.uid);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists() && docSnap.data().dashboardLayouts) {
+          setLayouts(docSnap.data().dashboardLayouts);
+        } else {
+          resetLayout();
+        }
+      } catch (error) {
+        console.error('Error loading dashboard layouts:', error);
         resetLayout();
       }
-    } else {
-      resetLayout();
-    }
-  }, []);
+    };
+    
+    loadLayouts();
+  }, [user?.uid]);
 
-  // Save
+  // Save to Firestore
   useEffect(() => {
-    if (mounted && layouts.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(layouts));
+    if (mounted && layouts.length > 0 && user?.uid) {
+      const saveLayouts = async () => {
+        try {
+          const docRef = doc(db, 'userPreferences', user.uid);
+          await setDoc(docRef, { dashboardLayouts: layouts }, { merge: true });
+        } catch (error) {
+          console.error('Error saving dashboard layouts:', error);
+        }
+      };
+      
+      // Debounce para no guardar en cada pequeño cambio
+      const timeoutId = setTimeout(saveLayouts, 1000);
+      return () => clearTimeout(timeoutId);
     }
-  }, [layouts, mounted]);
+  }, [layouts, mounted, user?.uid]);
 
   const resetLayout = () => {
     const defaultLayouts = Object.entries(WIDGETS).map(([id, config]) => ({
@@ -381,49 +409,101 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center space-x-2">
+            {/* Panel de Configuración Completo */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={isEditMode ? "animate-pulse border-primary" : ""}>
-                  <LayoutGrid className="mr-2 h-4 w-4" />
-                  Widgets
+                <Button variant="outline" size="sm">
+                  <Settings2 className="mr-2 h-4 w-4" />
+                  Configuración
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80" align="end">
+              <PopoverContent className="w-96" align="end">
                 <div className="grid gap-4">
                   <div className="space-y-2">
-                    <h4 className="font-medium leading-none">Configurar Widgets</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Activa o desactiva elementos del tablero
+                    <h4 className="font-medium leading-none flex items-center gap-2">
+                      <Monitor className="h-4 w-4" />
+                      Personalización del Espacio
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      Configura widgets, temas y apariencia
                     </p>
                   </div>
                   <Separator />
-                  <ScrollArea className="h-[200px] pr-4">
-                    <div className="grid gap-4">
-                      {Object.entries(WIDGETS).map(([id, config]) => {
-                        const isActive = layouts.some(l => l.id === id);
-                        return (
-                          <div key={id} className="flex items-start space-x-3 space-y-0">
-                            <Checkbox 
-                              id={`widget-${id}`} 
-                              checked={isActive}
-                              onCheckedChange={(c) => handleToggleWidget(id, c as boolean)}
-                            />
-                            <div className="grid gap-1.5 leading-none">
-                              <Label
-                                htmlFor={`widget-${id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                              >
-                                {config.title}
-                              </Label>
-                              <p className="text-xs text-muted-foreground">
-                                {config.description}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
+                  
+                  {/* Sección de Temas */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Palette className="h-4 w-4 text-primary" />
+                      <h5 className="text-sm font-semibold">Paleta de Colores</h5>
                     </div>
-                  </ScrollArea>
+                    <ScrollArea className="h-[180px] pr-3">
+                      <div className="grid gap-2">
+                        {predefinedThemes.map((themeOption, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setTheme(themeOption.colors)}
+                            className={`
+                              w-full p-3 rounded-lg border-2 transition-all text-left hover:scale-[1.02]
+                              ${JSON.stringify(theme) === JSON.stringify(themeOption.colors)
+                                ? 'border-primary bg-primary/10 shadow-md' 
+                                : 'border-border hover:border-primary/50 bg-secondary/20'
+                              }
+                            `}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-sm">{themeOption.name}</span>
+                              <div className="flex gap-1">
+                                {[themeOption.colors.primary, themeOption.colors.accent, themeOption.colors.card].map((color, i) => (
+                                  <div
+                                    key={i}
+                                    className="w-4 h-4 rounded-full border"
+                                    style={{ backgroundColor: `hsl(${color})` }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                  
+                  <Separator />
+                  
+                  {/* Sección de Widgets */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <LayoutGrid className="h-4 w-4 text-primary" />
+                      <h5 className="text-sm font-semibold">Widgets Activos</h5>
+                    </div>
+                    <ScrollArea className="h-[140px] pr-3">
+                      <div className="grid gap-3">
+                        {Object.entries(WIDGETS).map(([id, config]) => {
+                          const isActive = layouts.some(l => l.id === id);
+                          return (
+                            <div key={id} className="flex items-start space-x-3">
+                              <Checkbox 
+                                id={`widget-${id}`} 
+                                checked={isActive}
+                                onCheckedChange={(c) => handleToggleWidget(id, c as boolean)}
+                              />
+                              <div className="grid gap-1 leading-none flex-1">
+                                <Label
+                                  htmlFor={`widget-${id}`}
+                                  className="text-sm font-medium cursor-pointer"
+                                >
+                                  {config.title}
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                  {config.description}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+                  </div>
                 </div>
               </PopoverContent>
             </Popover>
