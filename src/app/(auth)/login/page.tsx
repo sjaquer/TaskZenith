@@ -65,13 +65,15 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background to-blue-950/20 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-            <div className="flex justify-center items-center gap-2 mb-2">
-                <Image src="/logo.png" alt="TaskZenith Logo" width={32} height={32} />
-                <CardTitle className="text-3xl">TaskZenith</CardTitle>
+      <Card className="w-full max-w-md shadow-2xl border-primary/20 bg-card/95 backdrop-blur-sm">
+        <CardHeader className="text-center space-y-1">
+            <div className="w-16 h-16 relative mx-auto mb-2">
+                <Image src="/logo.png" alt="TaskZenith Logo" fill className="object-contain" />
             </div>
-          <CardDescription>Inicia sesión para continuar con tus tareas</CardDescription>
+            <CardTitle className="text-2xl font-bold font-headline">TaskZenith</CardTitle>
+            <CardDescription className="text-base">
+                Inicia sesión para acceder a tu espacio de trabajo
+            </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -83,7 +85,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Correo Electrónico</FormLabel>
                     <FormControl>
-                      <Input placeholder="tu@email.com" {...field} />
+                      <Input placeholder="nombre@empresa.com" {...field} className="bg-background/50" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -97,14 +99,14 @@ export default function LoginPage() {
                     <FormLabel>Contraseña</FormLabel>
                     <div className="relative">
                       <FormControl>
-                        <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} />
+                        <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} className="bg-background/50 pr-10" />
                       </FormControl>
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
                       >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                     <FormMessage />
@@ -115,7 +117,7 @@ export default function LoginPage() {
                 control={form.control}
                 name="rememberMe"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                     <FormControl>
                       <Checkbox
                         checked={field.value}
@@ -123,26 +125,29 @@ export default function LoginPage() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Recordar contraseña
+                      <FormLabel className="font-normal cursor-pointer">
+                        Mantener sesión iniciada
                       </FormLabel>
                     </div>
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full text-lg mt-2" disabled={isLoading}>
                 {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
               </Button>
             </form>
           </Form>
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            ¿No tienes una cuenta?{' '}
-            <Link href="/signup" className="text-primary hover:underline">
-              Regístrate
+          <div className="mt-6 text-center text-sm">
+             <span className="text-muted-foreground">¿Eres nuevo aquí? </span>
+            <Link href="/signup" className="text-primary hover:underline font-medium">
+              Crear cuenta con código
             </Link>
-          </p>
+          </div>
         </CardContent>
       </Card>
+      <div className="absolute bottom-4 text-xs text-muted-foreground opacity-50">
+        TaskZenith Corporate v2.0
+      </div>
     </div>
   );
 }

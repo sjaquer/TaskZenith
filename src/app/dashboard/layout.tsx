@@ -4,7 +4,6 @@
 import { AppShell } from '@/components/layout/app-shell';
 import { UICustomizer } from '@/components/layout/ui-customizer';
 import withAuth from '@/components/auth/withAuth';
-import { VoiceTaskGenerator } from '@/components/tasks/voice-task-generator';
 import { useTheme } from '@/contexts/theme-context';
 
 function DashboardLayout({
@@ -19,7 +18,6 @@ function DashboardLayout({
       <div className="flex-1">
         {children}
       </div>
-      {layoutConfig.showVoiceButton && <VoiceTaskGenerator />}
       <UICustomizer />
     </AppShell>
   );

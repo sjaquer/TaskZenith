@@ -12,7 +12,7 @@ import {
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
-import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, Sparkles, Mic, Calendar, Flame } from 'lucide-react';
+import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, Sparkles, Mic, Calendar, Flame, Timer, CheckSquare, BarChart3 } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 
@@ -53,17 +53,13 @@ function hexToHSL(hex: string): { h: number, s: number, l: number } | null {
 }
 
 const layoutOptions: { key: keyof ReturnType<typeof useTheme>['layoutConfig']; label: string, icon: React.ElementType }[] = [
-    { key: 'showStats', label: 'Tarjetas de Estadísticas', icon: LayoutTemplate },
-    { key: 'showStreakCard', label: 'Mostrar Tarjeta de Racha', icon: Flame },
-    { key: 'showDailyFocus', label: 'Foco del Día (IA)', icon: Sparkles },
-    { key: 'showDailyTasks', label: 'Tareas Diarias', icon: LayoutTemplate },
-    { key: 'showTodoList', label: 'Lista de Tareas Principal', icon: LayoutTemplate },
-    { key: 'showKanban', label: 'Tablero Kanban', icon: LayoutTemplate },
-    { key: 'showHistory', label: 'Historial de Tareas', icon: LayoutTemplate },
-    { key: 'showSchedule', label: 'Cronograma', icon: Calendar },
-    { key: 'enableDueDates', label: 'Habilitar Fechas de Vencimiento', icon: CalendarClock },
-    { key: 'showPriorityTasks', label: 'Mostrar Tareas Prioritarias', icon: AlertOctagon },
-    { key: 'showVoiceButton', label: 'Mostrar Botón de Voz', icon: Mic },
+    { key: 'showStats', label: 'Estadísticas', icon: BarChart3 },
+    { key: 'showTodoList', label: 'Lista de Tareas', icon: CheckSquare },
+    { key: 'showPomodoro', label: 'Temporizador Pomodoro', icon: Timer },
+    { key: 'showCalendar', label: 'Calendario', icon: Calendar },
+    { key: 'showDueTasks', label: 'Vencimientos', icon: CalendarClock },
+    { key: 'showKanban', label: 'Acceso a Tablero Kanban', icon: LayoutTemplate },
+    { key: 'showHistory', label: 'Acceso a Historial', icon: LayoutTemplate },
 ];
 
 export function UICustomizer() {
@@ -156,7 +152,7 @@ export function UICustomizer() {
                                 </Label>
                                 <Switch
                                     id={`layout-${key}`}
-                                    checked={layoutConfig[key]}
+                                    checked={typeof layoutConfig[key] === 'boolean' ? layoutConfig[key] : false}
                                     onCheckedChange={(checked) => handleLayoutChange(key, checked)}
                                 />
                             </div>

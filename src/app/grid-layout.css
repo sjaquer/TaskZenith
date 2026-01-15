@@ -1,0 +1,109 @@
+/* React Grid Layout Styles */
+.react-grid-layout {
+  position: relative;
+  transition: height 200ms ease;
+}
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top;
+}
+.react-grid-item img {
+  pointer-events: none;
+  user-select: none;
+}
+.react-grid-item.cssTransforms {
+  transition-property: transform;
+}
+.react-grid-item.resizing {
+  z-index: 100 !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+.react-grid-item.react-grid-placeholder {
+  background: rgba(128, 128, 128, 0.2) !important;
+  border-radius: 8px;
+  opacity: 0.5;
+  z-index: 2;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+.react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  z-index: 10;
+}
+.react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 5px;
+  height: 5px;
+  border-right: 2px solid rgba(0, 0, 0, 0.4);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.4);
+}
+.dark .react-resizable-handle::after {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Grid visualization for Bento Dashboard (20x20) */
+.dashboard-grid-visible {
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent calc((40px + 12px) - 1px),
+      rgba(59, 130, 246, 0.25) calc((40px + 12px) - 1px),
+      rgba(59, 130, 246, 0.25) calc(40px + 12px)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent calc((40px + 12px) - 1px),
+      rgba(59, 130, 246, 0.25) calc((40px + 12px) - 1px),
+      rgba(59, 130, 246, 0.25) calc(40px + 12px)
+    );
+  background-size: calc(40px + 12px) 100%, 100% calc(40px + 12px);
+  background-position: 12px 12px;
+}
+
+/* Custom scrollbar for widgets */
+.dashboard-grid-visible ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dashboard-grid-visible ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-grid-visible ::-webkit-scrollbar-thumb {
+  background: rgba(100, 100, 100, 0.3);
+  border-radius: 3px;
+}
+
+.dashboard-grid-visible ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 100, 100, 0.5);
+}
+
+/* Highlight active dragging */
+.react-grid-item.react-draggable-dragging {
+  z-index: 999 !important;
+  opacity: 0.9;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Better placeholder visibility */
+.react-grid-item.react-grid-placeholder {
+  background: rgba(59, 130, 246, 0.3) !important;
+  border: 2px dashed rgba(59, 130, 246, 0.6) !important;
+  border-radius: 8px;
+  opacity: 1 !important;
+  z-index: 2;
+}

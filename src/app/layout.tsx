@@ -1,11 +1,16 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
+import './grid-layout.css';
 import { TaskProvider } from '@/contexts/task-context';
 import { Toaster } from '@/components/ui/toaster';
 import { Poppins } from 'next/font/google';
 import { ThemeProvider } from '@/contexts/theme-context';
 import { AuthProvider } from '@/contexts/auth-context';
+
+import { NotificationProvider } from '@/contexts/notification-context';
+import { ChatProvider } from '@/contexts/chat-context';
+import { ChatWidget } from '@/components/chat/chat-widget';
 
 const poppins = Poppins({ 
   subsets: ['latin'],
@@ -40,10 +45,15 @@ export default function RootLayout({
       <body className={`${poppins.className} antialiased overflow-x-hidden`}>
         <ThemeProvider>
           <AuthProvider>
-            <TaskProvider>
-                {children}
-                <Toaster />
-            </TaskProvider>
+            <NotificationProvider>
+              <ChatProvider>
+                <TaskProvider>
+                    {children}
+                    <ChatWidget />
+                    <Toaster />
+                </TaskProvider>
+              </ChatProvider>
+            </NotificationProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

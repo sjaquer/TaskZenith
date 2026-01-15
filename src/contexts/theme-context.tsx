@@ -13,16 +13,13 @@ type ColorTheme = {
 
 type LayoutConfig = {
     showStats: boolean;
-    showDailyFocus: boolean;
-    showDailyTasks: boolean;
     showTodoList: boolean;
     showKanban: boolean;
     showHistory: boolean;
-    showSchedule: boolean;
-    enableDueDates: boolean;
-    showPriorityTasks: boolean;
-    showVoiceButton: boolean;
-    showStreakCard: boolean;
+    showCalendar: boolean;
+    showDueTasks: boolean;
+    showPomodoro: boolean;
+    widgetOrder: string[]; // Array of widget keys
 }
 
 type PredefinedTheme = {
@@ -50,16 +47,13 @@ const defaultTheme: ColorTheme = {
 
 const defaultLayout: LayoutConfig = {
     showStats: true,
-    showDailyFocus: true,
-    showDailyTasks: true,
     showTodoList: true,
     showKanban: true,
     showHistory: true,
-    showSchedule: true,
-    enableDueDates: true,
-    showPriorityTasks: true,
-    showVoiceButton: true,
-    showStreakCard: true,
+    showCalendar: true,
+    showDueTasks: true,
+    showPomodoro: true,
+    widgetOrder: ['stats', 'pomodoro', 'due', 'calendar', 'todo'],
 };
 
 export const predefinedThemes: PredefinedTheme[] = [

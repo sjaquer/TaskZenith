@@ -1,55 +1,50 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useTasks } from '@/contexts/task-context';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Clock, CalendarCheck2, Info } from 'lucide-react';
+import { AlertTriangle, Clock, CalendarCheck } from 'lucide-react';
 import type { Task } from '@/lib/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 
 function useRelativeTime(date: Date | null) {
-    const [relativeTime, setRelativeTime] = useState('');
-  
-    useEffect(() => {
-      if (!date) {
-        setRelativeTime('');
-        return;
-      };
-  
-      const updateRelativeTime = () => {
-        const now = new Date();
-        const prefix = now > date ? 'Venció' : 'Vence';
-        setRelativeTime(`${prefix} ${formatDistanceToNowStrict(date, { addSuffix: true, locale: es })}`);
-      };
-  
-      updateRelativeTime();
-      const intervalId = setInterval(updateRelativeTime, 1000); // Actualiza cada segundo
-  
-      return () => clearInterval(intervalId);
-    }, [date]);
-  
-    return relativeTime;
+    if (!date) return '';
+    const now = new Date();
+    const isPast = now > date;
+    const distance = formatDistanceToNowStrict(date, { addSuffix: true, locale: es });
+    return isPast ? `Venció ${distance}` : `Vence ${distance}`;
 }
 
 function DueTaskItem({ task }: { task: Task }) {
     const { getProjectById } = useTasks();
     const relativeTime = useRelativeTime(task.dueDate ? new Date(task.dueDate) : null);
     const project = task.projectId ? getProjectById(task.projectId) : null;
+    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
   
     return (
-      <div className="flex items-start justify-between p-3 rounded-lg hover:bg-secondary/60 transition-colors">
-        <div className="flex-1">
-          <p className="font-medium text-sm">{task.title}</p>
-          <p className="text-xs text-muted-foreground capitalize">
-            {project ? project.name : task.category}
-          </p>
+      <div className={`
+        flex flex-col sm:flex-row sm:items-center justify-between p-2.5 rounded-md mb-2 border transition-colors
+        ${isOverdue ? 'bg-destructive/5 border-destructive/20 hover:bg-destructive/10' : 'bg-background border-border hover:bg-secondary/50'}
+      `}>
+        <div className="flex-1 min-w-0 pr-2">
+          <div className="flex items-center gap-2 mb-1">
+             <span className={`font-medium text-sm truncate ${isOverdue ? 'text-destructive' : 'text-foreground'}`}>
+                {task.title}
+             </span>
+             {isOverdue && <AlertTriangle className="w-3 h-3 text-destructive shrink-0" />}
+          </div>
+          <div className="flex gap-2">
+            <Badge variant="outline" className="text-[10px] h-5 px-1 truncate max-w-[100px]">
+                {project ? project.name : (task.category || 'Sin categoría')}
+            </Badge>
+          </div>
         </div>
-        <div className="text-xs text-right text-muted-foreground">
-          <div className="flex items-center justify-end gap-1">
+        
+        <div className="flex items-center gap-1.5 mt-2 sm:mt-0 text-xs text-muted-foreground whitespace-nowrap bg-secondary/50 px-2 py-1 rounded shrink-0">
             <Clock className="w-3 h-3" />
             <span>{relativeTime}</span>
-          </div>
         </div>
       </div>
     );
@@ -60,14 +55,14 @@ export function DueTasksWidget() {
 
   const { overdue, upcoming } = useMemo(() => {
     const now = new Date();
-    const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const fortyEightHours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
     const overdueTasks = tasks.filter(
       (task) => !task.completed && task.dueDate && new Date(task.dueDate) < now
     ).sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
     
     const upcomingTasks = tasks.filter(
-      (task) => !task.completed && task.dueDate && new Date(task.dueDate) > now && new Date(task.dueDate) <= twentyFourHoursFromNow
+      (task) => !task.completed && task.dueDate && new Date(task.dueDate) > now && new Date(task.dueDate) <= fortyEightHours
     ).sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
     
     return { overdue: overdueTasks, upcoming: upcomingTasks };
@@ -76,44 +71,40 @@ export function DueTasksWidget() {
   const hasTasks = overdue.length > 0 || upcoming.length > 0;
 
   return (
-    <Card className="bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold uppercase tracking-wider">Tareas Urgentes</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <div className="h-full flex flex-col">
         {!hasTasks ? (
-           <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-4">
-            <Info className="w-8 h-8 mb-2 text-accent" />
-            <p className="text-sm">Aquí aparecerán tus tareas con fecha de vencimiento próxima.</p>
-            <p className="text-xs mt-1">¡Asigna fechas a tus tareas para verlas aquí!</p>
+           <div className="flex flex-col items-center justify-center flex-1 text-center text-muted-foreground p-6 border-2 border-dashed rounded-lg bg-muted/10 h-full">
+            <CalendarCheck className="w-10 h-10 mb-2 opacity-20" />
+            <p className="text-sm font-medium">¡Todo en orden!</p>
+            <p className="text-xs opacity-70 mt-1">No hay tareas urgentes para las próximas 48h.</p>
           </div>
         ) : (
-            <>
-            {overdue.length > 0 && (
-            <div>
-                <h3 className="flex items-center gap-2 text-sm font-semibold mb-2 text-destructive">
-                <AlertTriangle className="w-4 h-4" />
-                Vencidas
-                </h3>
-                <div className="space-y-1">
-                {overdue.map(task => <DueTaskItem key={task.id} task={task} />)}
-                </div>
-            </div>
-            )}
-            {upcoming.length > 0 && (
-                <div>
-                    <h3 className="flex items-center gap-2 text-sm font-semibold mb-2 text-yellow-500">
-                    <CalendarCheck2 className="w-4 h-4" />
-                    Próximas a Vencer (24h)
-                    </h3>
-                    <div className="space-y-1">
-                    {upcoming.map(task => <DueTaskItem key={task.id} task={task} />)}
+          <ScrollArea className="flex-1 h-full pr-3 -mr-3">
+             <div className="space-y-4 pb-2">
+                {overdue.length > 0 && (
+                    <div>
+                        <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-destructive mb-2 sticky top-0 bg-background/95 backdrop-blur py-1 z-10 border-b">
+                            Atención Requerida ({overdue.length})
+                        </h4>
+                        <div>
+                            {overdue.map(task => <DueTaskItem key={task.id} task={task} />)}
+                        </div>
                     </div>
-                </div>
-            )}
-            </>
+                )}
+
+                {upcoming.length > 0 && (
+                    <div>
+                         <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary mb-2 sticky top-0 bg-background/95 backdrop-blur py-1 z-10 border-b">
+                            Próximas 48h ({upcoming.length})
+                        </h4>
+                        <div>
+                            {upcoming.map(task => <DueTaskItem key={task.id} task={task} />)}
+                        </div>
+                    </div>
+                )}
+             </div>
+          </ScrollArea>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }

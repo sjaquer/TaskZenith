@@ -14,18 +14,14 @@ import {
   browserSessionPersistence,
 } from 'firebase/auth';
 
-interface UserProfile {
-    displayName: string;
-    streak?: number;
-    lastCompletedDay?: string; // YYYY-MM-DD
-}
+import { UserProfile, UserRole } from '@/lib/types';
 
 interface AuthContextType {
   user: User | null;
+  profile: UserProfile | null;
   loading: boolean;
-  streak: number;
-  updateStreak: () => void;
-  signup: (email: string, password: string, displayName: string) => Promise<void>;
+  role: UserRole | null;
+  signup: (email: string, password: string, displayName: string, role: UserRole) => Promise<void>;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -62,16 +58,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe && unsubscribe();
   }, [user]);
 
-  const signup = async (email: string, password: string, displayName: string) => {
+  const signup = async (email: string, password: string, displayName: string, role: UserRole) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     if (user) {
       await updateAuthProfile(user, { displayName });
       const userDocRef = doc(db, 'users', user.uid);
-      const userProfile: UserProfile = { 
+      const userProfile: UserProfile = {
+          uid: user.uid,
+          email: user.email!, // Email is guaranteed to be present after successful signup
           displayName,
-          streak: 0,
-          lastCompletedDay: ''
+          role
       };
       await setDoc(userDocRef, userProfile);
       setUser({ ...user, displayName }); // Optimistic update
@@ -89,40 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await signOut(auth);
   };
 
-  const updateStreak = useCallback(async () => {
-    if (!user || !profile) return;
-    
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-
-    if (profile.lastCompletedDay === todayStr) {
-        return; // Already completed a task today
-    }
-
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-    const userDocRef = doc(db, 'users', user.uid);
-    let newStreak = 1;
-
-    if (profile.lastCompletedDay === yesterdayStr) {
-        newStreak = (profile.streak || 0) + 1;
-    }
-
-    try {
-        await updateDoc(userDocRef, {
-            streak: newStreak,
-            lastCompletedDay: todayStr,
-        });
-        setProfile(p => p ? {...p, streak: newStreak, lastCompletedDay: todayStr} : null);
-    } catch(error) {
-        console.error("Failed to update streak:", error);
-    }
-
-  }, [user, profile]);
-
-  const value = { user, loading, streak: profile?.streak || 0, updateStreak, signup, login, logout };
+  const value = { user, profile, loading, role: profile?.role || null, signup, login, logout };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

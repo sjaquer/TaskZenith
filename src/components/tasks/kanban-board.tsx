@@ -150,28 +150,30 @@ export function KanbanBoard({ taskLimit }: { taskLimit?: number }) {
     return column && column.length >= taskLimit;
   });
 
-  if (projects.length === 0) {
-    return (
-        <Card className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground bg-card/80">
-            <KanbanSquare className="w-12 h-12 mb-4" />
-            <h3 className="text-lg font-semibold">El tablero Kanban es para proyectos.</h3>
-            <p className="text-sm">Crea tu primer proyecto para empezar a usar el tablero.</p>
-        </Card>
-    );
-  }
-
   return (
     <div className="space-y-6">
-        <ProjectLegend onProjectSelect={setSelectedProjectId} selectedProjectId={selectedProjectId} />
-        <div className="flex flex-col md:flex-row gap-6 pb-4 overflow-x-auto">
-            {columns.map((status) => (
-                <KanbanColumn 
-                    key={status} 
-                    status={status} 
-                    tasks={groupedTasks[status] || []} 
-                />
-            ))}
+        <div className="bg-card p-4 rounded-lg border">
+            <ProjectLegend onProjectSelect={setSelectedProjectId} selectedProjectId={selectedProjectId} />
         </div>
+        
+        {projects.length === 0 ? (
+             <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground bg-muted/20 border-2 border-dashed rounded-lg">
+                <KanbanSquare className="w-12 h-12 mb-4 opacity-50" />
+                <h3 className="text-lg font-semibold">Tu tablero está vacío</h3>
+                <p className="text-sm max-w-sm mt-2">Crea tu primer proyecto usando el botón "Nuevo Proyecto" de arriba para activar las columnas del Kanban.</p>
+            </div>
+        ) : (
+            <div className="flex flex-col md:flex-row gap-6 pb-4 overflow-x-auto min-h-[500px]">
+                {columns.map((status) => (
+                    <KanbanColumn 
+                        key={status} 
+                        status={status} 
+                        tasks={groupedTasks[status] || []} 
+                    />
+                ))}
+            </div>
+        )}
+
         {showButton && (
             <div className="text-center mt-4">
                 <Button asChild variant="secondary">

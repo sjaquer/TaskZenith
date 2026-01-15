@@ -1,16 +1,28 @@
-export type Category = 'estudio' | 'trabajo' | 'personal' | 'proyectos';
+export type UserRole = 'admin' | 'operator';
+
+export type Category = 'development' | 'design' | 'marketing' | 'management' | 'other';
 export type Priority = 'baja' | 'media' | 'alta';
 export type KanbanStatus = 'Pendiente' | 'En Progreso' | 'Hecho' | 'Finalizado' | 'Cancelado';
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+  department?: string;
+  avatarUrl?: string; 
+}
 
 export interface Project {
   id: string;
   name: string;
   color: string;
   description?: string;
-  userId: string;
+  createdBy: string; // userId of creator
+  assignedTo?: string[]; // userIds of assigned operators
 }
 
-export type TaskFormValues = Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'userId'>> & { initialDate?: Date };
+export type TaskFormValues = Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'createdBy'>> & { initialDate?: Date };
 
 export interface SubTask {
   id: string;
@@ -31,46 +43,33 @@ export interface Task {
   projectId?: string;
   status: KanbanStatus;
   subTasks?: SubTask[];
+  createdBy: string; // Admin or creator
+  assignedTo?: string; // Operator ID (Deprecated in favor of assigneeIds)
+  assigneeIds?: string[]; // List of user IDs for joint tasks
+  aiPriorityScore?: number; // Calculated score
+  timeSpent?: number; // Time tracked in seconds
+  estimatedTime?: number; // Estimated minutes
+}
+
+export interface Notification {
+  id: string;
   userId: string;
-}
-
-export interface CustomDailyTask {
-  id: string;
+  type: 'task_completed' | 'task_assigned' | 'message' | 'alert';
   title: string;
-  time?: string; // e.g., "09:00"
+  message: string;
+  read: boolean;
+  createdAt: number;
+  link?: string;
+  fromUserId?: string;
 }
 
-export interface DailyTask extends CustomDailyTask {
-  completed: boolean;
-}
-
-
-// Types for AI Task Organizer
-export interface OrganizedTaskUpdate {
+export interface ChatMessage {
   id: string;
-  title?: string;
-  priority?: Priority;
-}
-
-export interface OrganizedTaskNew {
-  title: string;
-  priority: Priority;
-  category: Category;
-  projectId?: string;
-}
-
-export interface OrganizedTasks {
-  updatedTasks: OrganizedTaskUpdate[];
-  newTasks: OrganizedTaskNew[];
-  deletedTaskIds: string[];
-}
-
-// Types for AI Daily Plan
-export interface DailyPlan {
-    motivationalMessage: string;
-    suggestedTasks: {
-        id: string;
-        title: string;
-        reason: string;
-    }[];
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  content: string;
+  channelId: string; // 'general' or specific projectId
+  createdAt: number;
+  readBy?: string[];
 }
