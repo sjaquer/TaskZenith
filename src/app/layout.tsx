@@ -1,5 +1,5 @@
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import './grid-layout.css';
 import { TaskProvider } from '@/contexts/task-context';
@@ -60,11 +60,12 @@ export const metadata: Metadata = {
     title: 'TaskZenith - Gestión Corporativa de Tareas',
     description: 'Dashboard personalizable con sincronización en la nube',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
   themeColor: [
     { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
     { media: '(prefers-color-scheme: light)', color: '#ffffff' }

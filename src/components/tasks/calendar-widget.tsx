@@ -21,19 +21,19 @@ export function CalendarWidget() {
   });
 
   return (
-    <div className="h-full flex flex-col md:flex-row gap-4 p-2 overflow-hidden">
-      {/* Calendar Area - Centered and scaled */}
-      <div className="flex-1 flex items-center justify-center min-h-[300px]">
+    <div className="h-full flex flex-col lg:flex-row gap-2 p-2 overflow-hidden">
+      {/* Calendar Area - Flexible and scrollable */}
+      <div className="flex-1 flex items-center justify-center min-h-0 overflow-auto">
         <Calendar
           mode="single"
           selected={date}
           onSelect={setDate}
-          className="rounded-md border shadow-sm p-3 pointer-events-auto bg-background mx-auto scale-90 sm:scale-100 transition-transform origin-center"
+          className="rounded-md border shadow-sm p-2 sm:p-3 pointer-events-auto bg-background mx-auto scale-[0.85] sm:scale-90 lg:scale-100 transition-transform origin-center"
         />
       </div>
 
       {/* Tasks List Area - Responsive side or bottom */}
-      <div className="flex-1 min-h-[150px] flex flex-col border rounded-lg bg-secondary/10 overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col border rounded-lg bg-secondary/10 overflow-hidden">
         <div className="p-3 border-b bg-secondary/20 font-medium text-sm flex items-center gap-2">
            <CalendarIcon className="w-4 h-4 text-primary" />
            <span className="truncate">

@@ -71,15 +71,15 @@ export function DueTasksWidget() {
   const hasTasks = overdue.length > 0 || upcoming.length > 0;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col p-2 min-h-0 overflow-hidden">
         {!hasTasks ? (
-           <div className="flex flex-col items-center justify-center flex-1 text-center text-muted-foreground p-6 border-2 border-dashed rounded-lg bg-muted/10 h-full">
-            <CalendarCheck className="w-10 h-10 mb-2 opacity-20" />
+           <div className="flex flex-col items-center justify-center flex-1 text-center text-muted-foreground p-4 border-2 border-dashed rounded-lg bg-muted/10 min-h-0">
+            <CalendarCheck className="w-8 h-8 sm:w-10 sm:h-10 mb-2 opacity-20" />
             <p className="text-sm font-medium">¡Todo en orden!</p>
             <p className="text-xs opacity-70 mt-1">No hay tareas urgentes para las próximas 48h.</p>
           </div>
         ) : (
-          <ScrollArea className="flex-1 h-full pr-3 -mr-3">
+          <ScrollArea className="flex-1 min-h-0 pr-3 -mr-3">
              <div className="space-y-4 pb-2">
                 {overdue.length > 0 && (
                     <div>

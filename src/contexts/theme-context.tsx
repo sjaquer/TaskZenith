@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { useAuth } from './auth-context';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -22,7 +22,7 @@ type LayoutConfig = {
     showCalendar: boolean;
     showDueTasks: boolean;
     showPomodoro: boolean;
-    widgetOrder: string[]; // Array of widget keys
+    widgetOrder: string[];
 }
 
 type PredefinedTheme = {
@@ -34,6 +34,7 @@ interface ThemeContextType {
   theme: ColorTheme;
   layoutConfig: LayoutConfig;
   isCustomizerOpen: boolean;
+  isLoading: boolean;
   setTheme: (theme: ColorTheme) => void;
   setLayoutConfig: (config: LayoutConfig) => void;
   setCustomizerOpen: (isOpen: boolean) => void;
@@ -86,45 +87,76 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState<ColorTheme>(defaultTheme);
   const [layoutConfig, setLayoutConfigState] = useState<LayoutConfig>(defaultLayout);
   const [isCustomizerOpen, setCustomizerOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedRef = useRef(false);
 
-  // Load theme from Firestore
+  // Load theme and layoutConfig from Firestore
   useEffect(() => {
-    const loadTheme = async () => {
+    const loadPreferences = async () => {
+      if (hasLoadedRef.current) return;
+      
       if (!user?.uid) {
         // Si no hay usuario, cargar desde localStorage como fallback
-        const savedTheme = localStorage.getItem('taskzenith-theme');
-        if (savedTheme) {
-          try {
+        try {
+          const savedTheme = localStorage.getItem('taskzenith-theme');
+          if (savedTheme) {
             const parsedTheme = JSON.parse(savedTheme);
             setThemeState(parsedTheme);
             applyTheme(parsedTheme);
-          } catch (e) {
-            console.error("Failed to parse theme from localStorage", e);
+          } else {
+            applyTheme(defaultTheme);
           }
-        } else {
+          
+          const savedLayout = localStorage.getItem('taskzenith-layout');
+          if (savedLayout) {
+            setLayoutConfigState(JSON.parse(savedLayout));
+          }
+        } catch (e) {
+          console.error("Failed to parse preferences from localStorage", e);
           applyTheme(defaultTheme);
         }
+        setIsLoading(false);
         return;
       }
 
+      hasLoadedRef.current = true;
+      
       try {
         const docRef = doc(db, 'userPreferences', user.uid);
         const docSnap = await getDoc(docRef);
         
-        if (docSnap.exists() && docSnap.data().theme) {
-          const loadedTheme = docSnap.data().theme;
-          setThemeState(loadedTheme);
-          applyTheme(loadedTheme);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          
+          if (data.theme) {
+            setThemeState(data.theme);
+            applyTheme(data.theme);
+          } else {
+            applyTheme(defaultTheme);
+          }
+          
+          if (data.layoutConfig) {
+            setLayoutConfigState(data.layoutConfig);
+          }
         } else {
           applyTheme(defaultTheme);
         }
       } catch (error) {
-        console.error('Error loading theme:', error);
+        console.error('Error loading preferences:', error);
         applyTheme(defaultTheme);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    loadTheme();
+    loadPreferences();
+  }, [user?.uid]);
+
+  // Reset hasLoadedRef when user changes
+  useEffect(() => {
+    if (!user?.uid) {
+      hasLoadedRef.current = false;
+    }
   }, [user?.uid]);
 
   const setTheme = async (newTheme: ColorTheme) => {
@@ -145,18 +177,30 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const setLayoutConfig = (newConfig: LayoutConfig) => {
+  const setLayoutConfig = async (newConfig: LayoutConfig) => {
     setLayoutConfigState(newConfig);
+    
+    // Guardar en Firestore si hay usuario
+    if (user?.uid) {
+      try {
+        const docRef = doc(db, 'userPreferences', user.uid);
+        await setDoc(docRef, { layoutConfig: newConfig }, { merge: true });
+      } catch (error) {
+        console.error('Error saving layout config:', error);
+      }
+    }
+    
+    // También guardar en localStorage como backup
     localStorage.setItem('taskzenith-layout', JSON.stringify(newConfig));
   }
 
-  const resetToDefault = () => {
-    setTheme(defaultTheme);
-    setLayoutConfig(defaultLayout);
+  const resetToDefault = async () => {
+    await setTheme(defaultTheme);
+    await setLayoutConfig(defaultLayout);
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, layoutConfig, setLayoutConfig, isCustomizerOpen, setCustomizerOpen, resetToDefault }}>
+    <ThemeContext.Provider value={{ theme, setTheme, layoutConfig, setLayoutConfig, isCustomizerOpen, setCustomizerOpen, resetToDefault, isLoading }}>
       {children}
     </ThemeContext.Provider>
   );

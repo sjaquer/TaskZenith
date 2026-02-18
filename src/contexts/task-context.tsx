@@ -1,7 +1,7 @@
 'use client';
 
 import { type Task, type Project, type KanbanStatus, type SubTask } from '@/lib/types';
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { 
   collection, 
   doc, 
@@ -16,6 +16,30 @@ import {
 } from "firebase/firestore";
 import { useAuth } from './auth-context';
 import { db } from '@/lib/firebase';
+
+// Helper para convertir Date a Timestamp de Firestore
+const dateToTimestamp = (date: Date | null | undefined): Timestamp | null => {
+  if (!date) return null;
+  try {
+    return Timestamp.fromDate(date instanceof Date ? date : new Date(date));
+  } catch {
+    return null;
+  }
+};
+
+// Helper para sanitizar datos antes de enviar a Firestore
+const sanitizeForFirestore = (data: Record<string, any>): Record<string, any> => {
+  const sanitized: Record<string, any> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (value === undefined) continue;
+    if (key === 'dueDate' || key === 'createdAt' || key === 'completedAt' || key === 'startedAt') {
+      sanitized[key] = value ? dateToTimestamp(value) : null;
+    } else {
+      sanitized[key] = value;
+    }
+  }
+  return sanitized;
+};
 
 interface TaskContextType {
   tasks: Task[];
@@ -51,6 +75,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    const hasSynced = useRef(false);
 
     const userId = user?.uid;
 
@@ -120,7 +145,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
       const loadInitialData = async () => {
-        if (userId) {
+        if (userId && !hasSynced.current) {
+          hasSynced.current = true;
           let localTasks: Task[] = [];
           let localProjects: Project[] = [];
           
@@ -143,6 +169,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             console.error("Failed to parse data from localStorage", e);
           }
           
+          // Cargar datos locales inmediatamente para UI rápida
           if (localTasks.length > 0) {
              setTasks(localTasks);
           }
@@ -150,16 +177,16 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
              setProjects(localProjects);
           }
 
-          // Always try to sync fresh data on mount (or if valid user)
-          if (localTasks.length === 0 && localProjects.length === 0) {
-             await syncData();
-          } else {
-             // Background sync if we had local data
-             syncData(); 
+          // Siempre sincronizar con Firestore para tener datos frescos
+          try {
+            await syncData();
+          } catch (error) {
+            console.error('Error syncing data:', error);
           }
           
           setIsLoaded(true);
-        } else {
+        } else if (!userId) {
+          hasSynced.current = false;
           clearLocalData();
         }
       };
@@ -167,25 +194,26 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       if (!authLoading) {
         loadInitialData();
       }
-    }, [userId, authLoading, clearLocalData]); // syncData removed from deps to avoid loop, handled inside
+    }, [userId, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'createdBy'>>) => {
     if (!userId) return;
     const newDocRef = doc(tasksCollection);
 
+    const now = new Date();
     const taskPayload: Omit<Task, 'id'> = {
         title: task.title!,
         category: task.category!,
         priority: task.priority!,
-        createdAt: new Date(),
+        createdAt: now,
         dueDate: task.dueDate || null,
         createdBy: userId,
         completed: false,
         status: 'Pendiente',
         completedAt: null,
         subTasks: [],
-        assignedTo: task.assignedTo || userId, // Default to self if not assigned
+        assignedTo: task.assignedTo || userId,
         projectId: task.projectId
     };
     
@@ -194,10 +222,13 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     const newTask: Task = { ...taskPayload, id: newDocRef.id };
 
+    // Actualización optimista de UI
     setTasks((prev) => [newTask, ...prev]);
 
     try {
-        await setDoc(newDocRef, taskPayload);
+        // Convertir fechas a Timestamps para Firestore
+        const firestorePayload = sanitizeForFirestore(taskPayload);
+        await setDoc(newDocRef, firestorePayload);
     } catch (error) {
         console.error("Error adding task: ", error);
         setTasks((prev) => prev.filter(t => t.id !== newDocRef.id));
@@ -246,48 +277,51 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     if (!userId) return;
     const originalTasks = [...tasks];
     
-    // Clean data
-    const sanitizedData = Object.fromEntries(
+    // Clean data - remover undefined
+    const cleanedData = Object.fromEntries(
         Object.entries(data).filter(([, value]) => value !== undefined)
     );
 
+    // Actualización optimista en UI
     setTasks((prev) =>
-      prev.map((task) => (task.id === taskId ? { ...task, ...sanitizedData } as Task : task))
+      prev.map((task) => (task.id === taskId ? { ...task, ...cleanedData } as Task : task))
     );
   
     try {
       const taskRef = doc(tasksCollection, taskId);
-      await updateDoc(taskRef, sanitizedData);
+      // Convertir fechas a Timestamps para Firestore
+      const firestorePayload = sanitizeForFirestore(cleanedData);
+      await updateDoc(taskRef, firestorePayload);
     } catch (error) {
       console.error('Error updating task: ', error);
       setTasks(originalTasks);
     }
   };
 
-  const toggleTaskCompletion = (taskId: string, subTaskId?: string) => {
+  const toggleTaskCompletion = async (taskId: string, subTaskId?: string) => {
     const taskToUpdate = tasks.find(t => t.id === taskId);
     if (!taskToUpdate) return;
   
     if (subTaskId) {
         const updatedSubTasks = taskToUpdate.subTasks?.map(st =>
-        st.id === subTaskId ? { ...st, completed: !st.completed } : st
-      ) || [];
+          st.id === subTaskId ? { ...st, completed: !st.completed } : st
+        ) || [];
       
-      const allSubTasksCompleted = updatedSubTasks.every(st => st.completed);
-       const nextStatus: KanbanStatus = allSubTasksCompleted
-        ? 'Finalizado'
-        : 'En Progreso'; // Auto move to In Progress if working on subtasks
+        const allSubTasksCompleted = updatedSubTasks.length > 0 && updatedSubTasks.every(st => st.completed);
+        const nextStatus: KanbanStatus = allSubTasksCompleted
+          ? 'Finalizado'
+          : 'En Progreso';
 
-      updateTask(taskId, { 
-        subTasks: updatedSubTasks, 
-        completed: allSubTasksCompleted, 
-        completedAt: allSubTasksCompleted ? new Date() : null,
-        status: nextStatus as KanbanStatus
-      });
+        await updateTask(taskId, { 
+          subTasks: updatedSubTasks, 
+          completed: allSubTasksCompleted, 
+          completedAt: allSubTasksCompleted ? new Date() : null,
+          status: nextStatus
+        });
 
     } else {
         const newCompletedState = !taskToUpdate.completed;
-        updateTaskStatus(taskId, newCompletedState ? 'Finalizado' : 'Pendiente');
+        await updateTaskStatus(taskId, newCompletedState ? 'Finalizado' : 'Pendiente');
     }
   };
 

@@ -283,12 +283,12 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="h-full w-full flex flex-col p-2 min-h-0 overflow-hidden">
       
       {/* Quick Add Form */}
-      <Card className="border-dashed border-2 shadow-none bg-muted/20">
-        <CardContent className="pt-6">
-          <form onSubmit={handleAddTask} className="flex flex-col gap-4">
+      <Card className="border-dashed border-2 shadow-none bg-muted/20 shrink-0">
+        <CardContent className="pt-4 pb-4 sm:pt-6">
+          <form onSubmit={handleAddTask} className="flex flex-col gap-3 sm:gap-4">
             <div className="flex gap-2">
                 <Input
                   placeholder="¿Qué tarea tienes pendiente?"
@@ -300,7 +300,7 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
             
             <div className="flex flex-wrap gap-2">
                 <Select value={newTaskPriority} onValueChange={(val: Priority) => setNewTaskPriority(val)}>
-                  <SelectTrigger className="w-[110px] bg-background">
+                  <SelectTrigger className="w-[100px] sm:w-[110px] bg-background">
                     <SelectValue placeholder="Prioridad" />
                   </SelectTrigger>
                   <SelectContent>
@@ -374,10 +374,8 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
       </Card>
 
 
-      {/* Task List - Simplified to just a list for now, tabs were cluttering */}
-      {/* If needed we can bring back tabs for Priorities or Categories */}
-      
-      <div className="flex justify-between items-center pb-2">
+      {/* Task List Header */}
+      <div className="flex justify-between items-center py-2 shrink-0">
          <h3 className="font-semibold text-sm text-muted-foreground">Tareas Pendientes</h3>
          <Button 
             variant={sortByAI ? "secondary" : "ghost"} 
@@ -386,14 +384,15 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
             className="text-xs"
          >
             <BrainCircuit className="w-3 h-3 mr-2" />
-            {sortByAI ? "Orden Inteligente Activo" : "Ordenar por IA"}
+            {sortByAI ? "Orden Inteligente" : "Ordenar IA"}
          </Button>
       </div>
 
-      <div className="space-y-4">
+      {/* Scrollable Task List */}
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
          {pendingTasks.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">
-                <p>No tienes tareas asignadas pendientes.</p>
+            <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No tienes tareas pendientes.</p>
             </div>
          ) : (
             pendingTasks.map(task => (
@@ -416,7 +415,4 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
         />
       )}
     </div>
-  );
-}
-
-
+  );}
