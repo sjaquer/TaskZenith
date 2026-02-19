@@ -11,8 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Play, Sparkles } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useDemo } from '@/contexts/demo-context';
 import Image from 'next/image';
 
 const formSchema = z.object({
@@ -22,10 +23,12 @@ const formSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, enterDemoMode } = useAuth();
+  const { enterDemo, startTour } = useDemo();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -60,6 +63,24 @@ export default function LoginPage() {
       });
     } finally {
         setIsLoading(false);
+    }
+  }
+
+  async function handleDemoMode() {
+    setIsDemoLoading(true);
+    try {
+      enterDemoMode();
+      enterDemo();
+      toast({
+        title: '🚀 Modo Demo activado',
+        description: 'Explora todas las funcionalidades con datos de ejemplo.',
+        className: 'bg-primary text-primary-foreground',
+      });
+      router.push('/dashboard');
+      // Iniciar tour después de navegar
+      setTimeout(() => startTour(), 1500);
+    } finally {
+      setIsDemoLoading(false);
     }
   }
 
@@ -142,6 +163,32 @@ export default function LoginPage() {
             <Link href="/signup" className="text-primary hover:underline font-medium">
               Crear cuenta con código
             </Link>
+          </div>
+
+          {/* Demo mode */}
+          <div className="mt-4 pt-4 border-t border-border/50">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2 border-amber-500/30 text-amber-500 hover:bg-amber-500/10 hover:text-amber-400 hover:border-amber-500/50 transition-all"
+              onClick={handleDemoMode}
+              disabled={isDemoLoading}
+            >
+              {isDemoLoading ? (
+                <>
+                  <Sparkles className="w-4 h-4 animate-spin" />
+                  Cargando demo...
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4" />
+                  Probar en modo Demo
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Explora la app con datos de ejemplo y un tour guiado, sin necesidad de crear cuenta
+            </p>
           </div>
         </CardContent>
       </Card>

@@ -16,6 +16,7 @@ import {
 import { db } from '@/lib/firebase';
 import { useAuth } from './auth-context';
 import type { Group, GroupMember, MemberFunction } from '@/lib/types';
+import { DEMO_GROUPS, DEMO_GROUP_MEMBERS } from '@/lib/demo-data';
 
 // ── helpers ──────────────────────────────────────────────────
 function generateInviteCode(): string {
@@ -62,7 +63,7 @@ const GroupContext = createContext<GroupContextType | undefined>(undefined);
 
 // ── provider ─────────────────────────────────────────────────
 export function GroupProvider({ children }: { children: ReactNode }) {
-  const { user, profile, role, loading: authLoading } = useAuth();
+  const { user, profile, role, loading: authLoading, isDemo } = useAuth();
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
@@ -74,6 +75,22 @@ export function GroupProvider({ children }: { children: ReactNode }) {
 
   // ── Listen to groups where I am a member ──────────────────
   useEffect(() => {
+    // Modo demo: cargar datos de ejemplo
+    if (isDemo) {
+      setGroups([...DEMO_GROUPS]);
+      setMyMemberships(
+        DEMO_GROUPS.filter((g) =>
+          DEMO_GROUP_MEMBERS[g.id]?.some((m) => m.uid === uid)
+        ).map((g) => ({
+          groupId: g.id,
+          groupName: g.name,
+          memberFunction: DEMO_GROUP_MEMBERS[g.id]?.find((m) => m.uid === uid)?.memberFunction || 'otro',
+        }))
+      );
+      setLoadingGroups(false);
+      return;
+    }
+
     if (!uid || authLoading || role === null) {
       setGroups([]);
       setMyMemberships([]);
@@ -90,10 +107,11 @@ export function GroupProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsub();
-  }, [uid, authLoading, role]);
+  }, [uid, authLoading, role, isDemo]);
 
   // ── Listen for my memberships across all groups ───────────
   useEffect(() => {
+    if (isDemo) return; // Ya cargamos memberships en el efecto anterior
     if (!uid || groups.length === 0) {
       setMyMemberships([]);
       return;
@@ -126,6 +144,11 @@ export function GroupProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    if (isDemo) {
+      setMembers(DEMO_GROUP_MEMBERS[currentGroupId] || []);
+      return;
+    }
+
     const membersCol = collection(db, 'groups', currentGroupId, 'members');
     const unsub = onSnapshot(membersCol, (snap) => {
       setMembers(snap.docs.map((d) => ({ ...d.data(), id: d.id } as GroupMember)));
@@ -143,9 +166,7 @@ export function GroupProvider({ children }: { children: ReactNode }) {
       if (!uid || !profile) throw new Error('No autenticado');
       if (role !== 'admin') throw new Error('Solo los administradores pueden crear grupos');
 
-      const groupRef = doc(collection(db, 'groups'));
       const inviteCode = generateInviteCode();
-
       const group: Omit<Group, 'id'> = {
         name,
         description: description || '',
@@ -155,6 +176,14 @@ export function GroupProvider({ children }: { children: ReactNode }) {
         inviteCode,
       };
 
+      if (isDemo) {
+        const newId = `demo-group-${Date.now()}`;
+        setGroups((prev) => [...prev, { ...group, id: newId }]);
+        setMyMemberships((prev) => [...prev, { groupId: newId, groupName: name, memberFunction: 'administración' }]);
+        return newId;
+      }
+
+      const groupRef = doc(collection(db, 'groups'));
       await setDoc(groupRef, group);
 
       // Add creator as first member
@@ -171,7 +200,7 @@ export function GroupProvider({ children }: { children: ReactNode }) {
 
       return groupRef.id;
     },
-    [uid, profile, role]
+    [uid, profile, role, isDemo]
   );
 
   const deleteGroup = useCallback(
@@ -180,6 +209,13 @@ export function GroupProvider({ children }: { children: ReactNode }) {
       const group = groups.find((g) => g.id === groupId);
       if (!group) throw new Error('Grupo no encontrado');
       if (group.createdBy !== uid) throw new Error('Solo el creador puede eliminar el grupo');
+
+      if (isDemo) {
+        setGroups((prev) => prev.filter((g) => g.id !== groupId));
+        setMyMemberships((prev) => prev.filter((m) => m.groupId !== groupId));
+        if (currentGroupId === groupId) setCurrentGroupId(null);
+        return;
+      }
 
       // Delete members subcollection first
       const membersSnap = await getDocs(collection(db, 'groups', groupId, 'members'));
@@ -190,23 +226,31 @@ export function GroupProvider({ children }: { children: ReactNode }) {
 
       if (currentGroupId === groupId) setCurrentGroupId(null);
     },
-    [uid, groups, currentGroupId]
+    [uid, groups, currentGroupId, isDemo]
   );
 
   const updateGroup = useCallback(
     async (groupId: string, data: Partial<Pick<Group, 'name' | 'description' | 'color'>>) => {
+      if (isDemo) {
+        setGroups((prev) => prev.map((g) => (g.id === groupId ? { ...g, ...data } : g)));
+        return;
+      }
       await updateDoc(doc(db, 'groups', groupId), data);
     },
-    []
+    [isDemo]
   );
 
   const regenerateInviteCode = useCallback(
     async (groupId: string): Promise<string> => {
       const newCode = generateInviteCode();
+      if (isDemo) {
+        setGroups((prev) => prev.map((g) => (g.id === groupId ? { ...g, inviteCode: newCode } : g)));
+        return newCode;
+      }
       await updateDoc(doc(db, 'groups', groupId), { inviteCode: newCode });
       return newCode;
     },
-    []
+    [isDemo]
   );
 
   const joinGroup = useCallback(
@@ -215,6 +259,7 @@ export function GroupProvider({ children }: { children: ReactNode }) {
 
       const target = groups.find((g) => g.inviteCode === inviteCode.trim().toUpperCase());
       if (!target) {
+        if (isDemo) throw new Error('Código de invitación inválido');
         // Query Firestore directly in case the group wasn't loaded yet
         const q = query(collection(db, 'groups'), where('inviteCode', '==', inviteCode.trim().toUpperCase()));
         const snap = await getDocs(q);
@@ -236,6 +281,11 @@ export function GroupProvider({ children }: { children: ReactNode }) {
       const alreadyMember = myMemberships.some((m) => m.groupId === target.id);
       if (alreadyMember) throw new Error('Ya eres miembro de este grupo');
 
+      if (isDemo) {
+        setMyMemberships((prev) => [...prev, { groupId: target.id, groupName: target.name, memberFunction: 'otro' }]);
+        return;
+      }
+
       const memberRef = doc(db, 'groups', target.id, 'members', uid);
       await setDoc(memberRef, {
         uid,
@@ -246,7 +296,7 @@ export function GroupProvider({ children }: { children: ReactNode }) {
         joinedAt: Date.now(),
       });
     },
-    [uid, profile, groups, myMemberships]
+    [uid, profile, groups, myMemberships, isDemo]
   );
 
   const leaveGroup = useCallback(
@@ -254,10 +304,15 @@ export function GroupProvider({ children }: { children: ReactNode }) {
       if (!uid) return;
       const group = groups.find((g) => g.id === groupId);
       if (group?.createdBy === uid) throw new Error('El creador no puede abandonar el grupo. Elimínalo en su lugar.');
+      if (isDemo) {
+        setMyMemberships((prev) => prev.filter((m) => m.groupId !== groupId));
+        if (currentGroupId === groupId) setCurrentGroupId(null);
+        return;
+      }
       await deleteDoc(doc(db, 'groups', groupId, 'members', uid));
       if (currentGroupId === groupId) setCurrentGroupId(null);
     },
-    [uid, groups, currentGroupId]
+    [uid, groups, currentGroupId, isDemo]
   );
 
   const removeMember = useCallback(
@@ -268,16 +323,24 @@ export function GroupProvider({ children }: { children: ReactNode }) {
       if (group.createdBy !== uid && role !== 'admin')
         throw new Error('Solo el admin del grupo puede remover miembros');
       if (memberUid === group.createdBy) throw new Error('No puedes remover al creador del grupo');
+      if (isDemo) {
+        setMembers((prev) => prev.filter((m) => m.uid !== memberUid));
+        return;
+      }
       await deleteDoc(doc(db, 'groups', groupId, 'members', memberUid));
     },
-    [uid, groups, role]
+    [uid, groups, role, isDemo]
   );
 
   const updateMemberFunction = useCallback(
     async (groupId: string, memberUid: string, fn: MemberFunction) => {
+      if (isDemo) {
+        setMembers((prev) => prev.map((m) => (m.uid === memberUid ? { ...m, memberFunction: fn } : m)));
+        return;
+      }
       await updateDoc(doc(db, 'groups', groupId, 'members', memberUid), { memberFunction: fn });
     },
-    []
+    [isDemo]
   );
 
   const value: GroupContextType = {

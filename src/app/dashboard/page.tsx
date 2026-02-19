@@ -390,7 +390,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex-1 p-2 md:p-6 min-h-screen flex flex-col">
+    <div className="flex-1 p-2 md:p-6 min-h-screen flex flex-col" data-tour="dashboard">
       {/* Header flotante de controles */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md pb-4 pt-2 mb-2 border-b">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -549,7 +549,7 @@ export default function DashboardPage() {
                 if (!config) return null;
                 const Component = config.component;
                 return (
-                  <Card key={layout.id} className="overflow-hidden shadow-sm border-border/60">
+                  <Card key={layout.id} className="overflow-hidden shadow-sm border-border/60" data-tour={layout.id === 'stats' ? 'stats' : layout.id === 'todo' ? 'todo-list' : undefined}>
                     <div className="overflow-auto">
                       <Component />
                     </div>
@@ -579,6 +579,7 @@ export default function DashboardPage() {
           return (
             <div
               key={layout.id}
+              data-tour={layout.id === 'stats' ? 'stats' : layout.id === 'todo' ? 'todo-list' : undefined}
               className={cn(
                 "absolute transition-all duration-200 ease-out p-2", // p-2 añade el Gap Visual
                 isDragging && "z-50 duration-75 ease-linear cursor-grabbing scale-[1.01]",

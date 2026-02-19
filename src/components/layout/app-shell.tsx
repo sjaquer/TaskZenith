@@ -30,6 +30,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useTasks } from '@/contexts/task-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useGroups } from '@/contexts/group-context';
+import { DemoBadge } from '@/components/layout/demo-tour';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
@@ -93,14 +94,14 @@ function NotificationButton() {
 function ChatButton() {
     const { setIsOpen, isOpen } = useChat();
     return (
-        <Button variant="ghost" size="icon" onClick={() => setIsOpen(!isOpen)} className={isOpen ? 'bg-secondary' : ''}>
+        <Button variant="ghost" size="icon" onClick={() => setIsOpen(!isOpen)} className={isOpen ? 'bg-secondary' : ''} data-tour="chat-btn">
             <MessageSquare className="w-5 h-5" />
         </Button>
     )
 }
 
 function MainHeader() {
-    const { user, logout, role, changeRole } = useAuth();
+    const { user, logout, role, changeRole, isDemo, exitDemoMode } = useAuth();
     const { clearLocalData } = useTasks();
     const router = useRouter();
     const { setOpen: setSidebarOpen } = useSidebar();
@@ -110,7 +111,11 @@ function MainHeader() {
     const [roleLoading, setRoleLoading] = useState(false);
 
     const handleLogout = async () => {
-        await logout();
+        if (isDemo) {
+            exitDemoMode();
+        } else {
+            await logout();
+        }
         clearLocalData();
         router.push('/login');
     };
@@ -147,6 +152,7 @@ function MainHeader() {
             <div className="flex items-center gap-2 sm:gap-4">
                 <NotificationButton />
                 <ChatButton />
+                <DemoBadge />
                 <div className="hidden sm:flex flex-col items-end">
                      <span className="text-sm font-semibold">{user?.displayName || 'Usuario'}</span>
                      <span className="text-xs text-muted-foreground uppercase">{roleName}</span>
@@ -154,7 +160,7 @@ function MainHeader() {
                 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="relative h-10 w-10 rounded-full overflow-hidden">
+                        <Button variant="ghost" className="relative h-10 w-10 rounded-full overflow-hidden" data-tour="user-menu">
                              {user?.photoURL ? (
                                 <Image src={user.photoURL} alt="Profile" fill className="object-cover" />
                              ) : (
@@ -263,7 +269,8 @@ function DesktopSidebar() {
                     return (
                         <Link 
                             key={item.href} 
-                            href={item.href} 
+                            href={item.href}
+                            data-tour={`nav-${item.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`}
                             className={cn(
                                 "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200 group",
                                 isActive 

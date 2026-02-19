@@ -12,6 +12,8 @@ import { NotificationProvider } from '@/contexts/notification-context';
 import { ChatProvider } from '@/contexts/chat-context';
 import { ChatWidget } from '@/components/chat/chat-widget';
 import { GroupProvider } from '@/contexts/group-context';
+import { DemoProvider } from '@/contexts/demo-context';
+import { DemoTourOverlay } from '@/components/layout/demo-tour';
 
 const poppins = Poppins({ 
   subsets: ['latin'],
@@ -85,19 +87,22 @@ export default function RootLayout({
       </head>
       <body className={`${poppins.className} antialiased overflow-x-hidden`}>
         <AuthProvider>
-          <ThemeProvider>
-            <NotificationProvider>
-              <ChatProvider>
-                <GroupProvider>
-                  <TaskProvider>
-                      {children}
-                      <ChatWidget />
-                      <Toaster />
-                  </TaskProvider>
-                </GroupProvider>
-              </ChatProvider>
-            </NotificationProvider>
-          </ThemeProvider>
+          <DemoProvider>
+            <ThemeProvider>
+              <NotificationProvider>
+                <ChatProvider>
+                  <GroupProvider>
+                    <TaskProvider>
+                        {children}
+                        <ChatWidget />
+                        <DemoTourOverlay />
+                        <Toaster />
+                    </TaskProvider>
+                  </GroupProvider>
+                </ChatProvider>
+              </NotificationProvider>
+            </ThemeProvider>
+          </DemoProvider>
         </AuthProvider>
       </body>
     </html>

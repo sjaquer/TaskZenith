@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { useAuth } from './auth-context';
 import { db } from '@/lib/firebase';
+import { DEMO_TASKS, DEMO_PROJECTS } from '@/lib/demo-data';
 
 // Helper para convertir Date a Timestamp de Firestore
 const dateToTimestamp = (date: Date | null | undefined): Timestamp | null => {
@@ -68,7 +69,7 @@ interface TaskContextType {
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
-    const { user, role, loading: authLoading } = useAuth();
+    const { user, role, loading: authLoading, isDemo } = useAuth();
     const [tasks, setTasks] = useState<Task[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
@@ -85,6 +86,15 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     // Real-time listener para tareas
     useEffect(() => {
+      // Modo demo: cargar datos de ejemplo
+      if (isDemo) {
+        setTasks([...DEMO_TASKS]);
+        setProjects([...DEMO_PROJECTS]);
+        setIsLoaded(true);
+        setIsSyncing(false);
+        return;
+      }
+
       // No iniciar listeners hasta que auth termine de cargar y el perfil del usuario exista
       if (!userId || authLoading || role === null) {
         // Si no hay usuario, limpiar todo
@@ -150,7 +160,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         unsubTasks();
         unsubProjects();
       };
-    }, [userId, role, authLoading]);
+    }, [userId, role, authLoading, isDemo]);
 
     const clearLocalData = useCallback(() => {
         setTasks([]);
@@ -169,7 +179,6 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
   const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'createdBy'>>) => {
     if (!userId) return;
-    const newDocRef = doc(tasksCollection);
 
     const now = new Date();
     const taskPayload: Omit<Task, 'id'> = {
@@ -190,11 +199,16 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     // Remove undefined keys
     Object.keys(taskPayload).forEach(key => (taskPayload as any)[key] === undefined && delete (taskPayload as any)[key]);
 
-    const newTask: Task = { ...taskPayload, id: newDocRef.id };
+    const newId = isDemo ? `demo-task-${Date.now()}` : doc(tasksCollection).id;
+    const newTask: Task = { ...taskPayload, id: newId };
 
-    // Marcar como escritura pendiente y actualizar UI optimistamente
-    pendingWritesRef.current.add(newDocRef.id);
     setTasks((prev) => [newTask, ...prev]);
+
+    if (isDemo) return;
+
+    const newDocRef = doc(tasksCollection, newId);
+    // Marcar como escritura pendiente y actualizar UI optimistamente
+    pendingWritesRef.current.add(newId);
 
     try {
         // Convertir fechas a Timestamps para Firestore
@@ -212,11 +226,11 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const deleteTask = async (taskId: string) => {
     if (!userId) return;
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
+    if (isDemo) return;
     try {
         await deleteDoc(doc(tasksCollection, taskId));
     } catch (error) {
         console.error("Error deleting task: ", error);
-        // El listener restaurará la tarea si la eliminación falló en Firestore
     }
   };
 
@@ -233,6 +247,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     const tasksToKeep = tasks.filter(t => !tasksToDelete.some(deleted => deleted.id === t.id));
     setTasks(tasksToKeep);
+
+    if (isDemo) return;
 
     try {
         const batch = writeBatch(db);
@@ -258,6 +274,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       prev.map((task) => (task.id === taskId ? { ...task, ...cleanedData } as Task : task))
     );
   
+    if (isDemo) return;
+
     try {
       const taskRef = doc(tasksCollection, taskId);
       // Convertir fechas a Timestamps para Firestore
@@ -370,28 +388,32 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
   const addProject = async (project: Omit<Project, 'id' | 'createdBy'>) => {
     if (!userId) return;
-    const newDocRef = doc(projectsCollection);
 
     const projectPayload: Omit<Project, 'id'> = {
       ...project,
       createdBy: userId,
     }
 
-    const newProject: Project = { ...projectPayload, id: newDocRef.id };
+    const newId = isDemo ? `demo-proj-${Date.now()}` : doc(projectsCollection).id;
+    const newProject: Project = { ...projectPayload, id: newId };
 
     setProjects(prev => [...prev, newProject]);
+    if (isDemo) return;
+
+    const newDocRef = doc(projectsCollection, newId);
     try {
         await setDoc(newDocRef, projectPayload);
     } catch(error) {
         console.error("Error adding project: ", error);
-        setProjects(prev => prev.filter(p => p.id !== newDocRef.id));
+        setProjects(prev => prev.filter(p => p.id !== newId));
     }
   }
 
   const updateProject = async (projectId: string, data: Partial<Omit<Project, 'id' | 'createdBy'>>) => {
     if (!userId) return;
-    const projectRef = doc(projectsCollection, projectId);
     setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...data } as Project : p));
+    if (isDemo) return;
+    const projectRef = doc(projectsCollection, projectId);
     try {
       await updateDoc(projectRef, data);
     } catch (error) {
@@ -408,6 +430,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     
     setProjects(projectsToKeep);
     setTasks(tasksToKeep);
+
+    if (isDemo) return;
     
     try {
         const batch = writeBatch(db);
@@ -433,6 +457,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     clearLocalData();
     
+    if (isDemo) return;
+
     try {
         const batch = writeBatch(db);
         // Warning: This only deletes what we have loaded in memory/query. 
