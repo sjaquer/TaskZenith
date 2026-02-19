@@ -37,16 +37,24 @@ export default function SignupPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // Basic hardcoded check for demonstration
-    if (values.accessCode !== 'TASKZENITH-ADMIN' && values.accessCode !== 'TASKZENITH-CORP') {
-        form.setError('accessCode', { message: 'Código de acceso inválido. Contacta a un administrador.' });
-        return;
+    // Valid access codes map to roles
+    const VALID_CODES: Record<string, 'admin' | 'operator'> = {
+      'TASKZENITH-ADMIN': 'admin',
+      'permisos77': 'admin',
+      'TASKZENITH-CORP': 'operator',
+      'seaways9090': 'operator',
+    };
+
+    const provided = (values.accessCode || '').trim();
+    if (!VALID_CODES[provided]) {
+      form.setError('accessCode', { message: 'Código de acceso inválido. Contacta a un administrador.' });
+      return;
     }
 
     setIsLoading(true);
     try {
       // Determine role based on access code
-      const role = values.accessCode === 'TASKZENITH-ADMIN' ? 'admin' : 'operator';
+      const role = VALID_CODES[provided];
       await signup(values.email, values.password, values.displayName, role);
       toast({
         title: '¡Cuenta creada!',
