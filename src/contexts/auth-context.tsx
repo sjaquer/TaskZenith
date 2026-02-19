@@ -15,6 +15,14 @@ import {
 
 import { UserProfile, UserRole } from '@/lib/types';
 
+// Códigos de acceso válidos (mismos que en signup)
+const VALID_CODES: Record<string, 'admin' | 'operator'> = {
+  'TASKZENITH-ADMIN': 'admin',
+  'permisos77': 'admin',
+  'TASKZENITH-CORP': 'operator',
+  'seaways9090': 'operator',
+};
+
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
@@ -23,6 +31,7 @@ interface AuthContextType {
   signup: (email: string, password: string, displayName: string, role: UserRole) => Promise<void>;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => Promise<void>;
+  changeRole: (accessCode: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -88,7 +97,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await signOut(auth);
   };
 
-  const value = { user, profile, loading, role: profile?.role || null, signup, login, logout };
+  const changeRole = async (accessCode: string) => {
+    if (!user || !profile) throw new Error('Debes iniciar sesión primero.');
+    const code = (accessCode || '').trim();
+    const targetRole = VALID_CODES[code];
+    if (!targetRole) throw new Error('Código de acceso inválido.');
+    if (targetRole === profile.role) throw new Error(`Ya tienes el rol de ${targetRole}.`);
+    const userDocRef = doc(db, 'users', user.uid);
+    await updateDoc(userDocRef, { role: targetRole });
+  };
+
+  const value = { user, profile, loading, role: profile?.role || null, signup, login, logout, changeRole };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

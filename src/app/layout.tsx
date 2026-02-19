@@ -11,6 +11,7 @@ import { AuthProvider } from '@/contexts/auth-context';
 import { NotificationProvider } from '@/contexts/notification-context';
 import { ChatProvider } from '@/contexts/chat-context';
 import { ChatWidget } from '@/components/chat/chat-widget';
+import { GroupProvider } from '@/contexts/group-context';
 
 const poppins = Poppins({ 
   subsets: ['latin'],
@@ -87,11 +88,13 @@ export default function RootLayout({
           <ThemeProvider>
             <NotificationProvider>
               <ChatProvider>
-                <TaskProvider>
-                    {children}
-                    <ChatWidget />
-                    <Toaster />
-                </TaskProvider>
+                <GroupProvider>
+                  <TaskProvider>
+                      {children}
+                      <ChatWidget />
+                      <Toaster />
+                  </TaskProvider>
+                </GroupProvider>
               </ChatProvider>
             </NotificationProvider>
           </ThemeProvider>

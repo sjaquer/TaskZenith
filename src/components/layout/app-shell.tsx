@@ -20,11 +20,13 @@ import {
   LogOut,
   UserCircle,
   CalendarDays,
-  Menu
+  Menu,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useTasks } from '@/contexts/task-context';
 import { useTheme } from '@/contexts/theme-context';
+import { useGroups } from '@/contexts/group-context';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
@@ -35,6 +37,7 @@ const menuItems = [
     {href: '/dashboard/todo', label: 'Tareas', icon: ListTodo},
     {href: '/dashboard/kanban', label: 'Tablero', icon: KanbanSquare},
     {href: '/dashboard/schedule', label: 'Agenda', icon: CalendarDays },
+    {href: '/dashboard/groups', label: 'Grupos', icon: Users},
     {href: '/dashboard/history', label: 'Historial', icon: History},
 ];
 
@@ -160,6 +163,9 @@ import {
 function DesktopSidebar() {
     const pathname = usePathname();
     const { layoutConfig } = useTheme();
+    const { myMemberships, groups, setCurrentGroupId } = useGroups();
+
+    const myGroups = groups.filter((g) => myMemberships.some((m) => m.groupId === g.id));
 
     return (
         <aside className="hidden md:flex flex-col w-64 border-r bg-card h-screen sticky top-0 shadow-sm z-30 transition-all duration-300 ease-in-out">
@@ -200,24 +206,24 @@ function DesktopSidebar() {
                     );
                 })}
 
-                <div className="mt-8 px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Gestión
-                </div>
-                {/* Mock Projects Links */}
-                 <Link 
-                    href="/dashboard/kanban" 
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 group"
-                >
-                    <span className="w-2 h-2 rounded-full bg-blue-500 ring-4 ring-blue-500/20" />
-                    Marketing Q1
-                </Link>
-                 <Link 
-                    href="/dashboard/kanban" 
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 group"
-                >
-                    <span className="w-2 h-2 rounded-full bg-orange-500 ring-4 ring-orange-500/20" />
-                    Desarrollo Web
-                </Link>
+                {myGroups.length > 0 && (
+                  <>
+                    <div className="mt-8 px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Mis Grupos
+                    </div>
+                    {myGroups.map(group => (
+                      <Link 
+                          key={group.id}
+                          href="/dashboard/groups"
+                          onClick={() => setCurrentGroupId(group.id)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 group"
+                      >
+                          <span className="w-2 h-2 rounded-full ring-4 ring-opacity-20 flex-shrink-0" style={{ backgroundColor: group.color, boxShadow: `0 0 0 4px ${group.color}33` }} />
+                          <span className="truncate">{group.name}</span>
+                      </Link>
+                    ))}
+                  </>
+                )}
             </div>
 
             <div className="p-4 border-t border-border/40 bg-card/50">

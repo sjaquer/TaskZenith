@@ -1,7 +1,9 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useTheme, predefinedThemes } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
 import {
   Sheet,
   SheetContent,
@@ -11,10 +13,13 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
+import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
-import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, Sparkles, Mic, Calendar, Flame, CheckSquare, BarChart3 } from 'lucide-react';
+import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, Sparkles, Mic, Calendar, Flame, CheckSquare, BarChart3, Shield, KeyRound, Loader2 } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
+import { Badge } from '../ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 function HSLToHex(h: number, s: number, l: number): string {
     l /= 100;
@@ -63,6 +68,34 @@ const layoutOptions: { key: keyof ReturnType<typeof useTheme>['layoutConfig']; l
 
 export function UICustomizer() {
   const { theme, setTheme, isCustomizerOpen, setCustomizerOpen, resetToDefault, layoutConfig, setLayoutConfig } = useTheme();
+  const { profile, changeRole } = useAuth();
+  const { toast } = useToast();
+  const [showRoleChange, setShowRoleChange] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
+  const [roleLoading, setRoleLoading] = useState(false);
+
+  const handleRoleChange = async () => {
+    if (!accessCode.trim()) return;
+    setRoleLoading(true);
+    try {
+      await changeRole(accessCode);
+      toast({
+        title: 'Rol actualizado',
+        description: 'Tu rol ha sido cambiado exitosamente.',
+        className: 'bg-primary text-primary-foreground',
+      });
+      setShowRoleChange(false);
+      setAccessCode('');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'No se pudo cambiar el rol.',
+      });
+    } finally {
+      setRoleLoading(false);
+    }
+  };
 
   const handleColorChange = (key: keyof typeof theme, value: string) => {
     const hsl = hexToHSL(value);
@@ -94,6 +127,72 @@ export function UICustomizer() {
         </SheetHeader>
         <ScrollArea className="flex-1 mt-4 -mr-6 pr-6">
             <div className="space-y-8">
+                {/* ── Sección: Cuenta / Rol ── */}
+                <div>
+                    <h3 className="flex items-center text-sm font-medium mb-4">
+                        <Shield className="w-4 h-4 mr-2" />
+                        Cuenta
+                    </h3>
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Rol actual</span>
+                            <Badge variant={profile?.role === 'admin' ? 'default' : 'secondary'}>
+                                {profile?.role === 'admin' ? 'Administrador' : 'Operador'}
+                            </Badge>
+                        </div>
+
+                        {!showRoleChange ? (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                                onClick={() => setShowRoleChange(true)}
+                            >
+                                <KeyRound className="w-4 h-4 mr-2" />
+                                Cambiar rol
+                            </Button>
+                        ) : (
+                            <div className="space-y-2 p-3 border rounded-lg bg-muted/30">
+                                <p className="text-xs text-muted-foreground">
+                                    Introduce el código de acceso del rol al que deseas cambiar.
+                                </p>
+                                <Input
+                                    placeholder="Código de acceso"
+                                    type="password"
+                                    value={accessCode}
+                                    onChange={(e) => setAccessCode(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleRoleChange();
+                                        }
+                                    }}
+                                />
+                                <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        className="flex-1"
+                                        disabled={!accessCode.trim() || roleLoading}
+                                        onClick={handleRoleChange}
+                                    >
+                                        {roleLoading && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+                                        Confirmar
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => { setShowRoleChange(false); setAccessCode(''); }}
+                                    >
+                                        Cancelar
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <Separator />
+
                 <div>
                     <h3 className="text-sm font-medium mb-4">Temas Prediseñados</h3>
                     <div className="grid grid-cols-2 gap-4">
