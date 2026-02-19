@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -22,6 +22,9 @@ import {
   CalendarDays,
   Menu,
   Users,
+  KeyRound,
+  Shield,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useTasks } from '@/contexts/task-context';
@@ -30,6 +33,10 @@ import { useGroups } from '@/contexts/group-context';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Input } from '../ui/input';
+import { Badge } from '../ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 
 const menuItems = [
@@ -93,15 +100,34 @@ function ChatButton() {
 }
 
 function MainHeader() {
-    const { user, logout, role } = useAuth();
+    const { user, logout, role, changeRole } = useAuth();
     const { clearLocalData } = useTasks();
     const router = useRouter();
     const { setOpen: setSidebarOpen } = useSidebar();
+    const { toast } = useToast();
+    const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+    const [accessCode, setAccessCode] = useState('');
+    const [roleLoading, setRoleLoading] = useState(false);
 
     const handleLogout = async () => {
         await logout();
         clearLocalData();
         router.push('/login');
+    };
+
+    const handleRoleChange = async () => {
+        if (!accessCode.trim()) return;
+        setRoleLoading(true);
+        try {
+            await changeRole(accessCode);
+            toast({ title: 'Rol actualizado', description: 'Tu rol ha sido cambiado exitosamente.', className: 'bg-primary text-primary-foreground' });
+            setRoleDialogOpen(false);
+            setAccessCode('');
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message || 'No se pudo cambiar el rol.' });
+        } finally {
+            setRoleLoading(false);
+        }
     };
 
     const roleName = role === 'admin' ? 'Administrador' : 'Operador';
@@ -144,12 +170,57 @@ function MainHeader() {
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem className="gap-2">
+                            <Shield className="h-4 w-4 text-muted-foreground" />
+                            <span>Rol:</span>
+                            <Badge variant={role === 'admin' ? 'default' : 'secondary'} className="ml-auto text-[10px] px-1.5 py-0">
+                                {roleName}
+                            </Badge>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setRoleDialogOpen(true)}>
+                            <KeyRound className="mr-2 h-4 w-4" />
+                            <span>Cambiar Rol</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/10">
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Cerrar Sesión</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+
+                <Dialog open={roleDialogOpen} onOpenChange={(open) => { setRoleDialogOpen(open); if (!open) setAccessCode(''); }}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <KeyRound className="w-5 h-5 text-primary" />
+                                Cambiar Rol
+                            </DialogTitle>
+                            <DialogDescription>
+                                Introduce el código de acceso del rol al que deseas cambiar. Tu rol actual es <strong>{roleName}</strong>.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-2">
+                            <Input
+                                placeholder="Código de acceso"
+                                type="password"
+                                value={accessCode}
+                                onChange={(e) => setAccessCode(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleRoleChange(); } }}
+                                autoFocus
+                            />
+                            <div className="flex gap-2 justify-end">
+                                <Button variant="ghost" onClick={() => { setRoleDialogOpen(false); setAccessCode(''); }}>
+                                    Cancelar
+                                </Button>
+                                <Button disabled={!accessCode.trim() || roleLoading} onClick={handleRoleChange}>
+                                    {roleLoading && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+                                    Confirmar
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
         </header>
     );
