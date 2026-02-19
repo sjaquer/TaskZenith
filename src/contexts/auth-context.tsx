@@ -98,12 +98,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const changeRole = async (accessCode: string) => {
-    if (!user || !profile) throw new Error('Debes iniciar sesión primero.');
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error('Debes iniciar sesión primero.');
     const code = (accessCode || '').trim();
     const targetRole = VALID_CODES[code];
     if (!targetRole) throw new Error('Código de acceso inválido.');
-    if (targetRole === profile.role) throw new Error(`Ya tienes el rol de ${targetRole}.`);
-    const userDocRef = doc(db, 'users', user.uid);
+    const userDocRef = doc(db, 'users', currentUser.uid);
+    const userDoc = await getDoc(userDocRef);
+    if (!userDoc.exists()) throw new Error('Perfil de usuario no encontrado.');
+    const currentProfile = userDoc.data() as UserProfile;
+    if (targetRole === currentProfile.role) throw new Error(`Ya tienes el rol de ${targetRole === 'admin' ? 'Administrador' : 'Operador'}.`);
     await updateDoc(userDocRef, { role: targetRole });
   };
 
