@@ -22,7 +22,7 @@ export function DemoTourOverlay() {
     startTour,
   } = useDemo();
 
-  const { exitDemoMode } = useAuth();
+  const { exitDemoMode, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number; arrowDir: string }>({
@@ -152,39 +152,49 @@ export function DemoTourOverlay() {
     };
   }, [isTourActive, currentTourStep, positionTooltip, handleScrollOrResize]);
 
-  if (!isDemo) return null;
+  // No renderizar nada si no es demo ni usuario autenticado
+  const isAuthenticated = !!user;
 
-  // Demo banner (always shows when in demo mode)
+  if (!isDemo && !isAuthenticated) return null;
+
+  // Banner inferior: solo tour para usuarios autenticados, tour + salir para demo
   if (!isTourActive) {
-    return (
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] animate-in slide-in-from-bottom-4">
-        <div className="flex items-center gap-3 bg-primary/95 text-primary-foreground px-4 py-2.5 rounded-full shadow-2xl backdrop-blur-sm border border-primary-foreground/20">
-          <Sparkles className="w-4 h-4 animate-pulse" />
-          <span className="text-sm font-medium">Modo Demo</span>
-          <div className="w-px h-4 bg-primary-foreground/30" />
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={startTour}
-            className="h-7 text-xs gap-1 rounded-full"
-          >
-            <Play className="w-3 h-3" />
-            Iniciar Tour
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              exitDemoMode();
-              router.push('/login');
-            }}
-            className="h-7 text-xs text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 rounded-full"
-          >
-            Salir
-          </Button>
+    // En modo Demo: banner completo con "Iniciar Tour" y "Salir"
+    if (isDemo) {
+      return (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] animate-in slide-in-from-bottom-4">
+          <div className="flex items-center gap-3 bg-primary/95 text-primary-foreground px-4 py-2.5 rounded-full shadow-2xl backdrop-blur-sm border border-primary-foreground/20">
+            <Sparkles className="w-4 h-4 animate-pulse" />
+            <span className="text-sm font-medium">Modo Demo</span>
+            <div className="w-px h-4 bg-primary-foreground/30" />
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={startTour}
+              className="h-7 text-xs gap-1 rounded-full"
+            >
+              <Play className="w-3 h-3" />
+              Iniciar Tour
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                exitDemoMode();
+                router.push('/login');
+              }}
+              className="h-7 text-xs text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 rounded-full"
+            >
+              Salir
+            </Button>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+
+    // Para usuarios autenticados (no demo): no mostrar banner flotante,
+    // el botón de tour estará en el header vía TourStartButton
+    return null;
   }
 
   // Tour active - show overlay + tooltip
@@ -277,7 +287,7 @@ export function DemoTourOverlay() {
   );
 }
 
-// ── Exit Demo Button for AppShell ────────────────────────────
+// ── Exit Demo Button for AppShell (solo visible en modo demo) ─
 export function DemoBadge() {
   const { isDemo } = useDemo();
   const { exitDemoMode } = useAuth();
@@ -297,6 +307,28 @@ export function DemoBadge() {
     >
       <Sparkles className="w-3 h-3" />
       Salir del Demo
+    </Button>
+  );
+}
+
+// ── Tour Start Button (para usuarios autenticados, NO demo) ──
+export function TourStartButton() {
+  const { isDemo, startTour, isTourActive } = useDemo();
+  const { user } = useAuth();
+
+  // Solo mostrar para usuarios autenticados que NO están en demo
+  if (isDemo || !user || isTourActive) return null;
+
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={startTour}
+      className="h-7 text-xs gap-1.5"
+      title="Iniciar tour guiado"
+    >
+      <Play className="w-3 h-3" />
+      <span className="hidden sm:inline">Tour</span>
     </Button>
   );
 }

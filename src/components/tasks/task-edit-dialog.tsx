@@ -159,14 +159,14 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[520px] max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Editar Tarea</DialogTitle>
           <DialogDescription>
             Modifica los detalles de la tarea.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2 flex-1 overflow-y-auto pr-1">
           
           <div className="grid gap-2">
             <Label htmlFor="title">Título</Label>
@@ -335,7 +335,7 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                     <Plus className="h-4 w-4 mr-1" /> Agregar
                  </Button>
               </div>
-              <div className="space-y-2 max-h-[150px] overflow-y-auto">
+              <div className="space-y-2 max-h-[200px] overflow-y-auto rounded-md border border-border/40 p-2">
                  {fields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-2">
                         <Checkbox 

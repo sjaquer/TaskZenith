@@ -77,9 +77,16 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     const userId = user?.uid;
 
-    // Use root collections for shared corporate data
-    const tasksCollection = collection(db, 'tasks');
-    const projectsCollection = collection(db, 'projects');
+    // Colecciones anidadas bajo el usuario: users/{userId}/tasks, users/{userId}/projects
+    const getUserTasksCollection = useCallback(() => {
+      if (!userId) return collection(db, 'users', '_placeholder_', 'tasks');
+      return collection(db, 'users', userId, 'tasks');
+    }, [userId]);
+
+    const getUserProjectsCollection = useCallback(() => {
+      if (!userId) return collection(db, 'users', '_placeholder_', 'projects');
+      return collection(db, 'users', userId, 'projects');
+    }, [userId]);
 
     // Ref para IDs de tareas con escritura pendiente (optimistic updates activos)
     const pendingWritesRef = useRef<Set<string>>(new Set());
@@ -108,14 +115,12 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
       setIsSyncing(true);
 
-      // Query de tareas según rol
-      let qTasks = query(tasksCollection);
-      if (role === 'operator') {
-        qTasks = query(tasksCollection, where('assignedTo', '==', userId));
-      }
+      // Colecciones del usuario actual
+      const userTasksCol = collection(db, 'users', userId, 'tasks');
+      const userProjectsCol = collection(db, 'users', userId, 'projects');
 
-      // Listener en tiempo real para tareas
-      const unsubTasks = onSnapshot(qTasks, (snapshot) => {
+      // Listener en tiempo real para tareas del usuario
+      const unsubTasks = onSnapshot(query(userTasksCol), (snapshot) => {
         const tasksData = snapshot.docs.map(docSnap => {
           const data = docSnap.data();
           return { 
@@ -144,8 +149,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         setIsLoaded(true);
       });
 
-      // Listener en tiempo real para proyectos
-      const unsubProjects = onSnapshot(query(projectsCollection), (snapshot) => {
+      // Listener en tiempo real para proyectos del usuario
+      const unsubProjects = onSnapshot(query(userProjectsCol), (snapshot) => {
         const projectsData = snapshot.docs.map(docSnap => ({ 
           ...docSnap.data(), 
           id: docSnap.id 
@@ -199,14 +204,15 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     // Remove undefined keys
     Object.keys(taskPayload).forEach(key => (taskPayload as any)[key] === undefined && delete (taskPayload as any)[key]);
 
-    const newId = isDemo ? `demo-task-${Date.now()}` : doc(tasksCollection).id;
+    const userTasksCol = getUserTasksCollection();
+    const newId = isDemo ? `demo-task-${Date.now()}` : doc(userTasksCol).id;
     const newTask: Task = { ...taskPayload, id: newId };
 
     setTasks((prev) => [newTask, ...prev]);
 
     if (isDemo) return;
 
-    const newDocRef = doc(tasksCollection, newId);
+    const newDocRef = doc(userTasksCol, newId);
     // Marcar como escritura pendiente y actualizar UI optimistamente
     pendingWritesRef.current.add(newId);
 
@@ -228,7 +234,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
     if (isDemo) return;
     try {
-        await deleteDoc(doc(tasksCollection, taskId));
+        await deleteDoc(doc(getUserTasksCollection(), taskId));
     } catch (error) {
         console.error("Error deleting task: ", error);
     }
@@ -253,7 +259,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     try {
         const batch = writeBatch(db);
         tasksToDelete.forEach(task => {
-            batch.delete(doc(tasksCollection, task.id));
+            batch.delete(doc(getUserTasksCollection(), task.id));
         });
         await batch.commit();
     } catch (error) {
@@ -277,7 +283,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     if (isDemo) return;
 
     try {
-      const taskRef = doc(tasksCollection, taskId);
+      const taskRef = doc(getUserTasksCollection(), taskId);
       // Convertir fechas a Timestamps para Firestore
       const firestorePayload = sanitizeForFirestore(cleanedData);
       await updateDoc(taskRef, firestorePayload);
@@ -394,13 +400,14 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       createdBy: userId,
     }
 
-    const newId = isDemo ? `demo-proj-${Date.now()}` : doc(projectsCollection).id;
+    const userProjectsCol = getUserProjectsCollection();
+    const newId = isDemo ? `demo-proj-${Date.now()}` : doc(userProjectsCol).id;
     const newProject: Project = { ...projectPayload, id: newId };
 
     setProjects(prev => [...prev, newProject]);
     if (isDemo) return;
 
-    const newDocRef = doc(projectsCollection, newId);
+    const newDocRef = doc(userProjectsCol, newId);
     try {
         await setDoc(newDocRef, projectPayload);
     } catch(error) {
@@ -413,7 +420,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     if (!userId) return;
     setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...data } as Project : p));
     if (isDemo) return;
-    const projectRef = doc(projectsCollection, projectId);
+    const projectRef = doc(getUserProjectsCollection(), projectId);
     try {
       await updateDoc(projectRef, data);
     } catch (error) {
@@ -435,9 +442,9 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     
     try {
         const batch = writeBatch(db);
-        batch.delete(doc(projectsCollection, projectId));
+        batch.delete(doc(getUserProjectsCollection(), projectId));
         tasksToDelete.forEach(t => {
-            const taskRef = doc(tasksCollection, t.id);
+            const taskRef = doc(getUserTasksCollection(), t.id);
             batch.delete(taskRef);
         });
         await batch.commit();
@@ -463,8 +470,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         const batch = writeBatch(db);
         // Warning: This only deletes what we have loaded in memory/query. 
         // Real bulk delete needs a Cloud Function or recursive delete.
-        tasks.forEach(t => batch.delete(doc(tasksCollection, t.id)));
-        projects.forEach(p => batch.delete(doc(projectsCollection, p.id)));
+        tasks.forEach(t => batch.delete(doc(getUserTasksCollection(), t.id)));
+        projects.forEach(p => batch.delete(doc(getUserProjectsCollection(), p.id)));
 
         await batch.commit();
 

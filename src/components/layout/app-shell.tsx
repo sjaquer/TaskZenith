@@ -30,7 +30,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useTasks } from '@/contexts/task-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useGroups } from '@/contexts/group-context';
-import { DemoBadge } from '@/components/layout/demo-tour';
+import { DemoBadge, TourStartButton } from '@/components/layout/demo-tour';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
@@ -152,6 +152,7 @@ function MainHeader() {
             <div className="flex items-center gap-2 sm:gap-4">
                 <NotificationButton />
                 <ChatButton />
+                <TourStartButton />
                 <DemoBadge />
                 <div className="hidden sm:flex flex-col items-end">
                      <span className="text-sm font-semibold">{user?.displayName || 'Usuario'}</span>

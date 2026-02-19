@@ -207,7 +207,7 @@ export default function DashboardPage() {
       }
       
       try {
-        const docRef = doc(db, 'userPreferences', user.uid);
+        const docRef = doc(db, 'users', user.uid, 'preferences', 'main');
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists() && docSnap.data().dashboardLayouts) {
@@ -229,7 +229,7 @@ export default function DashboardPage() {
     if (mounted && layouts.length > 0 && user?.uid && !isDemo) {
       const saveLayouts = async () => {
         try {
-          const docRef = doc(db, 'userPreferences', user.uid);
+          const docRef = doc(db, 'users', user.uid, 'preferences', 'main');
           await setDoc(docRef, { dashboardLayouts: layouts }, { merge: true });
         } catch (error) {
           console.error('Error saving dashboard layouts:', error);

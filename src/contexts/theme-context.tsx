@@ -127,7 +127,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       hasLoadedRef.current = true;
       
       try {
-        const docRef = doc(db, 'userPreferences', user.uid);
+        const docRef = doc(db, 'users', user.uid, 'preferences', 'main');
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
@@ -171,7 +171,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     // Guardar en Firestore si hay usuario y no es demo
     if (user?.uid && !isDemo) {
       try {
-        const docRef = doc(db, 'userPreferences', user.uid);
+        const docRef = doc(db, 'users', user.uid, 'preferences', 'main');
         await setDoc(docRef, { theme: newTheme }, { merge: true });
       } catch (error) {
         console.error('Error saving theme:', error);
@@ -188,7 +188,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     // Guardar en Firestore si hay usuario y no es demo
     if (user?.uid && !isDemo) {
       try {
-        const docRef = doc(db, 'userPreferences', user.uid);
+        const docRef = doc(db, 'users', user.uid, 'preferences', 'main');
         await setDoc(docRef, { layoutConfig: newConfig }, { merge: true });
       } catch (error) {
         console.error('Error saving layout config:', error);

@@ -29,161 +29,103 @@ service cloud.firestore {
       return request.resource.size < 65536;
     }
 
+    // Verificar si el usuario es miembro de un grupo
+    function isGroupMember(groupId) {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
+    }
+
+    // Verificar si el usuario es el creador del grupo
+    function isGroupCreator(groupId) {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/groups/$(groupId))
+        && get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy == request.auth.uid;
+    }
+
     // ============================================================
-    // COLECCIÓN: users
+    // COLECCIÓN: users/{userId}
     // Almacena perfiles de usuario (uid, email, displayName, role).
-    // 
-    // Operaciones en la app:
-    //   - auth-context.tsx: setDoc (signup y auto-creación de perfil),
-    //     onSnapshot (perfil en tiempo real), updateDoc (cambio de rol)
     //
-    // NOTA: Si el usuario se autentica pero no tiene doc en users/,
-    //       auth-context lo crea automáticamente con role='operator'.
+    // ESTRUCTURA ANIDADA:
+    //   users/{userId}/tasks/{taskId}       → tareas personales
+    //   users/{userId}/projects/{projId}    → proyectos personales
+    //   users/{userId}/preferences/main     → preferencias (tema, layout, dashboard)
     // ============================================================
     match /users/{userId} {
       // Cualquier usuario autenticado puede leer perfiles
-      // (necesario para ver nombres de compañeros en tareas asignadas)
       allow read: if isAuthenticated();
 
       // Solo el propio usuario puede crear su perfil (signup o auto-creación)
-      // Campos obligatorios: uid, email, displayName, role
       allow create: if isOwner(userId)
                     && request.resource.data.uid == userId
                     && request.resource.data.email is string
                     && request.resource.data.displayName is string
                     && request.resource.data.role in ['admin', 'operator']
-                    && request.resource.data.keys().hasAll(['uid', 'email', 'displayName', 'role'])
-                    && request.resource.data.keys().hasOnly(['uid', 'email', 'displayName', 'role', 'photoURL']);
+                    && request.resource.data.keys().hasAll(['uid', 'email', 'displayName', 'role']);
 
       // Solo el propio usuario puede actualizar su perfil
-      // No puede cambiar su uid; role solo puede ser 'admin' u 'operator'
       allow update: if isOwner(userId)
                     && request.resource.data.uid == resource.data.uid
-                    && request.resource.data.role in ['admin', 'operator']
-                    && request.resource.data.keys().hasOnly(['uid', 'email', 'displayName', 'role', 'photoURL']);
+                    && request.resource.data.role in ['admin', 'operator'];
 
       // No se permite eliminar perfiles
       allow delete: if false;
+
+      // ── SUBCOLECCIÓN: tasks (tareas personales del usuario) ──
+      match /tasks/{taskId} {
+        allow read: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+                      && request.resource.data.createdBy == request.auth.uid
+                      && request.resource.data.title is string
+                      && request.resource.data.title.size() > 0
+                      && isReasonableSize();
+
+        allow update: if isOwner(userId)
+                      && request.resource.data.createdBy == resource.data.createdBy
+                      && isReasonableSize();
+
+        allow delete: if isOwner(userId);
+      }
+
+      // ── SUBCOLECCIÓN: projects (proyectos personales del usuario) ──
+      match /projects/{projectId} {
+        allow read: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+                      && request.resource.data.createdBy == request.auth.uid
+                      && request.resource.data.name is string
+                      && request.resource.data.name.size() > 0
+                      && isReasonableSize();
+
+        allow update: if isOwner(userId)
+                      && request.resource.data.createdBy == resource.data.createdBy
+                      && isReasonableSize();
+
+        allow delete: if isOwner(userId);
+      }
+
+      // ── SUBCOLECCIÓN: preferences (configuración del usuario) ──
+      match /preferences/{prefId} {
+        allow read:   if isOwner(userId);
+        allow create: if isOwner(userId) && isReasonableSize();
+        allow update: if isOwner(userId) && isReasonableSize();
+        allow delete: if isOwner(userId);
+      }
     }
 
     // ============================================================
-    // COLECCIÓN: tasks
-    // Almacena todas las tareas con campos: title, category, priority,
-    // createdAt, dueDate, createdBy, completed, status, completedAt,
-    // subTasks, assignedTo, projectId, startedAt, aiPriorityScore,
-    // description, timeSpent, timeEntries, etc.
+    // COLECCIÓN: groups/{groupId}
+    // Almacena grupos/empresas.
     //
-    // Operaciones en la app:
-    //   - task-context.tsx: onSnapshot (listener), setDoc (crear),
-    //     updateDoc (editar), deleteDoc (eliminar), writeBatch (batch delete)
-    // ============================================================
-    match /tasks/{taskId} {
-      // Lectura: cualquier usuario autenticado puede leer tareas
-      // (el filtrado por rol se hace en la query del cliente)
-      allow read: if isAuthenticated();
-
-      // Crear: usuario autenticado, createdBy debe coincidir con su uid
-      allow create: if isAuthenticated()
-                    && request.resource.data.createdBy == request.auth.uid
-                    && request.resource.data.title is string
-                    && request.resource.data.title.size() > 0
-                    && isReasonableSize();
-
-      // Actualizar: admin puede actualizar cualquier tarea,
-      // o el creador/asignado puede actualizar la suya.
-      // No se permite cambiar el campo createdBy.
-      allow update: if isAuthenticated()
-                    && request.resource.data.createdBy == resource.data.createdBy
-                    && isReasonableSize()
-                    && (
-                      isAdmin()
-                      || resource.data.createdBy == request.auth.uid
-                      || resource.data.assignedTo == request.auth.uid
-                    );
-
-      // Eliminar: admin puede eliminar cualquiera,
-      // o el creador puede eliminar la suya
-      allow delete: if isAuthenticated()
-                    && (
-                      isAdmin()
-                      || resource.data.createdBy == request.auth.uid
-                    );
-    }
-
-    // ============================================================
-    // COLECCIÓN: projects
-    // Almacena proyectos con campos: name, color, description,
-    // createdBy, assignedTo.
-    //
-    // Operaciones en la app:
-    //   - task-context.tsx: onSnapshot (listener), setDoc (crear),
-    //     updateDoc (editar), deleteDoc/writeBatch (eliminar)
-    // ============================================================
-    match /projects/{projectId} {
-      // Todos los usuarios autenticados pueden leer proyectos
-      allow read: if isAuthenticated();
-
-      // Crear: usuario autenticado, createdBy debe coincidir con su uid
-      allow create: if isAuthenticated()
-                    && request.resource.data.createdBy == request.auth.uid
-                    && request.resource.data.name is string
-                    && request.resource.data.name.size() > 0
-                    && isReasonableSize();
-
-      // Actualizar: admin o el creador del proyecto.
-      // No se permite cambiar createdBy.
-      allow update: if isAuthenticated()
-                    && request.resource.data.createdBy == resource.data.createdBy
-                    && isReasonableSize()
-                    && (
-                      isAdmin()
-                      || resource.data.createdBy == request.auth.uid
-                    );
-
-      // Eliminar: admin o el creador del proyecto
-      allow delete: if isAuthenticated()
-                    && (
-                      isAdmin()
-                      || resource.data.createdBy == request.auth.uid
-                    );
-    }
-
-    // ============================================================
-    // COLECCIÓN: userPreferences
-    // Almacena preferencias por usuario: theme, layoutConfig, 
-    // dashboardLayouts. El ID del documento es el uid del usuario.
-    //
-    // Operaciones en la app:
-    //   - theme-context.tsx: getDoc (leer), setDoc merge (guardar tema/layout)
-    //   - dashboard/page.tsx: getDoc (leer layouts), setDoc merge (guardar layouts)
-    //
-    // NOTA: El modo demo NO accede a esta colección (guards en contextos).
-    // ============================================================
-    match /userPreferences/{userId} {
-      allow read:   if isOwner(userId);
-      allow create: if isOwner(userId)
-                    && isReasonableSize();
-      allow update: if isOwner(userId)
-                    && isReasonableSize();
-      // Permitir eliminar solo al propietario (reset de preferencias)
-      allow delete: if isOwner(userId);
-    }
-
-    // ============================================================
-    // COLECCIÓN: groups
-    // Almacena grupos/empresas con campos: name, description, color,
-    // createdBy, createdAt, inviteCode.
-    //
-    // Operaciones:
-    //   - group-context.tsx: onSnapshot (listener), setDoc (crear),
-    //     updateDoc (editar), deleteDoc (eliminar)
+    // ESTRUCTURA ANIDADA:
+    //   groups/{groupId}/members/{memberId}  → miembros del grupo
+    //   groups/{groupId}/tasks/{taskId}      → tareas del grupo
+    //   groups/{groupId}/projects/{projId}   → proyectos del grupo
     // ============================================================
     match /groups/{groupId} {
-      // Lectura: cualquier usuario autenticado puede ver grupos
-      // (necesario para buscar por inviteCode y listar)
       allow read: if isAuthenticated();
 
-      // Crear: solo admins, createdBy debe ser el uid del usuario
       allow create: if isAdmin()
                     && request.resource.data.createdBy == request.auth.uid
                     && request.resource.data.name is string
@@ -191,27 +133,18 @@ service cloud.firestore {
                     && request.resource.data.keys().hasAll(['name', 'createdBy', 'createdAt', 'inviteCode'])
                     && isReasonableSize();
 
-      // Actualizar: solo el creador del grupo (admin).
-      // No se permite cambiar createdBy.
       allow update: if isAuthenticated()
                     && resource.data.createdBy == request.auth.uid
                     && request.resource.data.createdBy == resource.data.createdBy
                     && isReasonableSize();
 
-      // Eliminar: solo el creador del grupo
       allow delete: if isAuthenticated()
                     && resource.data.createdBy == request.auth.uid;
 
       // ── SUBCOLECCIÓN: members ──────────────────────────────
-      // Almacena miembros del grupo: uid, displayName, email,
-      // role, memberFunction, joinedAt.
-      // El ID del documento es el uid del miembro.
       match /members/{memberId} {
-        // Lectura: cualquier usuario autenticado puede ver miembros
         allow read: if isAuthenticated();
 
-        // Crear: un usuario puede añadirse a sí mismo (join),
-        // o el creador del grupo puede añadir miembros
         allow create: if isAuthenticated()
                       && request.resource.data.uid is string
                       && request.resource.data.displayName is string
@@ -221,9 +154,6 @@ service cloud.firestore {
                         || get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy == request.auth.uid
                       );
 
-        // Actualizar: el creador del grupo puede modificar funciones,
-        // o el propio miembro puede actualizar sus datos.
-        // No se permite cambiar el uid del miembro.
         allow update: if isAuthenticated()
                       && request.resource.data.uid == resource.data.uid
                       && isReasonableSize()
@@ -232,20 +162,121 @@ service cloud.firestore {
                         || request.auth.uid == memberId
                       );
 
-        // Eliminar: el creador del grupo puede remover miembros,
-        // o el propio miembro puede abandonar
         allow delete: if isAuthenticated()
                       && (
                         get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy == request.auth.uid
                         || request.auth.uid == memberId
                       );
       }
+
+      // ── SUBCOLECCIÓN: tasks (tareas del grupo) ─────────────
+      match /tasks/{taskId} {
+        allow read: if isGroupMember(groupId);
+
+        allow create: if isGroupMember(groupId)
+                      && request.resource.data.createdBy == request.auth.uid
+                      && request.resource.data.title is string
+                      && request.resource.data.title.size() > 0
+                      && isReasonableSize();
+
+        allow update: if isGroupMember(groupId)
+                      && request.resource.data.createdBy == resource.data.createdBy
+                      && isReasonableSize()
+                      && (
+                        isGroupCreator(groupId)
+                        || resource.data.createdBy == request.auth.uid
+                        || resource.data.assignedTo == request.auth.uid
+                      );
+
+        allow delete: if isGroupMember(groupId)
+                      && (
+                        isGroupCreator(groupId)
+                        || resource.data.createdBy == request.auth.uid
+                      );
+      }
+
+      // ── SUBCOLECCIÓN: projects (proyectos del grupo) ───────
+      match /projects/{projectId} {
+        allow read: if isGroupMember(groupId);
+
+        allow create: if isGroupMember(groupId)
+                      && request.resource.data.createdBy == request.auth.uid
+                      && request.resource.data.name is string
+                      && request.resource.data.name.size() > 0
+                      && isReasonableSize();
+
+        allow update: if isGroupMember(groupId)
+                      && request.resource.data.createdBy == resource.data.createdBy
+                      && isReasonableSize()
+                      && (
+                        isGroupCreator(groupId)
+                        || resource.data.createdBy == request.auth.uid
+                      );
+
+        allow delete: if isGroupMember(groupId)
+                      && (
+                        isGroupCreator(groupId)
+                        || resource.data.createdBy == request.auth.uid
+                      );
+      }
+    }
+
+    // ============================================================
+    // COMPATIBILIDAD: colecciones raíz legacy
+    // (se pueden eliminar tras migrar datos existentes)
+    // ============================================================
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.resource.data.title is string
+                    && request.resource.data.title.size() > 0
+                    && isReasonableSize();
+      allow update: if isAuthenticated()
+                    && request.resource.data.createdBy == resource.data.createdBy
+                    && isReasonableSize()
+                    && (
+                      isAdmin()
+                      || resource.data.createdBy == request.auth.uid
+                      || resource.data.assignedTo == request.auth.uid
+                    );
+      allow delete: if isAuthenticated()
+                    && (
+                      isAdmin()
+                      || resource.data.createdBy == request.auth.uid
+                    );
+    }
+
+    match /projects/{projectId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && isReasonableSize();
+      allow update: if isAuthenticated()
+                    && request.resource.data.createdBy == resource.data.createdBy
+                    && isReasonableSize()
+                    && (
+                      isAdmin()
+                      || resource.data.createdBy == request.auth.uid
+                    );
+      allow delete: if isAuthenticated()
+                    && (
+                      isAdmin()
+                      || resource.data.createdBy == request.auth.uid
+                    );
+    }
+
+    match /userPreferences/{userId} {
+      allow read:   if isOwner(userId);
+      allow create: if isOwner(userId) && isReasonableSize();
+      allow update: if isOwner(userId) && isReasonableSize();
+      allow delete: if isOwner(userId);
     }
 
     // ============================================================
     // DENEGAR TODO LO DEMÁS
-    // Cualquier otra colección o documento no listado arriba
-    // queda bloqueado por defecto (Firestore deniega si no hay match).
     // ============================================================
   }
 }

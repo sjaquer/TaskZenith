@@ -217,10 +217,14 @@ export function GroupProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Delete members subcollection first
+      // Delete members, tasks and projects subcollections first
       const membersSnap = await getDocs(collection(db, 'groups', groupId, 'members'));
+      const groupTasksSnap = await getDocs(collection(db, 'groups', groupId, 'tasks'));
+      const groupProjectsSnap = await getDocs(collection(db, 'groups', groupId, 'projects'));
       const batch = writeBatch(db);
       membersSnap.docs.forEach((d) => batch.delete(d.ref));
+      groupTasksSnap.docs.forEach((d) => batch.delete(d.ref));
+      groupProjectsSnap.docs.forEach((d) => batch.delete(d.ref));
       batch.delete(doc(db, 'groups', groupId));
       await batch.commit();
 
