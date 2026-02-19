@@ -1,7 +1,7 @@
 'use client';
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { initializeAuth, getAuth, browserLocalPersistence, indexedDBLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration is loaded from environment variables
@@ -29,7 +29,19 @@ if (missingConfigKeys.length > 0) {
 
 // Initialize Firebase
 const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(firebaseApp);
+
+// Initialize Auth with explicit LOCAL persistence (IndexedDB → localStorage fallback)
+// This ensures the auth session survives browser restarts when "Recordar sesión" is active.
+let auth: ReturnType<typeof getAuth>;
+try {
+  auth = initializeAuth(firebaseApp, {
+    persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+  });
+} catch {
+  // initializeAuth throws if auth was already initialized (e.g. hot reload in dev)
+  auth = getAuth(firebaseApp);
+}
+
 const db = getFirestore(firebaseApp);
 
 export { firebaseApp, auth, db };

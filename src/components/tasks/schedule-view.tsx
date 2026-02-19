@@ -292,7 +292,7 @@ export function ScheduleView() {
                       head_row: 'flex',
                       head_cell: 'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
                       row: 'flex w-full mt-2',
-                      cell: 'h-24 w-full text-left p-0 relative',
+                      cell: 'h-14 md:h-24 w-full text-left p-0 relative',
                       day: cn(
                           buttonVariants({ variant: "ghost" }),
                           "h-full w-full p-0 font-normal aria-selected:opacity-100 flex flex-col items-start"

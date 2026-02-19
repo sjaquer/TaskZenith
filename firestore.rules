@@ -1,0 +1,149 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // FUNCIONES AUXILIARES
+    // ============================================================
+
+    // Verificar que el usuario esté autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Verificar si el usuario es admin (con protección si el perfil no existe aún)
+    function isAdmin() {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Verificar si el usuario es el dueño del documento
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ============================================================
+    // COLECCIÓN: users
+    // Almacena perfiles de usuario (uid, email, displayName, role).
+    // 
+    // Operaciones en la app:
+    //   - auth-context.tsx: setDoc (signup), onSnapshot (perfil en tiempo real)
+    // ============================================================
+    match /users/{userId} {
+      // Cualquier usuario autenticado puede leer perfiles
+      // (necesario para ver nombres de compañeros en tareas asignadas)
+      allow read: if isAuthenticated();
+
+      // Solo el propio usuario puede crear su perfil (durante signup)
+      allow create: if isOwner(userId)
+                    && request.resource.data.uid == userId
+                    && request.resource.data.email is string
+                    && request.resource.data.displayName is string
+                    && request.resource.data.role in ['admin', 'operator'];
+
+      // Solo el propio usuario puede actualizar su perfil
+      // No puede cambiar su propio uid ni role (seguridad)
+      allow update: if isOwner(userId)
+                    && request.resource.data.uid == resource.data.uid
+                    && request.resource.data.role == resource.data.role;
+
+      // No se permite eliminar perfiles
+      allow delete: if false;
+    }
+
+    // ============================================================
+    // COLECCIÓN: tasks
+    // Almacena todas las tareas con campos: title, category, priority,
+    // createdAt, dueDate, createdBy, completed, status, completedAt,
+    // subTasks, assignedTo, projectId, startedAt, aiPriorityScore, etc.
+    //
+    // Operaciones en la app:
+    //   - task-context.tsx: onSnapshot (listener), setDoc (crear),
+    //     updateDoc (editar), deleteDoc (eliminar), writeBatch (batch delete)
+    // ============================================================
+    match /tasks/{taskId} {
+      // Lectura: cualquier usuario autenticado puede leer tareas
+      // (el filtrado por rol se hace en la query del cliente)
+      allow read: if isAuthenticated();
+
+      // Crear: usuario autenticado, createdBy debe coincidir con su uid
+      allow create: if isAuthenticated()
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.resource.data.title is string;
+
+      // Actualizar: admin puede actualizar cualquier tarea,
+      // o el creador/asignado puede actualizar la suya
+      allow update: if isAuthenticated()
+                    && (
+                      isAdmin()
+                      || resource.data.createdBy == request.auth.uid
+                      || resource.data.assignedTo == request.auth.uid
+                    );
+
+      // Eliminar: admin puede eliminar cualquiera,
+      // o el creador puede eliminar la suya
+      allow delete: if isAuthenticated()
+                    && (
+                      isAdmin()
+                      || resource.data.createdBy == request.auth.uid
+                    );
+    }
+
+    // ============================================================
+    // COLECCIÓN: projects
+    // Almacena proyectos con campos: name, color, description,
+    // createdBy, assignedTo.
+    //
+    // Operaciones en la app:
+    //   - task-context.tsx: onSnapshot (listener), setDoc (crear),
+    //     updateDoc (editar), deleteDoc/writeBatch (eliminar)
+    // ============================================================
+    match /projects/{projectId} {
+      // Todos los usuarios autenticados pueden leer proyectos
+      allow read: if isAuthenticated();
+
+      // Crear: usuario autenticado, createdBy debe coincidir con su uid
+      allow create: if isAuthenticated()
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.resource.data.name is string;
+
+      // Actualizar: admin o el creador del proyecto
+      allow update: if isAuthenticated()
+                    && (
+                      isAdmin()
+                      || resource.data.createdBy == request.auth.uid
+                    );
+
+      // Eliminar: admin o el creador del proyecto
+      allow delete: if isAuthenticated()
+                    && (
+                      isAdmin()
+                      || resource.data.createdBy == request.auth.uid
+                    );
+    }
+
+    // ============================================================
+    // COLECCIÓN: userPreferences
+    // Almacena preferencias por usuario: theme, layoutConfig, 
+    // dashboardLayouts. El ID del documento es el uid del usuario.
+    //
+    // Operaciones en la app:
+    //   - theme-context.tsx: getDoc (leer), setDoc merge (guardar tema/layout)
+    //   - dashboard/page.tsx: getDoc (leer layouts), setDoc merge (guardar layouts)
+    // ============================================================
+    match /userPreferences/{userId} {
+      allow read:   if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // ============================================================
+    // DENEGAR TODO LO DEMÁS
+    // Cualquier otra colección o documento no listado arriba
+    // queda bloqueado por defecto (Firestore deniega si no hay match).
+    // ============================================================
+  }
+}

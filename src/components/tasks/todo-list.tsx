@@ -25,7 +25,6 @@ import { Progress } from '../ui/progress';
 import { calculateAIPriorityScore, sortTasksByAIPriority } from '@/lib/ai-priority';
 import { BrainCircuit, SortAsc } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
-import { TimeTracker } from './time-tracker';
 
 function useRelativeTime(date: Date | null) {
   const [relativeTime, setRelativeTime] = useState('');
@@ -122,9 +121,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: { task: Task; onToggle: 
                 </div>
             </div>
 
-            <TimeTracker taskId={task.id} initialTime={task.timeSpent || 0} className="mr-2 hidden sm:flex" />
-            
-            <div className="flex items-center ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center ml-auto md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                 <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-primary" onClick={() => onEdit(task)}>
                     <Edit className="w-4 h-4" />
                 </Button>
@@ -366,7 +363,8 @@ export function TodoList({ initialDate, onBack }: { initialDate?: Date, onBack?:
                 </Popover>
 
                 <Button type="submit" disabled={!newTaskTitle.trim()}>
-                    <Plus className="w-4 h-4 mr-2" /> Agregar Tarea
+                    <Plus className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Agregar Tarea</span>
                 </Button>
             </div>
           </form>

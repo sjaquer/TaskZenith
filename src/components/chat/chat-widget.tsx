@@ -38,7 +38,7 @@ export function ChatWidget() {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed bottom-4 right-4 w-80 md:w-96 bg-card border shadow-xl rounded-xl flex flex-col z-[100] h-[500px] animate-in slide-in-from-bottom-5 fade-in duration-200">
+        <div className="fixed bottom-20 md:bottom-4 right-4 w-[calc(100vw-2rem)] sm:w-80 md:w-96 bg-card border shadow-xl rounded-xl flex flex-col z-[100] h-[min(500px,calc(100vh-10rem))] animate-in slide-in-from-bottom-5 fade-in duration-200">
             {/* Header */}
             <div className="p-3 border-b flex justify-between items-center bg-primary text-primary-foreground rounded-t-xl">
                 <div className="flex items-center gap-2">

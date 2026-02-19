@@ -134,7 +134,7 @@ const Sidebar = React.forwardRef<
       <Sheet open={open} onOpenChange={setOpen} {...props}>
         <SheetContent
           ref={ref}
-          className={cn("hidden md:flex w-3/4 md:w-auto md:max-w-xs bg-card p-0 text-foreground", className)}
+          className={cn("flex w-3/4 max-w-xs bg-card p-0 text-foreground", className)}
           side="left"
         >
           <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>

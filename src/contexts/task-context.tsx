@@ -10,7 +10,7 @@ import {
   deleteDoc,
   Timestamp,
   updateDoc,
-  getDocs,
+  onSnapshot,
   query,
   where
 } from "firebase/firestore";
@@ -67,15 +67,12 @@ interface TaskContextType {
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
-const getLocalStorageKey = (userId: string, key: 'tasks' | 'projects') => `taskzenith_corp_${userId}_${key}`;
-
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const { user, role, loading: authLoading } = useAuth();
     const [tasks, setTasks] = useState<Task[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
-    const hasSynced = useRef(false);
 
     const userId = user?.uid;
 
@@ -83,118 +80,91 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const tasksCollection = collection(db, 'tasks');
     const projectsCollection = collection(db, 'projects');
 
-    // Effect to persist state to localStorage whenever it changes
+    // Ref para IDs de tareas con escritura pendiente (optimistic updates activos)
+    const pendingWritesRef = useRef<Set<string>>(new Set());
+
+    // Real-time listener para tareas
     useEffect(() => {
-      if (userId && isLoaded) {
-        localStorage.setItem(getLocalStorageKey(userId, 'tasks'), JSON.stringify(tasks));
-        localStorage.setItem(getLocalStorageKey(userId, 'projects'), JSON.stringify(projects));
+      // No iniciar listeners hasta que auth termine de cargar y el perfil del usuario exista
+      if (!userId || authLoading || role === null) {
+        // Si no hay usuario, limpiar todo
+        if (!userId && !authLoading) {
+          setTasks([]);
+          setProjects([]);
+          setIsLoaded(false);
+        }
+        return;
       }
-    }, [tasks, projects, userId, isLoaded]);
+
+      setIsSyncing(true);
+
+      // Query de tareas según rol
+      let qTasks = query(tasksCollection);
+      if (role === 'operator') {
+        qTasks = query(tasksCollection, where('assignedTo', '==', userId));
+      }
+
+      // Listener en tiempo real para tareas
+      const unsubTasks = onSnapshot(qTasks, (snapshot) => {
+        const tasksData = snapshot.docs.map(docSnap => {
+          const data = docSnap.data();
+          return { 
+            ...data, 
+            id: docSnap.id, 
+            createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(),
+            startedAt: data.startedAt ? (data.startedAt as Timestamp).toDate() : null,
+            completedAt: data.completedAt ? (data.completedAt as Timestamp).toDate() : null,
+            dueDate: data.dueDate ? (data.dueDate as Timestamp).toDate() : null,
+          } as Task;
+        });
+
+        // Preservar optimistic updates que aún no se confirmaron
+        setTasks(prev => {
+          const serverIds = new Set(tasksData.map(t => t.id));
+          // Mantener tareas con escritura pendiente que aún no están en el servidor
+          const pendingTasks = prev.filter(t => pendingWritesRef.current.has(t.id) && !serverIds.has(t.id));
+          return [...tasksData, ...pendingTasks];
+        });
+
+        setIsSyncing(false);
+        setIsLoaded(true);
+      }, (error) => {
+        console.error("Error en listener de tareas:", error);
+        setIsSyncing(false);
+        setIsLoaded(true);
+      });
+
+      // Listener en tiempo real para proyectos
+      const unsubProjects = onSnapshot(query(projectsCollection), (snapshot) => {
+        const projectsData = snapshot.docs.map(docSnap => ({ 
+          ...docSnap.data(), 
+          id: docSnap.id 
+        }) as Project);
+        setProjects(projectsData);
+      }, (error) => {
+        console.error("Error en listener de proyectos:", error);
+      });
+
+      // Limpiar listeners al desmontar o cambiar de usuario
+      return () => {
+        unsubTasks();
+        unsubProjects();
+      };
+    }, [userId, role, authLoading]);
 
     const clearLocalData = useCallback(() => {
-        if (userId) {
-          localStorage.removeItem(getLocalStorageKey(userId, 'tasks'));
-          localStorage.removeItem(getLocalStorageKey(userId, 'projects'));
-        }
         setTasks([]);
         setProjects([]);
         setIsLoaded(false);
-    }, [userId]);
+    }, []);
 
+    // syncData ahora es un no-op ya que usamos listeners en tiempo real,
+    // pero mantenemos la interfaz para compatibilidad con el botón de sync
     const syncData = useCallback(async () => {
-        if (!userId) return;
-        setIsSyncing(true);
-        try {
-            // ADMIN sees ALL Tasks. OPERATOR sees ASSIGNED tasks.
-            let qTasks = query(tasksCollection);
-            
-            if (role === 'operator') {
-                qTasks = query(tasksCollection, where('assignedTo', '==', userId));
-            }
-
-            const tasksSnapshot = await getDocs(qTasks);
-            const tasksData = tasksSnapshot.docs.map(doc => {
-              const data = doc.data();
-              return { 
-                ...data, 
-                id: doc.id, 
-                createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(),
-                startedAt: data.startedAt ? (data.startedAt as Timestamp).toDate() : null,
-                completedAt: data.completedAt ? (data.completedAt as Timestamp).toDate() : null,
-                dueDate: data.dueDate ? (data.dueDate as Timestamp).toDate() : null,
-              } as Task
-            });
-            setTasks(tasksData);
-
-            // ADMIN sees ALL Projects. OPERATOR sees projects they are part of? 
-            // For now, let's let everyone see all projects to facilitate collaboration context.
-            // Or if strict, filter by members. Assuming 'members' array exists on Project if needed.
-            // We kept Project simple in type definition, so let's show all for now.
-            const projectsSnapshot = await getDocs(query(projectsCollection));
-            const projectsData = projectsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Project);
-            setProjects(projectsData);
-            
-        } catch (error) {
-            console.error("Error fetching from Firestore:", error);
-            // Don't throw to avoid crashing UI, just log
-        } finally {
-            setIsSyncing(false);
-        }
-    }, [userId, role]);
-    
-
-    useEffect(() => {
-      const loadInitialData = async () => {
-        if (userId && !hasSynced.current) {
-          hasSynced.current = true;
-          let localTasks: Task[] = [];
-          let localProjects: Project[] = [];
-          
-          try {
-            const storedTasks = localStorage.getItem(getLocalStorageKey(userId, 'tasks'));
-            if (storedTasks) {
-              localTasks = JSON.parse(storedTasks, (key, value) => {
-                if (key.endsWith('At') || key === 'dueDate' || key === 'createdAt') {
-                  return value ? new Date(value) : null;
-                }
-                return value;
-              });
-            }
-            
-            const storedProjects = localStorage.getItem(getLocalStorageKey(userId, 'projects'));
-            if (storedProjects) {
-              localProjects = JSON.parse(storedProjects);
-            }
-          } catch(e) {
-            console.error("Failed to parse data from localStorage", e);
-          }
-          
-          // Cargar datos locales inmediatamente para UI rápida
-          if (localTasks.length > 0) {
-             setTasks(localTasks);
-          }
-          if (localProjects.length > 0) {
-             setProjects(localProjects);
-          }
-
-          // Siempre sincronizar con Firestore para tener datos frescos
-          try {
-            await syncData();
-          } catch (error) {
-            console.error('Error syncing data:', error);
-          }
-          
-          setIsLoaded(true);
-        } else if (!userId) {
-          hasSynced.current = false;
-          clearLocalData();
-        }
-      };
-    
-      if (!authLoading) {
-        loadInitialData();
-      }
-    }, [userId, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+        // Los listeners en tiempo real ya mantienen los datos actualizados
+        // Esta función existe solo para compatibilidad con la UI
+        return;
+    }, []);
 
 
   const addTask = async (task: Partial<Omit<Task, 'id' | 'completed' | 'status' | 'completedAt' | 'createdAt' | 'createdBy'>>) => {
@@ -222,7 +192,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     const newTask: Task = { ...taskPayload, id: newDocRef.id };
 
-    // Actualización optimista de UI
+    // Marcar como escritura pendiente y actualizar UI optimistamente
+    pendingWritesRef.current.add(newDocRef.id);
     setTasks((prev) => [newTask, ...prev]);
 
     try {
@@ -231,19 +202,21 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         await setDoc(newDocRef, firestorePayload);
     } catch (error) {
         console.error("Error adding task: ", error);
-        setTasks((prev) => prev.filter(t => t.id !== newDocRef.id));
+        // No eliminamos la tarea del estado - el listener la actualizará cuando se confirme
+        // Si realmente falló, al menos la tarea queda visible hasta el siguiente refresh
+    } finally {
+        pendingWritesRef.current.delete(newDocRef.id);
     }
   };
 
   const deleteTask = async (taskId: string) => {
     if (!userId) return;
-    const originalTasks = tasks;
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
     try {
         await deleteDoc(doc(tasksCollection, taskId));
     } catch (error) {
         console.error("Error deleting task: ", error);
-        setTasks(originalTasks);
+        // El listener restaurará la tarea si la eliminación falló en Firestore
     }
   };
 
@@ -269,13 +242,11 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         await batch.commit();
     } catch (error) {
         console.error("Error deleting completed tasks: ", error);
-        setTasks(tasks); // Revert
     }
   };
 
   const updateTask = async (taskId: string, data: Partial<Omit<Task, 'id' | 'createdBy'>>) => {
     if (!userId) return;
-    const originalTasks = [...tasks];
     
     // Clean data - remover undefined
     const cleanedData = Object.fromEntries(
@@ -294,7 +265,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       await updateDoc(taskRef, firestorePayload);
     } catch (error) {
       console.error('Error updating task: ', error);
-      setTasks(originalTasks);
+      // El listener en tiempo real corregirá el estado si hay inconsistencia
     }
   };
 
@@ -448,8 +419,6 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         await batch.commit();
     } catch(error) {
         console.error("Error deleting project and its tasks: ", error);
-        setProjects(projects);
-        setTasks(tasks);
     }
   }
   

@@ -12,7 +12,7 @@ import {
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
-import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, Sparkles, Mic, Calendar, Flame, Timer, CheckSquare, BarChart3 } from 'lucide-react';
+import { Paintbrush, RotateCcw, LayoutTemplate, CalendarClock, AlertOctagon, Sparkles, Mic, Calendar, Flame, CheckSquare, BarChart3 } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 
@@ -55,7 +55,6 @@ function hexToHSL(hex: string): { h: number, s: number, l: number } | null {
 const layoutOptions: { key: keyof ReturnType<typeof useTheme>['layoutConfig']; label: string, icon: React.ElementType }[] = [
     { key: 'showStats', label: 'Estadísticas', icon: BarChart3 },
     { key: 'showTodoList', label: 'Lista de Tareas', icon: CheckSquare },
-    { key: 'showPomodoro', label: 'Temporizador Pomodoro', icon: Timer },
     { key: 'showCalendar', label: 'Calendario', icon: Calendar },
     { key: 'showDueTasks', label: 'Vencimientos', icon: CalendarClock },
     { key: 'showKanban', label: 'Acceso a Tablero Kanban', icon: LayoutTemplate },

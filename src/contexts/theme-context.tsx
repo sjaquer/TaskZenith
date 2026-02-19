@@ -21,7 +21,6 @@ type LayoutConfig = {
     showHistory: boolean;
     showCalendar: boolean;
     showDueTasks: boolean;
-    showPomodoro: boolean;
     widgetOrder: string[];
 }
 
@@ -56,8 +55,7 @@ const defaultLayout: LayoutConfig = {
     showHistory: true,
     showCalendar: true,
     showDueTasks: true,
-    showPomodoro: true,
-    widgetOrder: ['stats', 'pomodoro', 'due', 'calendar', 'todo'],
+    widgetOrder: ['stats', 'due', 'calendar', 'todo'],
 };
 
 export const predefinedThemes: PredefinedTheme[] = [

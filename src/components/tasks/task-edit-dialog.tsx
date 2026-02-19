@@ -43,7 +43,6 @@ const formSchema = z.object({
   projectId: z.string().optional(),
   assignedTo: z.string().optional(),
   dueDate: z.date().optional().nullable(),
-  estimatedTime: z.number().optional(),
   subTasks: z.array(subTaskSchema).optional(),
 });
 
@@ -67,7 +66,6 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
       projectId: task.projectId || undefined,
       assignedTo: task.assignedTo || undefined,
       dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-      estimatedTime: task.estimatedTime || undefined,
       subTasks: task.subTasks || [],
     },
   });
@@ -161,7 +159,7 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Tarea</DialogTitle>
           <DialogDescription>
@@ -253,8 +251,7 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                 </div>
            )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
+          <div className="grid gap-2">
                  <Label>Fecha de Vencimiento / Hora</Label>
                  <Controller
                     control={form.control}
@@ -329,16 +326,6 @@ export function TaskEditDialog({ isOpen, onOpenChange, task }: TaskEditDialogPro
                       </Popover>
                     )}
                   />
-            </div>
-            
-            <div className="grid gap-2">
-                <Label>Tiempo Estimado (Minutos)</Label>
-                <Input 
-                    type="number" 
-                    {...form.register('estimatedTime', { valueAsNumber: true })} 
-                    placeholder="Ej. 60"
-                />
-            </div>
           </div>
 
           <div className="space-y-2">

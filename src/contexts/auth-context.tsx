@@ -10,7 +10,6 @@ import {
   updateProfile as updateAuthProfile,
   type User,
   setPersistence,
-  browserLocalPersistence,
   browserSessionPersistence,
 } from 'firebase/auth';
 
@@ -77,8 +76,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = async (email: string, password: string, rememberMe = true) => {
-    const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
-    await setPersistence(auth, persistence);
+    // Auth is initialized with LOCAL persistence (IndexedDB) by default in firebase.ts.
+    // Only override when the user explicitly does NOT want to be remembered.
+    if (!rememberMe) {
+      await setPersistence(auth, browserSessionPersistence);
+    }
     await signInWithEmailAndPassword(auth, email, password);
   };
 

@@ -30,7 +30,6 @@ export const metadata: Metadata = {
     'firebase real-time',
     'workspace colaborativo',
     'task management',
-    'pomodoro timer',
     'team productivity'
   ],
   authors: [{ name: 'Sebastián Jaque', url: 'https://github.com/sjaquer' }],

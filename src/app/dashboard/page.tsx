@@ -9,7 +9,6 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { TaskStatsCards } from '@/components/tasks/task-stats-cards';
 import { DueTasksWidget } from '@/components/tasks/due-tasks-widget';
 import { TodoList } from '@/components/tasks/todo-list';
-import { PomodoroTimer } from '@/components/tasks/pomodoro-timer';
 import { CalendarWidget } from '@/components/tasks/calendar-widget';
 import { 
   RefreshCw, 
@@ -34,6 +33,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useTheme, predefinedThemes } from '@/contexts/theme-context';
 import { Palette, Monitor } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Configuración del Grid Adaptativo
 const GRID_COLS = 48; // Grid mucho más fino para mayor libertad de movimiento
@@ -78,14 +78,6 @@ const WIDGETS: Record<string, WidgetConfig> = {
     title: 'Vencimientos',
     description: 'Tareas próximas a vencer',
     defaultLayout: { x: 28, y: 200, width: 20, height: 240 },
-    minW: 10,
-    minH: 200
-  },
-  pomodoro: {
-    component: PomodoroTimer,
-    title: 'Pomodoro',
-    description: 'Temporizador de enfoque',
-    defaultLayout: { x: 28, y: 460, width: 20, height: 240 },
     minW: 10,
     minH: 200
   },
@@ -164,6 +156,7 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   const handleSync = async () => {
     try {
@@ -400,24 +393,25 @@ export default function DashboardPage() {
     <div className="flex-1 p-2 md:p-6 min-h-screen flex flex-col">
       {/* Header flotante de controles */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md pb-4 pt-2 mb-2 border-b">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Mi Espacio</h2>
-            <p className="text-sm text-muted-foreground">
-              Hola {user?.displayName?.split(' ')[0] || 'Usuario'}, edita y organiza tu tablero libremente
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight">Mi Espacio</h2>
+            <p className="text-xs md:text-sm text-muted-foreground">
+              Hola {user?.displayName?.split(' ')[0] || 'Usuario'}{!isMobile && ', edita y organiza tu tablero libremente'}
             </p>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-wrap">
             {/* Panel de Configuración Completo */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Settings2 className="mr-2 h-4 w-4" />
-                  Configuración
+                  <span className="hidden sm:inline">Configuración</span>
+                  <span className="sm:hidden">Config.</span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-96" align="end">
+              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-96" align="end">
                 <div className="grid gap-4">
                   <div className="space-y-2">
                     <h4 className="font-medium leading-none flex items-center gap-2">
@@ -512,7 +506,7 @@ export default function DashboardPage() {
               variant={isEditMode ? 'default' : 'secondary'}
               size="sm"
               onClick={() => setIsEditMode(!isEditMode)}
-              className="min-w-[100px]"
+              className="min-w-[100px] hidden md:inline-flex"
             >
               {isEditMode ? <Unlock className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
               {isEditMode ? 'Guardar' : 'Editar'}
@@ -520,10 +514,10 @@ export default function DashboardPage() {
             
             {isEditMode && (
               <>
-                <Button variant="ghost" size="icon" onClick={() => setLayouts(compactLayoutsVertically(layouts, containerWidth))} title="Auto-ordenar">
+                <Button variant="ghost" size="icon" onClick={() => setLayouts(compactLayoutsVertically(layouts, containerWidth))} title="Auto-ordenar" className="hidden md:inline-flex">
                   <Maximize2 className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={resetLayout} title="Resetear">
+                <Button variant="ghost" size="icon" onClick={resetLayout} title="Resetear" className="hidden md:inline-flex">
                   <RotateCcw className="h-4 w-4" />
                 </Button>
               </>
@@ -536,7 +530,36 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Grid Canvas */}
+      {/* Mobile Layout - Simple stacked view */}
+      {isMobile ? (
+        <div className="flex flex-col gap-4 mt-2">
+          {layouts.length === 0 ? (
+            <div className="flex items-center justify-center flex-col text-muted-foreground opacity-50 py-20">
+              <LayoutGrid className="h-16 w-16 mb-4" />
+              <p>Tu tablero está vacío</p>
+            </div>
+          ) : (
+            layouts
+              .sort((a, b) => {
+                const order = ['stats', 'todo', 'due', 'calendar'];
+                return order.indexOf(a.id) - order.indexOf(b.id);
+              })
+              .map((layout) => {
+                const config = WIDGETS[layout.id];
+                if (!config) return null;
+                const Component = config.component;
+                return (
+                  <Card key={layout.id} className="overflow-hidden shadow-sm border-border/60">
+                    <div className="overflow-auto">
+                      <Component />
+                    </div>
+                  </Card>
+                );
+              })
+          )}
+        </div>
+      ) : (
+      /* Desktop Layout - Absolute positioned grid */
       <div 
         ref={containerRef}
         className={cn(
@@ -617,6 +640,7 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
