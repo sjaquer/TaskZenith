@@ -33,6 +33,7 @@ export function DemoTourOverlay() {
   const [isPositioned, setIsPositioned] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   // Navigate to the step's page if needed
   useEffect(() => {
@@ -42,7 +43,7 @@ export function DemoTourOverlay() {
     }
   }, [currentTourStep, pathname, router]);
 
-  // Position the tooltip
+  // Position the tooltip and highlight - recalculates target rect each time
   const positionTooltip = useCallback(() => {
     if (!currentTourStep || !tooltipRef.current) return;
 
@@ -73,6 +74,7 @@ export function DemoTourOverlay() {
       return;
     }
 
+    // Always recalculate from live DOM position
     const targetRect = targetEl.getBoundingClientRect();
     setHighlightRect(targetRect);
 
@@ -108,18 +110,47 @@ export function DemoTourOverlay() {
     setIsPositioned(true);
   }, [currentTourStep]);
 
+  // Scroll-aware repositioning using rAF for smooth tracking
+  const handleScrollOrResize = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      positionTooltip();
+    });
+  }, [positionTooltip]);
+
+  // Scroll target element into view when step changes, then position
   useEffect(() => {
     if (!isTourActive || !currentTourStep) return;
     setIsPositioned(false);
 
+    const setup = () => {
+      if (currentTourStep.placement !== 'center' && currentTourStep.target) {
+        const targetEl = document.querySelector(currentTourStep.target);
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+          // After scroll animation settles, position tooltip
+          setTimeout(positionTooltip, 450);
+          return;
+        }
+      }
+      positionTooltip();
+    };
+
     // Delay to allow DOM to render after navigation
-    const timer = setTimeout(positionTooltip, 350);
-    window.addEventListener('resize', positionTooltip);
+    const timer = setTimeout(setup, 350);
+
+    // Listen to scroll on all scrollable ancestors + window
+    const scrollHandler = handleScrollOrResize;
+    window.addEventListener('resize', scrollHandler);
+    window.addEventListener('scroll', scrollHandler, true); // capture phase to catch all scrolls
+
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', positionTooltip);
+      window.removeEventListener('resize', scrollHandler);
+      window.removeEventListener('scroll', scrollHandler, true);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isTourActive, currentTourStep, positionTooltip]);
+  }, [isTourActive, currentTourStep, positionTooltip, handleScrollOrResize]);
 
   if (!isDemo) return null;
 
@@ -159,42 +190,23 @@ export function DemoTourOverlay() {
   // Tour active - show overlay + tooltip
   return (
     <>
-      {/* Dark overlay with cutout */}
-      <div className="fixed inset-0 z-[9998]" onClick={skipTour}>
-        <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <mask id="tour-mask">
-              <rect width="100%" height="100%" fill="white" />
-              {highlightRect && (
-                <rect
-                  x={highlightRect.left - 6}
-                  y={highlightRect.top - 6}
-                  width={highlightRect.width + 12}
-                  height={highlightRect.height + 12}
-                  rx="8"
-                  fill="black"
-                />
-              )}
-            </mask>
-          </defs>
-          <rect
-            width="100%"
-            height="100%"
-            fill="rgba(0,0,0,0.6)"
-            mask="url(#tour-mask)"
-          />
-        </svg>
-      </div>
+      {/* Clickable overlay - clicking anywhere on the dark area skips the tour */}
+      <div 
+        className="fixed inset-0 z-[9997]"
+        onClick={skipTour}
+        style={{ background: highlightRect ? 'transparent' : 'rgba(0,0,0,0.6)' }}
+      />
 
-      {/* Highlight border */}
+      {/* Highlight cutout with massive box-shadow for overlay effect */}
       {highlightRect && (
         <div
-          className="fixed z-[9998] pointer-events-none rounded-lg ring-2 ring-primary ring-offset-2 ring-offset-transparent transition-all duration-300"
+          className="fixed z-[9998] rounded-lg ring-2 ring-primary ring-offset-2 ring-offset-transparent pointer-events-none"
           style={{
             top: highlightRect.top - 6,
             left: highlightRect.left - 6,
             width: highlightRect.width + 12,
             height: highlightRect.height + 12,
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
           }}
         />
       )}

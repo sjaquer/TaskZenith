@@ -1,12 +1,39 @@
 'use client';
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import Image from "next/image";
-import { LayoutGrid, Cloud, Palette, Lock, Zap, Users } from "lucide-react";
+import { LayoutGrid, Cloud, Palette, Lock, Zap, Users, Play, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/contexts/auth-context";
+import { useDemo } from "@/contexts/demo-context";
+import { useToast } from "@/hooks/use-toast";
 
 export default function WelcomePage() {
+    const { enterDemoMode } = useAuth();
+    const { enterDemo, startTour } = useDemo();
+    const router = useRouter();
+    const { toast } = useToast();
+    const [isDemoLoading, setIsDemoLoading] = useState(false);
+
+    function handleDemoMode() {
+        setIsDemoLoading(true);
+        try {
+            enterDemoMode();
+            enterDemo();
+            toast({
+                title: '🚀 Modo Demo activado',
+                description: 'Explora todas las funcionalidades con datos de ejemplo.',
+                className: 'bg-primary text-primary-foreground',
+            });
+            router.push('/dashboard');
+            setTimeout(() => startTour(), 1500);
+        } finally {
+            setIsDemoLoading(false);
+        }
+    }
     const features = [
         {
             icon: LayoutGrid,
@@ -73,7 +100,29 @@ export default function WelcomePage() {
                         <Button asChild variant="secondary" size="lg" className="text-lg px-8">
                             <Link href="/signup">Crear Cuenta</Link>
                         </Button>
+                        <Button
+                            size="lg"
+                            variant="outline"
+                            className="text-lg px-8 gap-2 border-amber-500/40 text-amber-500 hover:bg-amber-500/10 hover:text-amber-400 hover:border-amber-500/60 transition-all"
+                            onClick={handleDemoMode}
+                            disabled={isDemoLoading}
+                        >
+                            {isDemoLoading ? (
+                                <>
+                                    <Sparkles className="w-5 h-5 animate-spin" />
+                                    Cargando...
+                                </>
+                            ) : (
+                                <>
+                                    <Play className="w-5 h-5" />
+                                    Probar Demo
+                                </>
+                            )}
+                        </Button>
                     </div>
+                    <p className="text-sm text-muted-foreground mt-3">
+                        Explora la app con datos de ejemplo y un tour guiado, sin necesidad de crear cuenta
+                    </p>
                 </div>
 
                 {/* Features Grid */}
