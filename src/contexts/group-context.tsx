@@ -183,11 +183,10 @@ export function GroupProvider({ children }: { children: ReactNode }) {
         return newId;
       }
 
+      // Batch atómico: grupo + miembro creador en una sola operación
       const groupRef = doc(collection(db, 'groups'));
-      await setDoc(groupRef, group);
-
-      // Add creator as first member
       const memberRef = doc(db, 'groups', groupRef.id, 'members', uid);
+
       const member: Omit<GroupMember, 'id'> = {
         uid,
         displayName: profile.displayName,
@@ -196,7 +195,11 @@ export function GroupProvider({ children }: { children: ReactNode }) {
         memberFunction: 'administración',
         joinedAt: Date.now(),
       };
-      await setDoc(memberRef, member);
+
+      const batch = writeBatch(db);
+      batch.set(groupRef, group);
+      batch.set(memberRef, member);
+      await batch.commit();
 
       return groupRef.id;
     },
