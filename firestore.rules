@@ -24,30 +24,43 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Verificar que el documento no exceda un tamaño razonable (64 KB)
+    function isReasonableSize() {
+      return request.resource.size < 65536;
+    }
+
     // ============================================================
     // COLECCIÓN: users
     // Almacena perfiles de usuario (uid, email, displayName, role).
     // 
     // Operaciones en la app:
-    //   - auth-context.tsx: setDoc (signup), onSnapshot (perfil en tiempo real)
+    //   - auth-context.tsx: setDoc (signup y auto-creación de perfil),
+    //     onSnapshot (perfil en tiempo real), updateDoc (cambio de rol)
+    //
+    // NOTA: Si el usuario se autentica pero no tiene doc en users/,
+    //       auth-context lo crea automáticamente con role='operator'.
     // ============================================================
     match /users/{userId} {
       // Cualquier usuario autenticado puede leer perfiles
       // (necesario para ver nombres de compañeros en tareas asignadas)
       allow read: if isAuthenticated();
 
-      // Solo el propio usuario puede crear su perfil (durante signup)
+      // Solo el propio usuario puede crear su perfil (signup o auto-creación)
+      // Campos obligatorios: uid, email, displayName, role
       allow create: if isOwner(userId)
                     && request.resource.data.uid == userId
                     && request.resource.data.email is string
                     && request.resource.data.displayName is string
-                    && request.resource.data.role in ['admin', 'operator'];
+                    && request.resource.data.role in ['admin', 'operator']
+                    && request.resource.data.keys().hasAll(['uid', 'email', 'displayName', 'role'])
+                    && request.resource.data.keys().hasOnly(['uid', 'email', 'displayName', 'role', 'photoURL']);
 
       // Solo el propio usuario puede actualizar su perfil
       // No puede cambiar su uid; role solo puede ser 'admin' u 'operator'
       allow update: if isOwner(userId)
                     && request.resource.data.uid == resource.data.uid
-                    && request.resource.data.role in ['admin', 'operator'];
+                    && request.resource.data.role in ['admin', 'operator']
+                    && request.resource.data.keys().hasOnly(['uid', 'email', 'displayName', 'role', 'photoURL']);
 
       // No se permite eliminar perfiles
       allow delete: if false;
@@ -57,7 +70,8 @@ service cloud.firestore {
     // COLECCIÓN: tasks
     // Almacena todas las tareas con campos: title, category, priority,
     // createdAt, dueDate, createdBy, completed, status, completedAt,
-    // subTasks, assignedTo, projectId, startedAt, aiPriorityScore, etc.
+    // subTasks, assignedTo, projectId, startedAt, aiPriorityScore,
+    // description, timeSpent, timeEntries, etc.
     //
     // Operaciones en la app:
     //   - task-context.tsx: onSnapshot (listener), setDoc (crear),
@@ -71,11 +85,16 @@ service cloud.firestore {
       // Crear: usuario autenticado, createdBy debe coincidir con su uid
       allow create: if isAuthenticated()
                     && request.resource.data.createdBy == request.auth.uid
-                    && request.resource.data.title is string;
+                    && request.resource.data.title is string
+                    && request.resource.data.title.size() > 0
+                    && isReasonableSize();
 
       // Actualizar: admin puede actualizar cualquier tarea,
-      // o el creador/asignado puede actualizar la suya
+      // o el creador/asignado puede actualizar la suya.
+      // No se permite cambiar el campo createdBy.
       allow update: if isAuthenticated()
+                    && request.resource.data.createdBy == resource.data.createdBy
+                    && isReasonableSize()
                     && (
                       isAdmin()
                       || resource.data.createdBy == request.auth.uid
@@ -107,10 +126,15 @@ service cloud.firestore {
       // Crear: usuario autenticado, createdBy debe coincidir con su uid
       allow create: if isAuthenticated()
                     && request.resource.data.createdBy == request.auth.uid
-                    && request.resource.data.name is string;
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && isReasonableSize();
 
-      // Actualizar: admin o el creador del proyecto
+      // Actualizar: admin o el creador del proyecto.
+      // No se permite cambiar createdBy.
       allow update: if isAuthenticated()
+                    && request.resource.data.createdBy == resource.data.createdBy
+                    && isReasonableSize()
                     && (
                       isAdmin()
                       || resource.data.createdBy == request.auth.uid
@@ -132,19 +156,18 @@ service cloud.firestore {
     // Operaciones en la app:
     //   - theme-context.tsx: getDoc (leer), setDoc merge (guardar tema/layout)
     //   - dashboard/page.tsx: getDoc (leer layouts), setDoc merge (guardar layouts)
+    //
+    // NOTA: El modo demo NO accede a esta colección (guards en contextos).
     // ============================================================
     match /userPreferences/{userId} {
       allow read:   if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      allow create: if isOwner(userId)
+                    && isReasonableSize();
+      allow update: if isOwner(userId)
+                    && isReasonableSize();
+      // Permitir eliminar solo al propietario (reset de preferencias)
       allow delete: if isOwner(userId);
     }
-
-    // ============================================================
-    // DENEGAR TODO LO DEMÁS
-    // Cualquier otra colección o documento no listado arriba
-    // queda bloqueado por defecto (Firestore deniega si no hay match).
-    // ============================================================
 
     // ============================================================
     // COLECCIÓN: groups
@@ -163,11 +186,17 @@ service cloud.firestore {
       // Crear: solo admins, createdBy debe ser el uid del usuario
       allow create: if isAdmin()
                     && request.resource.data.createdBy == request.auth.uid
-                    && request.resource.data.name is string;
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.keys().hasAll(['name', 'createdBy', 'createdAt', 'inviteCode'])
+                    && isReasonableSize();
 
-      // Actualizar: solo el creador del grupo (admin)
+      // Actualizar: solo el creador del grupo (admin).
+      // No se permite cambiar createdBy.
       allow update: if isAuthenticated()
-                    && resource.data.createdBy == request.auth.uid;
+                    && resource.data.createdBy == request.auth.uid
+                    && request.resource.data.createdBy == resource.data.createdBy
+                    && isReasonableSize();
 
       // Eliminar: solo el creador del grupo
       allow delete: if isAuthenticated()
@@ -184,21 +213,27 @@ service cloud.firestore {
         // Crear: un usuario puede añadirse a sí mismo (join),
         // o el creador del grupo puede añadir miembros
         allow create: if isAuthenticated()
+                      && request.resource.data.uid is string
+                      && request.resource.data.displayName is string
+                      && isReasonableSize()
                       && (
                         request.auth.uid == memberId
                         || get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy == request.auth.uid
                       );
 
         // Actualizar: el creador del grupo puede modificar funciones,
-        // o el propio miembro puede actualizar sus datos
+        // o el propio miembro puede actualizar sus datos.
+        // No se permite cambiar el uid del miembro.
         allow update: if isAuthenticated()
+                      && request.resource.data.uid == resource.data.uid
+                      && isReasonableSize()
                       && (
                         get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy == request.auth.uid
                         || request.auth.uid == memberId
                       );
 
         // Eliminar: el creador del grupo puede remover miembros,
-        // o el propio miembro puede abandonar (excepto el creador)
+        // o el propio miembro puede abandonar
         allow delete: if isAuthenticated()
                       && (
                         get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy == request.auth.uid
@@ -206,5 +241,11 @@ service cloud.firestore {
                       );
       }
     }
+
+    // ============================================================
+    // DENEGAR TODO LO DEMÁS
+    // Cualquier otra colección o documento no listado arriba
+    // queda bloqueado por defecto (Firestore deniega si no hay match).
+    // ============================================================
   }
 }

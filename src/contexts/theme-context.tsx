@@ -81,7 +81,7 @@ const applyTheme = (theme: ColorTheme) => {
 };
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user, isDemo } = useAuth();
   const [theme, setThemeState] = useState<ColorTheme>(defaultTheme);
   const [layoutConfig, setLayoutConfigState] = useState<LayoutConfig>(defaultLayout);
   const [isCustomizerOpen, setCustomizerOpen] = useState(false);
@@ -113,6 +113,13 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
           console.error("Failed to parse preferences from localStorage", e);
           applyTheme(defaultTheme);
         }
+        setIsLoading(false);
+        return;
+      }
+
+      // En modo demo, usar solo localStorage
+      if (isDemo) {
+        applyTheme(defaultTheme);
         setIsLoading(false);
         return;
       }
@@ -161,8 +168,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setThemeState(newTheme);
     applyTheme(newTheme);
     
-    // Guardar en Firestore si hay usuario
-    if (user?.uid) {
+    // Guardar en Firestore si hay usuario y no es demo
+    if (user?.uid && !isDemo) {
       try {
         const docRef = doc(db, 'userPreferences', user.uid);
         await setDoc(docRef, { theme: newTheme }, { merge: true });
@@ -178,8 +185,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const setLayoutConfig = async (newConfig: LayoutConfig) => {
     setLayoutConfigState(newConfig);
     
-    // Guardar en Firestore si hay usuario
-    if (user?.uid) {
+    // Guardar en Firestore si hay usuario y no es demo
+    if (user?.uid && !isDemo) {
       try {
         const docRef = doc(db, 'userPreferences', user.uid);
         await setDoc(docRef, { layoutConfig: newConfig }, { merge: true });

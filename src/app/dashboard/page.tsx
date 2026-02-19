@@ -151,7 +151,7 @@ function compactLayoutsVertically(layouts: WidgetLayout[], containerWidth: numbe
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, isDemo } = useAuth();
   const { syncData, isSyncing } = useTasks();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -201,7 +201,7 @@ export default function DashboardPage() {
   useEffect(() => {
     setMounted(true);
     const loadLayouts = async () => {
-      if (!user?.uid) {
+      if (!user?.uid || isDemo) {
         resetLayout();
         return;
       }
@@ -222,11 +222,11 @@ export default function DashboardPage() {
     };
     
     loadLayouts();
-  }, [user?.uid]);
+  }, [user?.uid, isDemo]);
 
   // Save to Firestore
   useEffect(() => {
-    if (mounted && layouts.length > 0 && user?.uid) {
+    if (mounted && layouts.length > 0 && user?.uid && !isDemo) {
       const saveLayouts = async () => {
         try {
           const docRef = doc(db, 'userPreferences', user.uid);
